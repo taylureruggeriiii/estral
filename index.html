@@ -359,6 +359,14 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
 .phase-modal-section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 .chat-bubble-ai { align-self: flex-start; max-width: 88%; background: #E8B4B0; border: none; padding: 16px 18px; font-size: 15px; line-height: 1.75; font-family: 'DM Sans', sans-serif; font-style: italic; color: #B5292A; }
 .chat-bubble-user { align-self: flex-end; max-width: 80%; background: var(--phase); color: #fff; padding: 12px 16px; border-radius: 18px 18px 4px 18px; font-size: 14px; line-height: 1.55; font-family: 'DM Sans', sans-serif; font-style: normal; }
+
+/* Week columns new style */
+#weekColumns { overflow-x: auto; }
+#week-area-legend::-webkit-scrollbar { display: none; }
+.week-col-body { transition: background 0.15s; }
+#week-tray-items { min-height: 32px; }
+#drag-tray-items { min-height: 32px; }
+
 </style>
 </head>
 <body class="phase-follicular">
@@ -1095,39 +1103,53 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     <div class="plan-view scroll-area" id="plan-month" style="padding-bottom:20px;">
       <div style="padding:16px 16px 8px; display:flex; justify-content:space-between; align-items:center;">
         <h3>March 2026</h3>
-        <button id="generateMonthBtn" onclick="populateMonth()" style="background:var(--phase); color:#fff; border:none; padding:7px 16px; border-radius:100px; font-size:12px; cursor:pointer;">✦ Generate month</button>
+        <button id="generateMonthBtn" onclick="openEventsInputModal()" style="background:var(--phase); color:#fff; border:none; padding:7px 16px; border-radius:100px; font-size:12px; cursor:pointer;">✦ Generate month</button>
       </div>
-      <div style="display:flex; gap:10px; padding:0 16px 10px; flex-wrap:wrap;">
+      <!-- Phase legend -->
+      <div style="display:flex; gap:10px; padding:0 16px 10px; flex-wrap:wrap; overflow-x:auto;">
         <div style="display:flex; align-items:center; gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:var(--menstrual);"></div><span style="font-size:11px;" class="muted">Menstrual</span></div>
         <div style="display:flex; align-items:center; gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:var(--follicular);"></div><span style="font-size:11px;" class="muted">Follicular</span></div>
         <div style="display:flex; align-items:center; gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:var(--ovulatory);"></div><span style="font-size:11px;" class="muted">Ovulatory</span></div>
         <div style="display:flex; align-items:center; gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:var(--luteal);"></div><span style="font-size:11px;" class="muted">Luteal</span></div>
+        <div style="display:flex; align-items:center; gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:#5B7FBF;"></div><span style="font-size:11px;" class="muted">Event 🔒</span></div>
       </div>
       <div class="day-label-row"><div class="day-label">Sun</div><div class="day-label">Mon</div><div class="day-label">Tue</div><div class="day-label">Wed</div><div class="day-label">Thu</div><div class="day-label">Fri</div><div class="day-label">Sat</div></div>
       <div class="month-grid" id="monthGrid"></div>
-      <div style="padding:14px 16px 0;"><p class="muted" style="font-size:12px; text-align:center;">Tap any day to view details</p></div>
+      <!-- Drag tray — brain dump items -->
+      <div id="drag-tray" style="display:none; padding:16px;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--phase); margin-bottom:10px;">Drag tasks onto any day ↑</div>
+        <div id="drag-tray-items" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+        <p class="muted" style="font-size:11px; margin-top:10px; text-align:center;">Tap a day to also add tasks manually</p>
+      </div>
     </div>
     <!-- WEEK -->
-    <div class="plan-view scroll-area" id="plan-week">
-      <div style="padding:16px 16px 8px;">
-        <h3 id="plan-week-title">Week of Mar 7</h3>
-        <p class="muted" style="font-size:13px; margin-top:4px;" id="plan-week-subtitle">Follicular phase · Building window</p>
-      </div>
-      <!-- Moon card in planning -->
-      <div onclick="openMoonOverlay()" style="margin:0 16px 16px; background:linear-gradient(135deg, rgba(28,26,24,0.06), rgba(28,26,24,0.03)); border-radius:14px; padding:16px 18px; cursor:pointer; border:1px solid rgba(28,26,24,0.08); display:flex; align-items:center; gap:14px;">
-        <div id="plan-moon-emoji" style="font-size:32px;">🌙</div>
-        <div style="flex:1;">
-          <div id="plan-moon-phase-name" style="font-size:14px; font-weight:600; color:var(--text);">—</div>
-          <div id="plan-moon-sign-line" style="font-size:12px; color:var(--muted); margin-top:2px;">—</div>
-          <div id="plan-moon-one-liner" style="font-size:12px; color:var(--phase); margin-top:4px; font-style:italic;">—</div>
+    <div class="plan-view scroll-area" id="plan-week" style="padding-bottom:20px;">
+      <div style="padding:16px 16px 8px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <h3 id="plan-week-title">Week of Mar 7</h3>
+          <p class="muted" style="font-size:13px; margin-top:2px;" id="plan-week-subtitle">Follicular · Building window</p>
         </div>
-        <div style="color:var(--muted); font-size:16px;">→</div>
+        <button onclick="openLifeAreaSettings()" style="background:none;border:1px solid rgba(28,26,24,0.15);border-radius:100px;padding:5px 12px;font-size:11px;cursor:pointer;color:var(--muted);">⚙ Areas</button>
       </div>
-      <div class="week-strip" id="weekStrip"></div>
-      <div style="padding:0 16px;"><div id="weekDayDetail" style="display:none; flex-direction:column; gap:0;"></div></div>
-      <div class="estral-voice card-voice" style="margin:12px 16px;">
-        <span class="voice-label">Tip from ESTRAL</span>
-        this is your window. not metaphorically. actually. front-load the hard creative stuff, the scary conversations, the things you've been putting off. you're running on oestrogen right now and she doesn't miss.
+      <!-- Moon card -->
+      <div onclick="openMoonOverlay()" style="margin:0 16px 12px; background:linear-gradient(135deg, rgba(28,26,24,0.06), rgba(28,26,24,0.03)); border-radius:14px; padding:14px 16px; cursor:pointer; border:1px solid rgba(28,26,24,0.08); display:flex; align-items:center; gap:12px;">
+        <div id="plan-moon-emoji" style="font-size:28px;">🌙</div>
+        <div style="flex:1;">
+          <div id="plan-moon-phase-name" style="font-size:13px; font-weight:600; color:var(--text);">—</div>
+          <div id="plan-moon-sign-line" style="font-size:11px; color:var(--muted); margin-top:1px;">—</div>
+        </div>
+        <div style="color:var(--muted); font-size:14px;">→</div>
+      </div>
+      <!-- Life area color legend -->
+      <div id="week-area-legend" style="display:flex; gap:8px; padding:0 16px 10px; overflow-x:auto; flex-wrap:nowrap; scrollbar-width:none;"></div>
+      <!-- Week columns -->
+      <div style="padding:0 16px;">
+        <div id="weekColumns" style="display:grid; grid-template-columns:repeat(7,1fr); gap:6px; align-items:start;"></div>
+      </div>
+      <!-- Drag tray for week -->
+      <div id="week-drag-tray" style="padding:14px 16px 4px;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); margin-bottom:8px;">Drag onto any day ↑</div>
+        <div id="week-tray-items" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
       </div>
     </div>
     <!-- TODAY -->
@@ -1490,7 +1512,7 @@ function switchTab(tab) {
   if (tab === 'chat') setTimeout(function(){ if(typeof initChatGreeting==='function') initChatGreeting(); }, 80);
   if (tab === 'log')  setTimeout(function(){ if(typeof renderLogContent==='function') renderLogContent(currentLogMonth||'mar'); if(typeof buildMilestonesSection==='function') buildMilestonesSection(); }, 80);
   if (tab === 'chart') setTimeout(function(){ if(typeof buildChartFromData==='function') buildChartFromData(); }, 80);
-  if (tab === 'plan') setTimeout(function(){ if(typeof checkBrainDumpFirstVisit==='function') checkBrainDumpFirstVisit(); if(typeof updatePlanMoonCard==='function') updatePlanMoonCard(); }, 80);
+  if (tab === 'plan') setTimeout(function(){ if(typeof checkBrainDumpFirstVisit==='function') checkBrainDumpFirstVisit(); if(typeof updatePlanMoonCard==='function') updatePlanMoonCard(); if(typeof buildWeekAreaLegend==='function') buildWeekAreaLegend(); if(typeof buildWeekTrayItems==='function') buildWeekTrayItems(); if(typeof buildWeekColumns==='function') buildWeekColumns(); }, 80);
 }
 
 function goToMorning() { currentMorningScreen = 1; showMorningScreen(1); updateProgress(); }
@@ -1765,6 +1787,7 @@ function switchPlanView(view) {
   const views = ['dump','month','week','today'];
   document.querySelectorAll('.plan-tab-btn')[views.indexOf(view)].classList.add('active');
   document.getElementById('plan-' + view).classList.add('active');
+  if (view === 'week') { setTimeout(() => { if(typeof buildWeekColumns==='function') buildWeekColumns(); if(typeof buildWeekAreaLegend==='function') buildWeekAreaLegend(); if(typeof buildWeekTrayItems==='function') buildWeekTrayItems(); }, 50); }
 }
 
 const SORTED_DEFAULTS = [
@@ -4214,6 +4237,311 @@ function updatePlanMoonCard() {
   } catch(e) {}
 }
 
+
+// ═══════════════════════════════════════════════
+// LIFE AREAS + EVENTS + DRAG-DROP PLANNING SYSTEM
+// ═══════════════════════════════════════════════
+
+const DEFAULT_LIFE_AREAS = [
+  { id:'work',    name:'Work',         color:'#5B7FBF' },
+  { id:'health',  name:'Health',       color:'#4CAF7D' },
+  { id:'money',   name:'Money',        color:'#C4903A' },
+  { id:'self',    name:'Self',         color:'#9B6BB5' },
+  { id:'family',  name:'Family',       color:'#E07070' },
+  { id:'social',  name:'Social',       color:'#3BAFD4' },
+  { id:'home',    name:'Home',         color:'#8B7355' },
+  { id:'creative',name:'Creative',     color:'#D4608A' },
+];
+
+let lifeAreas = JSON.parse(localStorage.getItem('estral_life_areas') || 'null') || DEFAULT_LIFE_AREAS;
+let monthEvents = JSON.parse(localStorage.getItem('estral_month_events') || '[]');
+let dragItem = null;
+let dragSource = null;
+
+function getAreaColor(areaId) {
+  const a = lifeAreas.find(x => x.id === areaId);
+  return a ? a.color : '#888';
+}
+function getAreaName(areaId) {
+  const a = lifeAreas.find(x => x.id === areaId);
+  return a ? a.name : areaId;
+}
+
+// ── EVENTS INPUT MODAL ──
+function openEventsInputModal() {
+  document.getElementById('events-input-modal').style.display = 'block';
+  renderEventRows();
+}
+function closeEventsModal() {
+  document.getElementById('events-input-modal').style.display = 'none';
+}
+function renderEventRows() {
+  const list = document.getElementById('event-input-list');
+  list.innerHTML = '';
+  monthEvents.forEach((ev, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:grid; grid-template-columns:1fr 60px auto; gap:8px; align-items:center;';
+    row.innerHTML = `
+      <input value="${ev.title}" oninput="monthEvents[${i}].title=this.value" placeholder="Event name" style="border:1px solid rgba(28,26,24,0.15);border-radius:10px;padding:10px 12px;font-size:14px;background:var(--bg);color:var(--text);font-family:inherit;">
+      <input type="number" value="${ev.day}" min="1" max="31" oninput="monthEvents[${i}].day=parseInt(this.value)" placeholder="Day" style="border:1px solid rgba(28,26,24,0.15);border-radius:10px;padding:10px 8px;font-size:14px;background:var(--bg);color:var(--text);font-family:inherit;text-align:center;">
+      <button onclick="removeEvent(${i})" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px;">×</button>`;
+    list.appendChild(row);
+  });
+}
+function addEventRow() {
+  monthEvents.push({ title:'', day: new Date().getDate(), locked: true });
+  renderEventRows();
+}
+function removeEvent(i) {
+  monthEvents.splice(i, 1);
+  renderEventRows();
+}
+function quickAddEvent(title) {
+  monthEvents.push({ title, day: new Date().getDate(), locked: true });
+  renderEventRows();
+}
+function confirmEventsAndGenerate() {
+  monthEvents = monthEvents.filter(e => e.title.trim());
+  localStorage.setItem('estral_month_events', JSON.stringify(monthEvents));
+  closeEventsModal();
+  populateMonth();
+}
+
+// ── POPULATE MONTH with drag-drop ──
+function populateMonth() {
+  if (brainDumpItems.length === 0) brainDumpItems = SORTED_DEFAULTS.map(d => ({ ...d }));
+  monthTasks = {};
+
+  // Lock in events
+  monthEvents.forEach(ev => {
+    if (!monthTasks[ev.day]) monthTasks[ev.day] = [];
+    monthTasks[ev.day].unshift({ text: ev.title, phase: 'event', locked: true });
+  });
+
+  // Don't auto-assign brain dump — let user drag
+  buildMonthGrid();
+  buildDragTray();
+  document.getElementById('drag-tray').style.display = 'block';
+  switchPlanView('month');
+}
+
+// ── DRAG TRAY ──
+function buildDragTray() {
+  const tray = document.getElementById('drag-tray-items');
+  tray.innerHTML = '';
+  brainDumpItems.forEach((item, idx) => {
+    // Skip already placed items
+    const placed = Object.values(monthTasks).flat().some(t => t.text === item.text && !t.locked);
+    if (placed) return;
+    const chip = document.createElement('div');
+    chip.draggable = true;
+    const areaColor = getTaskAreaColor(item);
+    chip.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:100px;font-size:12px;cursor:grab;border:1.5px solid ${areaColor};color:${areaColor};background:${areaColor}18;user-select:none;`;
+    chip.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:${areaColor};flex-shrink:0;"></span>${item.text}`;
+    chip.addEventListener('dragstart', e => {
+      dragItem = item;
+      dragSource = 'tray';
+      e.dataTransfer.effectAllowed = 'move';
+      chip.style.opacity = '0.5';
+    });
+    chip.addEventListener('dragend', () => { chip.style.opacity = '1'; });
+    tray.appendChild(chip);
+  });
+}
+
+function getTaskAreaColor(item) {
+  // Try to match area from brain dump area field or phase
+  if (item.area) return getAreaColor(item.area);
+  const phaseMap = { follicular: '#3BAFD4', ovulatory: '#F0C040', luteal: '#C47830', menstrual: '#D4326B', event: '#5B7FBF' };
+  return phaseMap[item.phase] || '#888';
+}
+
+// ── MONTH GRID with drag-drop ──
+function buildMonthGrid() {
+  const grid = document.getElementById('monthGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  // March 2026 starts on Sunday (day 0)
+  const startDay = 0;
+  for (let blank = 0; blank < startDay; blank++) {
+    grid.appendChild(document.createElement('div'));
+  }
+  for (let d = 1; d <= 31; d++) {
+    const phase = PHASE_MAP[d] || 'follicular';
+    const color = PHASE_COLORS[phase];
+    const isToday = d === (new Date().getDate());
+    const cell = document.createElement('div');
+    cell.className = 'month-day-cell' + (isToday ? ' today' : '');
+    cell.style.background = `${color}${isToday ? '33' : '18'}`;
+    cell.style.minHeight = '64px';
+    cell.style.position = 'relative';
+    const moon = MOON_ICONS[((d - 1) % 28)];
+    const tasks = monthTasks[d] || [];
+    const dots = tasks.map(t => {
+      const c = t.locked ? '#5B7FBF' : getTaskAreaColor(t);
+      return `<div style="width:5px;height:5px;border-radius:50%;background:${c};flex-shrink:0;${t.locked ? 'outline:1.5px solid ' + c + ';outline-offset:1px;' : ''}"></div>`;
+    }).join('');
+    cell.innerHTML = `<span class="month-day-num" style="color:${isToday ? color : 'rgba(28,26,24,0.75)'};">${d}</span><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px;">${dots}</div>`;
+    // Drag-drop onto day
+    cell.addEventListener('dragover', e => { e.preventDefault(); cell.style.outline = `2px solid ${color}`; });
+    cell.addEventListener('dragleave', () => { cell.style.outline = ''; });
+    cell.addEventListener('drop', e => {
+      e.preventDefault();
+      cell.style.outline = '';
+      if (!dragItem) return;
+      if (!monthTasks[d]) monthTasks[d] = [];
+      if (!monthTasks[d].find(t => t.text === dragItem.text)) {
+        monthTasks[d].push({ ...dragItem });
+      }
+      buildMonthGrid();
+      buildDragTray();
+    });
+    cell.addEventListener('click', () => openDayModal(d, phase, monthTasks[d] || [], moon));
+    grid.appendChild(cell);
+  }
+}
+
+// ── LIFE AREA SETTINGS ──
+function openLifeAreaSettings() {
+  document.getElementById('life-area-settings').style.display = 'block';
+  renderLifeAreaEditor();
+}
+function closeLifeAreaSettings() {
+  document.getElementById('life-area-settings').style.display = 'none';
+  buildWeekColumns();
+  buildWeekAreaLegend();
+}
+function renderLifeAreaEditor() {
+  const ed = document.getElementById('life-area-editor');
+  ed.innerHTML = '';
+  lifeAreas.forEach((area, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:grid;grid-template-columns:32px 1fr 40px;gap:10px;align-items:center;background:rgba(28,26,24,0.03);border-radius:12px;padding:10px 14px;';
+    row.innerHTML = `
+      <input type="color" value="${area.color}" oninput="lifeAreas[${i}].color=this.value;renderLifeAreaEditor()" style="width:28px;height:28px;border:none;border-radius:50%;cursor:pointer;padding:0;background:none;">
+      <input value="${area.name}" oninput="lifeAreas[${i}].name=this.value" style="border:none;background:none;font-size:15px;color:var(--text);font-family:inherit;outline:none;">
+      <button onclick="lifeAreas.splice(${i},1);renderLifeAreaEditor()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;">×</button>`;
+    ed.appendChild(row);
+  });
+}
+function addLifeArea() {
+  const colors = ['#E07070','#70B0E0','#70C070','#C070C0','#E0A070','#70D0C0'];
+  lifeAreas.push({ id: 'area_' + Date.now(), name: 'New area', color: colors[lifeAreas.length % colors.length] });
+  renderLifeAreaEditor();
+}
+function saveLifeAreas() {
+  localStorage.setItem('estral_life_areas', JSON.stringify(lifeAreas));
+  closeLifeAreaSettings();
+}
+
+// ── WEEK COLUMNS (new taller design) ──
+function buildWeekColumns() {
+  const container = document.getElementById('weekColumns');
+  if (!container) return;
+  container.innerHTML = '';
+  const p = window._userProfile || {};
+  const today = new Date();
+  const dayNames = ['S','M','T','W','T','F','S'];
+  const dayFull = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - today.getDay() + i); // Start from Sunday of this week
+    const cl = parseInt(p.cycleLength) || 28;
+    const pl = parseInt(p.periodLength) || 5;
+    const dayOffset = i - today.getDay();
+    const adjDay = ((((p.cycleDay || 1) + dayOffset) - 1) % cl + cl) % cl + 1;
+    const phase = adjDay <= pl ? 'menstrual' : adjDay <= 13 ? 'follicular' : adjDay <= 17 ? 'ovulatory' : 'luteal';
+    const color = PHASE_COLORS[phase];
+    const isToday = i === today.getDay();
+    const dateNum = d.getDate();
+    const dayEvents = monthEvents.filter(ev => ev.day === dateNum);
+    const dayTasks = (monthTasks[dateNum] || []).filter(t => !t.locked);
+
+    const col = document.createElement('div');
+    col.style.cssText = `display:flex;flex-direction:column;border-radius:12px;overflow:hidden;border:1.5px solid ${isToday ? color : 'rgba(28,26,24,0.08)'};min-height:180px;`;
+
+    // Header
+    const header = document.createElement('div');
+    header.style.cssText = `background:${color}${isToday ? '33' : '15'};padding:8px 6px 6px;text-align:center;`;
+    header.innerHTML = `<div style="font-size:10px;font-weight:600;color:${color};letter-spacing:0.04em;">${dayNames[i]}</div><div style="font-size:16px;font-weight:${isToday ? 700 : 400};color:${isToday ? color : 'var(--text)'};">${dateNum}</div>`;
+    col.appendChild(header);
+
+    // Phase bar
+    const bar = document.createElement('div');
+    bar.style.cssText = `height:3px;background:${color};opacity:0.5;`;
+    col.appendChild(bar);
+
+    // Content area
+    const body = document.createElement('div');
+    body.style.cssText = `flex:1;padding:6px 5px;display:flex;flex-direction:column;gap:4px;min-height:130px;`;
+    body.dataset.day = dateNum;
+
+    // Locked events
+    dayEvents.forEach(ev => {
+      const tag = document.createElement('div');
+      tag.style.cssText = `background:#5B7FBF22;border-left:2.5px solid #5B7FBF;border-radius:4px;padding:3px 5px;font-size:9px;line-height:1.3;color:#5B7FBF;font-weight:600;`;
+      tag.innerHTML = `🔒 ${ev.title}`;
+      body.appendChild(tag);
+    });
+
+    // Tasks from monthTasks
+    dayTasks.forEach(task => {
+      const c = getTaskAreaColor(task);
+      const tag = document.createElement('div');
+      tag.style.cssText = `background:${c}18;border-left:2.5px solid ${c};border-radius:4px;padding:3px 5px;font-size:9px;line-height:1.3;color:${c};`;
+      tag.textContent = task.text;
+      body.appendChild(tag);
+    });
+
+    // Drop zone
+    body.addEventListener('dragover', e => { e.preventDefault(); body.style.background = `${color}22`; });
+    body.addEventListener('dragleave', () => { body.style.background = ''; });
+    body.addEventListener('drop', e => {
+      e.preventDefault();
+      body.style.background = '';
+      if (!dragItem) return;
+      if (!monthTasks[dateNum]) monthTasks[dateNum] = [];
+      if (!monthTasks[dateNum].find(t => t.text === dragItem.text)) {
+        monthTasks[dateNum].push({ ...dragItem });
+      }
+      buildWeekColumns();
+      buildWeekTrayItems();
+      buildDragTray();
+    });
+    col.appendChild(body);
+    container.appendChild(col);
+  }
+}
+
+function buildWeekAreaLegend() {
+  const legend = document.getElementById('week-area-legend');
+  if (!legend) return;
+  legend.innerHTML = lifeAreas.slice(0, 6).map(a =>
+    `<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;"><div style="width:8px;height:8px;border-radius:50%;background:${a.color};"></div><span style="font-size:10px;color:var(--muted);white-space:nowrap;">${a.name}</span></div>`
+  ).join('');
+}
+
+function buildWeekTrayItems() {
+  const tray = document.getElementById('week-tray-items');
+  if (!tray) return;
+  tray.innerHTML = '';
+  if (brainDumpItems.length === 0) return;
+  brainDumpItems.forEach((item) => {
+    const chip = document.createElement('div');
+    chip.draggable = true;
+    const c = getTaskAreaColor(item);
+    chip.style.cssText = `display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:100px;font-size:11px;cursor:grab;border:1.5px solid ${c};color:${c};background:${c}15;user-select:none;`;
+    chip.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:${c};flex-shrink:0;"></span>${item.text}`;
+    chip.addEventListener('dragstart', e => {
+      dragItem = item;
+      dragSource = 'week-tray';
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    tray.appendChild(chip);
+  });
+}
+
 </script>
 
 
@@ -4291,6 +4619,52 @@ function updatePlanMoonCard() {
     </div>
 
     <button onclick="closeMoonOverlay()" class="btn-primary phase" style="width:100%; margin-top:8px;">Got it →</button>
+  </div>
+</div>
+
+<!-- EVENTS INPUT MODAL -->
+<div id="events-input-modal" style="display:none; position:fixed; inset:0; z-index:700; background:var(--bg); overflow-y:auto;">
+  <div style="padding:52px 24px 100px; max-width:430px; margin:0 auto;">
+    <button onclick="closeEventsModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-bottom:20px;padding:0;">←</button>
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--phase); margin-bottom:8px;">Before we build your month</div>
+    <h2 style="font-size:26px; line-height:1.2; margin-bottom:8px;">What's already on<br>your calendar?</h2>
+    <p class="muted" style="font-size:14px; line-height:1.6; margin-bottom:24px;">Add your fixed events, appointments, and important dates. ESTRAL will lock these in and plan around them.</p>
+
+    <!-- Event list -->
+    <div id="event-input-list" style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;"></div>
+
+    <!-- Add event button -->
+    <button onclick="addEventRow()" style="width:100%; background:none; border:1.5px dashed rgba(28,26,24,0.2); border-radius:12px; padding:13px; font-size:14px; color:var(--muted); cursor:pointer; margin-bottom:24px;">+ Add event / appointment</button>
+
+    <!-- Examples -->
+    <div style="background:rgba(28,26,24,0.04); border-radius:12px; padding:14px; margin-bottom:28px;">
+      <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:8px;">Quick add</div>
+      <div style="display:flex; flex-wrap:wrap; gap:6px;" id="quick-event-chips">
+        <button class="chip" onclick="quickAddEvent('Doctor appt')">Doctor appt</button>
+        <button class="chip" onclick="quickAddEvent('Work meeting')">Work meeting</button>
+        <button class="chip" onclick="quickAddEvent('Date night')">Date night</button>
+        <button class="chip" onclick="quickAddEvent('Travel')">Travel</button>
+        <button class="chip" onclick="quickAddEvent('Benny leaves')">Benny leaves</button>
+        <button class="chip" onclick="quickAddEvent('School pickup')">School pickup</button>
+        <button class="chip" onclick="quickAddEvent('Deadline')">Deadline</button>
+      </div>
+    </div>
+
+    <button onclick="confirmEventsAndGenerate()" class="btn-primary phase" style="width:100%;">✦ Build my month →</button>
+    <button onclick="confirmEventsAndGenerate()" style="background:none;border:none;color:var(--muted);font-size:13px;padding:14px;width:100%;cursor:pointer;">Skip — no fixed events</button>
+  </div>
+</div>
+
+<!-- LIFE AREA SETTINGS OVERLAY -->
+<div id="life-area-settings" style="display:none; position:fixed; inset:0; z-index:700; background:var(--bg); overflow-y:auto;">
+  <div style="padding:52px 24px 100px; max-width:430px; margin:0 auto;">
+    <button onclick="closeLifeAreaSettings()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-bottom:20px;padding:0;">←</button>
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--phase); margin-bottom:8px;">Customise</div>
+    <h2 style="font-size:26px; margin-bottom:8px;">Life areas</h2>
+    <p class="muted" style="font-size:14px; line-height:1.6; margin-bottom:24px;">These are the categories your tasks live in. Customize names and colors — they show up on your calendar.</p>
+    <div id="life-area-editor" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;"></div>
+    <button onclick="addLifeArea()" style="width:100%; background:none; border:1.5px dashed rgba(28,26,24,0.2); border-radius:12px; padding:13px; font-size:14px; color:var(--muted); cursor:pointer; margin-bottom:24px;">+ Add life area</button>
+    <button onclick="saveLifeAreas()" class="btn-primary phase" style="width:100%;">Save →</button>
   </div>
 </div>
 </body>
