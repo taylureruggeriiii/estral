@@ -26,8 +26,8 @@
   --follicular-glow: #3BAFD4;
   --follicular-dim: rgba(26,110,142,0.10);
   --follicular-mid: rgba(59,175,212,0.30);
-  --ovulatory-base: #A8284E;
-  --ovulatory-glow: #F0507A;
+  --ovulatory-base: #B8860B;
+  --ovulatory-glow: #F0C040;
   --ovulatory-dim: rgba(240,80,122,0.10);
   --ovulatory-mid: rgba(240,80,122,0.30);
   --luteal-base: #6B3E1A;
@@ -36,7 +36,7 @@
   --luteal-mid: rgba(196,120,48,0.30);
   --menstrual: #5C2D4A;
   --follicular: #4A8FA8;
-  --ovulatory: #C4607A;
+  --ovulatory: #B8860B;
   --luteal: #8B5E3C;
   color-scheme: light only;
 }
@@ -71,10 +71,10 @@ body.phase-follicular::before {
 }
 body.phase-ovulatory::before {
   background:
-    radial-gradient(ellipse 68% 55% at 82% 12%,  rgba(196,96,122,0.13) 0%, transparent 65%),
+    radial-gradient(ellipse 68% 55% at 82% 12%,  rgba(184,134,11,0.13) 0%, transparent 65%),
     radial-gradient(ellipse 55% 45% at 18% 20%,  rgba(220,150,168,0.09) 0%, transparent 60%),
     radial-gradient(ellipse 75% 62% at 50% 58%,  rgba(238,200,210,0.08) 0%, transparent 70%),
-    radial-gradient(ellipse 48% 42% at 85% 75%,  rgba(196,96,122,0.10) 0%, transparent 62%),
+    radial-gradient(ellipse 48% 42% at 85% 75%,  rgba(184,134,11,0.10) 0%, transparent 62%),
     radial-gradient(ellipse 52% 45% at 15% 85%,  rgba(245,210,218,0.09) 0%, transparent 65%),
     radial-gradient(ellipse 28% 26% at 52% 20%,  rgba(255,240,244,0.28) 0%, transparent 52%),
     #EDE7DC;
@@ -1440,7 +1440,7 @@ let monthTasks = {};
 let brainDumpItems = [];
 
 const PHASE_MAP = {1:'menstrual',2:'menstrual',3:'menstrual',4:'menstrual',5:'menstrual',6:'follicular',7:'follicular',8:'follicular',9:'follicular',10:'follicular',11:'follicular',12:'follicular',13:'follicular',14:'ovulatory',15:'ovulatory',16:'ovulatory',17:'luteal',18:'luteal',19:'luteal',20:'luteal',21:'luteal',22:'luteal',23:'luteal',24:'luteal',25:'luteal',26:'luteal',27:'luteal',28:'luteal'};
-const PHASE_COLORS = { menstrual:'#5C2D4A', follicular:'#4A8FA8', ovulatory:'#C4607A', luteal:'#8B5E3C' };
+const PHASE_COLORS = { menstrual:'#5C2D4A', follicular:'#4A8FA8', ovulatory:'#B8860B', luteal:'#8B5E3C' };
 const MOON_ICONS = ['🌑','🌒','🌒','🌒','🌓','🌔','🌔','🌕','🌕','🌖','🌖','🌗','🌗','🌘','🌘','🌑','🌒','🌒','🌓','🌔','🌔','🌕','🌖','🌗','🌗','🌘','🌑','🌒'];
 const PHASE_GUIDE = { follicular:{energy:'High',guide:'Build · Create · Initiate',moon:'🌒'}, ovulatory:{energy:'Peak',guide:'Launch · Connect · Pitch',moon:'🌕'}, luteal:{energy:'Moderate',guide:'Refine · Finish · Analyse',moon:'🌖'}, menstrual:{energy:'Low',guide:'Rest · Reflect · Release',moon:'🌑'} };
 
@@ -1647,7 +1647,7 @@ function buildMorningTimeBlocks() {
     {time:'13:00',label:'Lunch + reset',type:'buffer',dur:'60 min'},
     {time:'14:30',label:'Admin, email, calls',type:'medium',dur:'90 min'},
   ] : [{time:'10:00',label:'One non-negotiable',type:'deep',dur:'60 min'},{time:'12:00',label:'Gentle movement',type:'personal',dur:'30 min'}];
-  const colors = {deep:'var(--phase)',medium:'var(--phase-mid)',buffer:'rgba(28,26,24,0.12)',personal:'rgba(196,96,122,0.45)',locked:'var(--phase)'};
+  const colors = {deep:'var(--phase)',medium:'var(--phase-mid)',buffer:'rgba(28,26,24,0.12)',personal:'rgba(184,134,11,0.45)',locked:'var(--phase)'};
   blocks.forEach(b => {
     const r = document.createElement('div'); r.className='time-block';
     r.innerHTML=`<div class="time-block-time">${b.time}</div><div class="time-block-bar" style="background:${colors[b.type]};"></div><div class="time-block-content"><div class="time-block-label">${b.label}</div>${b.dur?`<div class="time-block-sub">${b.dur}</div>`:''}</div>`;
@@ -1740,7 +1740,7 @@ function unlockDashboard() {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           <button onclick="setPhaseBackground('menstrual')" style="padding:10px;background:rgba(92,45,74,0.12);border:1px solid rgba(92,45,74,0.25);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">🌑 Menstrual</button>
           <button onclick="setPhaseBackground('follicular')" style="padding:10px;background:rgba(74,143,168,0.12);border:1px solid rgba(74,143,168,0.25);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">🌒 Follicular</button>
-          <button onclick="setPhaseBackground('ovulatory')" style="padding:10px;background:rgba(196,96,122,0.12);border:1px solid rgba(196,96,122,0.25);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">🌕 Ovulatory</button>
+          <button onclick="setPhaseBackground('ovulatory')" style="padding:10px;background:rgba(184,134,11,0.12);border:1px solid rgba(184,134,11,0.25);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">🌕 Ovulatory</button>
           <button onclick="setPhaseBackground('luteal')" style="padding:10px;background:rgba(139,94,60,0.12);border:1px solid rgba(139,94,60,0.25);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">🌖 Luteal</button>
         </div>
       </div>
@@ -1935,7 +1935,7 @@ function buildTodayTimeBlocks() {
     {time:'10:00',label:'One non-negotiable',type:'deep',dur:'60 min',locked:false},
     {time:'12:00',label:'Gentle movement',type:'personal',dur:'30 min',locked:false},
   ];
-  const colors = {deep:'var(--phase)',medium:'var(--phase-mid)',buffer:'rgba(28,26,24,0.1)',personal:'rgba(196,96,122,0.4)',locked:'var(--phase)'};
+  const colors = {deep:'var(--phase)',medium:'var(--phase-mid)',buffer:'rgba(28,26,24,0.1)',personal:'rgba(184,134,11,0.4)',locked:'var(--phase)'};
   c.innerHTML = '';
   blocks.forEach(b => {
     const row = document.createElement('div'); row.className = 'today-time-block';
@@ -2010,7 +2010,7 @@ async function sendChat() {
   input.value=''; addChatMessage('user',msg);
   const typing=document.createElement('div'); typing.className='chat-bubble-ai'; typing.textContent='✦  …'; document.getElementById('chat-messages').appendChild(typing);
   try {
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`You are ESTRAL — a bio-synced life operating system for high-performing women. Counterculture big sister voice. Sharp, warm, direct. No therapy language. No generic wellness speak. No bullet points. Max 3 short paragraphs.\n\nUser context right now:\n- Name: ${(window._userProfile && window._userProfile.name ? window._userProfile.name.split(' ')[0] : 'her')}\n- Cycle: Day ${(window._userProfile ? window._userProfile.cycleDay || 8 : 8)}, ${(window._userProfile ? window._userProfile.cyclePhase||'follicular' : 'follicular').charAt(0).toUpperCase()+(window._userProfile ? window._userProfile.cyclePhase||'follicular' : 'follicular').slice(1)} phase\n- Energy: ${(morningData.energy || 7)}/10\n- Mood: ${(morningData.mood && morningData.mood.length ? morningData.mood.join(', ') : 'not logged')}\n- Symptoms: ${(morningData.symptoms && morningData.symptoms.length ? morningData.symptoms.join(', ') : 'none')}\n- Intention: ${(morningData.intention || 'not set')}\n- 90-day goal: ${(window._userProfile ? window._userProfile.goal90 || 'not set' : 'not set')}\n\nPhase intelligence:\n${(window._userProfile ? window._userProfile.cyclePhase||'follicular' : 'follicular')==='follicular'?'Follicular: Oestrogen rising. Cognitive peak. Best for creating and starting.':''}${(window._userProfile && window._userProfile.cyclePhase==='ovulatory')?'Ovulatory: Peak energy and magnetism. Best for visibility, pitching, connecting.':''}${(window._userProfile && window._userProfile.cyclePhase==='luteal')?'Luteal: Finishing energy. Inner critic loud in late luteal — do not validate spirals.':''}${(window._userProfile && window._userProfile.cyclePhase==='menstrual')?'Menstrual: Lowest energy, sharpest intuition. Do not push her to produce.':''}\n\nAlways reference her actual data. Be specific, never generic.`,messages:[...chatHistory.filter(m=>m.role!=='system').slice(-8).map(m=>({role:m.role==='assistant'?'assistant':'user',content:m.content})),{role:'user',content:msg}]})});
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`You are ESTRAL — a bio-synced life operating system for high-performing women. Counterculture big sister voice. Sharp, warm, direct. No therapy language. No generic wellness speak. No bullet points. Max 3 short paragraphs.\n\nUser context right now:\n- Name: ${(window._userProfile && window._userProfile.name ? window._userProfile.name.split(' ')[0] : 'her')}\n- Cycle: Day ${(window._userProfile ? window._userProfile.cycleDay || 8 : 8)}, ${(window._userProfile ? window._userProfile.cyclePhase||'follicular' : 'follicular').charAt(0).toUpperCase()+(window._userProfile ? window._userProfile.cyclePhase||'follicular' : 'follicular').slice(1)} phase\n- Energy: ${(morningData.energy || 7)}/10\n- Mood: ${(morningData.mood && morningData.mood.length ? morningData.mood.join(', ') : 'not logged')}\n- Symptoms: ${(morningData.symptoms && morningData.symptoms.length ? morningData.symptoms.join(', ') : 'none')}\n- Intention: ${(morningData.intention || 'not set')}\n- 90-day goal: ${(window._userProfile ? window._userProfile.goal90 || 'not set' : 'not set')}\n\nPhase intelligence:\n${(window._userProfile ? window._userProfile.cyclePhase||'follicular' : 'follicular')==='follicular'?'Follicular: Oestrogen rising. Cognitive peak. Best for creating and starting.':''}${(window._userProfile && window._userProfile.cyclePhase==='ovulatory')?'Ovulatory: Peak energy and magnetism. Best for visibility, pitching, connecting.':''}${(window._userProfile && window._userProfile.cyclePhase==='luteal')?'Luteal: Finishing energy. Inner critic loud in late luteal — do not validate spirals.':''}${(window._userProfile && window._userProfile.cyclePhase==='menstrual')?'Menstrual: Lowest energy, sharpest intuition. Do not push her to produce.':''}\n\nAlways reference her actual data. Be specific, never generic.`,messages:[...chatHistory.filter(m=>m.role!=='system').slice(-8).map(m=>({role:m.role==='assistant'?'assistant':'user',content:m.content})),{role:'user',content:msg}]})});
     const data=await res.json(); typing.remove();
     addChatMessage('assistant', data.content?.[0]?.text||'Try again.');
   } catch(e) { typing.textContent='Connection issue. Try again.'; }
@@ -2232,12 +2232,12 @@ function applyProfileToApp() {
 }
 
 function getPhaseColor(phase) {
-  const map = { menstrual:'#8B1A4A', follicular:'#1A6E8E', ovulatory:'#A8284E', luteal:'#6B3E1A' };
+  const map = { menstrual:'#8B1A4A', follicular:'#1A6E8E', ovulatory:'#B8860B', luteal:'#6B3E1A' };
   return map[phase] || '#1A6E8E';
 }
 
 function getPhaseGlow(phase) {
-  const map = { menstrual:'#D4326B', follicular:'#3BAFD4', ovulatory:'#F0507A', luteal:'#C47830' };
+  const map = { menstrual:'#D4326B', follicular:'#3BAFD4', ovulatory:'#F0C040', luteal:'#C47830' };
   return map[phase] || '#3BAFD4';
 }
 
@@ -2300,7 +2300,7 @@ window.addEventListener('DOMContentLoaded', () => {
 // ── PHASE MODAL ──
 const PHASE_DETAILS = {
   follicular: { name:'Follicular', days:'Days 6–13', color:'#4A8FA8', emoji:'🌱', tagline:'Your brain is literally on fire right now.', hormone_title:"What's happening hormonally", hormone:"Oestrogen is climbing fast. Like, climbing. It peaks right before ovulation and it's pulling everything up with it — your mood, your focus, your energy, your skin. FSH is doing its job, maturing a follicle in your ovary. Your body is building toward something.", body_title:'What this feels like in your body', body:"You feel lighter. Clearer. The fog from your period is gone and you've got this quiet hum of energy that doesn't feel forced. Your appetite probably dips slightly. Sleep tends to be good. You might feel a little more motivated to move — lean into that.", mind_title:'What this means for your mind', mind:"Your verbal skills are sharper. You're better at starting things, making connections, thinking creatively. This is the phase where ideas feel exciting rather than overwhelming. Pitch meetings, new projects, hard conversations you've been avoiding — this is your window. Don't waste it on admin.", watch_title:'Watch out for', watch:"Overcommitting. You feel so good that you say yes to everything — and then luteal phase you has to deal with all of it. Book in the hard stuff. Protect your calendar.", mantra:'Build. Begin. Start before you\'re ready.' },
-  ovulatory: { name:'Ovulatory', days:'Days 14–16', color:'#C4607A', emoji:'🌕', tagline:'Peak you. Everyone can feel it.', hormone_title:"What's happening hormonally", hormone:"Oestrogen hits its absolute peak and then LH surges — that's what triggers ovulation. Your body releases an egg. Testosterone also spikes briefly, which is why your confidence and sex drive are both turned up. This is nature literally making you magnetic.", body_title:'What this feels like in your body', body:"You look good and you know it. Skin glows, voice sounds warmer, you're naturally more expressive. You have the most physical energy of your cycle. Your pain tolerance is higher. You could pull an all-nighter and be fine. Don't — but you could.", mind_title:'What this means for your mind', mind:"You're at your most persuasive, collaborative, and socially magnetic. Your brain is wired for connection right now. Use it. Launch things publicly, do podcasts, film content, pitch to investors, go on dates, have the conversations that need chemistry behind them.", watch_title:'Watch out for', watch:"Ignoring your own needs to perform for others. The magnetism is real but so is the crash if you burn through it. Do the visible stuff — then rest.", mantra:'Be seen. Show up. This is your stage.' },
+  ovulatory: { name:'Ovulatory', days:'Days 14–16', color:'#B8860B', emoji:'🌕', tagline:'Peak you. Everyone can feel it.', hormone_title:"What's happening hormonally", hormone:"Oestrogen hits its absolute peak and then LH surges — that's what triggers ovulation. Your body releases an egg. Testosterone also spikes briefly, which is why your confidence and sex drive are both turned up. This is nature literally making you magnetic.", body_title:'What this feels like in your body', body:"You look good and you know it. Skin glows, voice sounds warmer, you're naturally more expressive. You have the most physical energy of your cycle. Your pain tolerance is higher. You could pull an all-nighter and be fine. Don't — but you could.", mind_title:'What this means for your mind', mind:"You're at your most persuasive, collaborative, and socially magnetic. Your brain is wired for connection right now. Use it. Launch things publicly, do podcasts, film content, pitch to investors, go on dates, have the conversations that need chemistry behind them.", watch_title:'Watch out for', watch:"Ignoring your own needs to perform for others. The magnetism is real but so is the crash if you burn through it. Do the visible stuff — then rest.", mantra:'Be seen. Show up. This is your stage.' },
   luteal: { name:'Luteal', days:'Days 17–28', color:'#8B5E3C', emoji:'🍂', tagline:'Your body is doing a lot. Be patient with it.', hormone_title:"What's happening hormonally", hormone:"Progesterone is now running the show — it rises steeply after ovulation, trying to prepare the uterus in case of pregnancy. If there's no pregnancy, both oestrogen and progesterone crash toward the end of this phase. That crash is what brings PMS.", body_title:'What this feels like in your body', body:"Early luteal can feel really good actually — calm, grounded, focused. Then around day 21-23 things shift. Bloating, breast tenderness, fatigue, cravings. Sleep gets disrupted. You might feel hotter. All of this is normal.", mind_title:'What this means for your mind', mind:"Detail work, editing, analysis, finishing things — this phase is built for it. You're less interested in socialising and more interested in getting things done quietly. The inner critic gets louder toward the end. Notice it. Don't believe everything it says.", watch_title:'Watch out for', watch:"Making big decisions in late luteal. The emotional intensity is real but it's amplified. Sleep, eat, move gently. The clarity comes back — give it 48 hours.", mantra:'Finish. Refine. Protect your energy.' },
   menstrual: { name:'Menstrual', days:'Days 1–5', color:'#5C2D4A', emoji:'🌑', tagline:"Rest isn't lazy. It's literally the protocol.", hormone_title:"What's happening hormonally", hormone:"Oestrogen and progesterone are at their lowest point of the entire cycle. The uterine lining is shedding. Prostaglandins are causing the uterine contractions — that's the cramping. Your body is doing real physical work right now, even when you're lying still.", body_title:'What this feels like in your body', body:"Tired. Potentially crampy. Lower back might ache. You might feel unusually cold. Iron dips slightly as you bleed which contributes to the fatigue. Warm food, iron-rich food, rest. That's the prescription.", mind_title:'What this means for your mind', mind:"Counterintuitively, your intuition is sharpest here. The veil between how things appear and how they actually are gets thin. You have less tolerance for bullshit — use it. Journalling, reflection, evaluating what's working — this is the phase for honest inventory.", watch_title:'Watch out for', watch:"Pushing through. The follicular phase energy is coming — three to five days away. You don't need to perform right now. Let yourself be slow.", mantra:'Rest. Reflect. Release.' }
 };
@@ -2348,7 +2348,6 @@ function initCycleRing(currentDay, totalDays, suffix) {
     el.style.strokeDashoffset = -startOffset;
     el.style.transform = `rotate(${rotate}deg)`;
     el.style.transformOrigin = '65px 65px';
-  });
   });
   const dayNumEl = document.getElementById('cycleRingDayNum' + suffix);
   const dotEl = document.getElementById('cycleRingDot' + suffix);
@@ -2515,7 +2514,7 @@ function sendSuggestion(btn) {
 const PHASE_WEEKS = {
   menstrual:  { label:'Menstrual · Days 1–5',    color:'#5C2D4A' },
   follicular: { label:'Follicular · Days 6–13',  color:'#4A8FA8' },
-  ovulatory:  { label:'Ovulatory · Days 14–16',  color:'#C4607A' },
+  ovulatory:  { label:'Ovulatory · Days 14–16',  color:'#B8860B' },
   luteal:     { label:'Luteal · Days 17–28',      color:'#8B5E3C' }
 };
 
@@ -2666,7 +2665,7 @@ function drawMoodBars(logs) {
   if (!Object.keys(counts).length) { c.innerHTML = '<p class="muted" style="font-size:13px;">Mood data will appear after more check-ins.</p>'; return; }
 
   const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0,6);
-  const glowColors = { menstrual:'#D4326B', follicular:'#3BAFD4', ovulatory:'#F0507A', luteal:'#C47830' };
+  const glowColors = { menstrual:'#D4326B', follicular:'#3BAFD4', ovulatory:'#F0C040', luteal:'#C47830' };
   const color = glowColors[phase] || 'var(--phase)';
   c.innerHTML = sorted.map(([mood, n], idx) => {
     const pct = Math.round((n/total)*100);
@@ -2862,7 +2861,7 @@ function drawEnergyLine(canvas, logs) {
   const reversed = [...logs].reverse().slice(-14);
   const data = reversed.map(l => (l.am && l.am.energy) || 5);
   const phases = reversed.map(l => l.phase || 'follicular');
-  const pc = { menstrual:'#5C2D4A', follicular:'#4A8FA8', ovulatory:'#C4607A', luteal:'#8B5E3C' };
+  const pc = { menstrual:'#5C2D4A', follicular:'#4A8FA8', ovulatory:'#B8860B', luteal:'#8B5E3C' };
 
   const w = canvas.parentElement?.offsetWidth - 32 || 320;
   const h = 100; const pad = 20;
@@ -2882,7 +2881,7 @@ function drawEnergyLine(canvas, logs) {
   // Fill
   ctx.beginPath(); data.forEach((v,i) => i===0?ctx.moveTo(xFor(i),yFor(v)):ctx.lineTo(xFor(i),yFor(v)));
   ctx.lineTo(xFor(data.length-1),pad+ch); ctx.lineTo(xFor(0),pad+ch); ctx.closePath();
-  const glow = { menstrual:'#D4326B', follicular:'#3BAFD4', ovulatory:'#F0507A', luteal:'#C47830' };
+  const glow = { menstrual:'#D4326B', follicular:'#3BAFD4', ovulatory:'#F0C040', luteal:'#C47830' };
   const currentPhase = (window._userProfile||{}).cyclePhase || 'follicular';
   const glowColor = glow[currentPhase] || '#3BAFD4';
   ctx.fillStyle=`${glowColor}15`; ctx.fill();
@@ -2907,7 +2906,7 @@ function drawPhaseAvgBars(logs) {
   if (!c) return;
   const avgs = { menstrual:[], follicular:[], ovulatory:[], luteal:[] };
   logs.forEach(l => { if ((l.am && l.am.energy) && avgs[l.phase]) avgs[l.phase].push(l.am.energy); });
-  const pc = { menstrual:'#D4326B', follicular:'#3BAFD4', ovulatory:'#F0507A', luteal:'#C47830' };
+  const pc = { menstrual:'#D4326B', follicular:'#3BAFD4', ovulatory:'#F0C040', luteal:'#C47830' };
   const pl = { menstrual:'🌑 Menstrual', follicular:'🌱 Follicular', ovulatory:'🌕 Ovulatory', luteal:'🍂 Luteal' };
   const hasData = Object.values(avgs).some(a=>a.length>0);
   if (!hasData) return;
@@ -3632,7 +3631,7 @@ const MILESTONE_JOURNALS = {
     subtitle: 'you\'re at your peak. log it.',
     emoji: '🌕',
     phase: 'ovulatory',
-    color: '#C4607A',
+    color: '#B8860B',
     intro: 'hi!!! you\'re in your most magnetic, most energised, most capable window of the entire cycle. literally everything is turned up. this is a BIG deal and you probably don\'t even notice because you\'re too busy being amazing. let\'s log it.',
     questions: [
       { id: 'q1', label: 'what\'s feeling most alive for you right now?', type: 'textarea', placeholder: 'in work, relationships, creativity, your body...' },
@@ -3686,7 +3685,7 @@ const MILESTONE_JOURNALS = {
     subtitle: 'what came to light?',
     emoji: '🌕',
     phase: null,
-    color: '#C4607A',
+    color: '#B8860B',
     intro: 'the full moon illuminates EVERYTHING. including the stuff you\'d rather not look at. that\'s the whole point. this is a check-in with your new moon intentions and a chance to be honest about what has grown, shifted, or surprise-attacked you.',
     questions: [
       { id: 'q1', label: 'what has come to light for you since the new moon?', type: 'textarea', placeholder: 'in your work, your relationships, yourself...' },
