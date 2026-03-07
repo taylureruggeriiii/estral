@@ -1161,54 +1161,109 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
   </div>
 </div>
 
-<div class="screen" id="screen-pm8" style="display:none;">
-  <div class="section" style="padding-top:56px; gap:20px;">
+<div class="screen" id="screen-pm8" style="display:none; overflow-y:auto;">
+  <div class="section" style="padding-top:56px; gap:20px; padding-bottom:120px;">
     <div class="morning-cycle-pill">🌙 Evening · 8 of 8</div>
-    <h2 style="font-size:28px;">Tomorrow.</h2>
-    <p class="muted" style="font-size:14px; line-height:1.7;">Do you want to plan tomorrow before you sleep, or let it come?</p>
-    <div style="display:flex; flex-direction:column; gap:10px;">
-      <button class="chip" onclick="showTomorrowPlanner()">Yes — plan it now</button>
-      <button class="chip" onclick="skipTomorrowPlanner()">No — rest first</button>
+    <h2 style="font-size:28px; line-height:1.2;">Let's close<br>the day out.</h2>
+
+    <!-- TODAY'S TASK REVIEW -->
+    <div>
+      <p class="label" style="color:var(--phase); margin-bottom:12px;">Today's tasks — how did it go?</p>
+      <div id="pm-task-review" style="display:flex; flex-direction:column; gap:8px;"></div>
     </div>
-    <!-- Tomorrow planner (shown if yes) -->
-    <div id="tomorrow-planner" style="display:none; flex-direction:column; gap:12px;">
-      <div>
-        <p class="label" style="margin-bottom:8px; color:var(--phase);">Tomorrow's one focus</p>
-        <input type="text" id="pm-tomorrow-focus" placeholder="The one thing that matters most..." oninput="pmData.tomorrowFocus=this.value" style="width:100%;">
+
+    <!-- CARRY FORWARD NOTICE -->
+    <div id="pm-carry-forward-notice" style="display:none;">
+      <div style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:rgba(196,18,48,0.06); border-radius:10px; border-left:3px solid #C41230;">
+        <span style="font-size:16px;">↩</span>
+        <span style="font-size:13px; color:#C41230;" id="pm-carry-text">2 unfinished tasks will roll to tomorrow</span>
       </div>
-      <div>
-        <p class="label" style="margin-bottom:8px;">3 must-dos</p>
-        <input type="text" id="pm-must1" placeholder="1." style="width:100%; margin-bottom:8px;" oninput="pmData.tomorrowMust=[this.value, document.getElementById('pm-must2').value, document.getElementById('pm-must3').value]">
-        <input type="text" id="pm-must2" placeholder="2." style="width:100%; margin-bottom:8px;" oninput="pmData.tomorrowMust=[document.getElementById('pm-must1').value, this.value, document.getElementById('pm-must3').value]">
-        <input type="text" id="pm-must3" placeholder="3." style="width:100%;" oninput="pmData.tomorrowMust=[document.getElementById('pm-must1').value, document.getElementById('pm-must2').value, this.value]">
-      </div>
-      <div>
-        <p class="label" style="margin-bottom:8px;">Hard-no tomorrow</p>
-        <input type="text" id="pm-tomorrow-hardno" placeholder="What are you saying no to?" oninput="pmData.tomorrowHardNo=this.value" style="width:100%;">
-      </div>
-      <button class="btn-primary phase" onclick="completePMQuiz()">Save + see ESTRAL read →</button>
     </div>
+
+    <!-- ONE FOCUS -->
+    <div>
+      <p class="label" style="margin-bottom:8px; color:var(--phase);">Tomorrow's one focus</p>
+      <input type="text" id="pm-tomorrow-focus" placeholder="The one thing that matters most..." oninput="pmData.tomorrowFocus=this.value" style="width:100%;">
+    </div>
+
+    <!-- LIFE AREA TASKS -->
+    <div>
+      <p class="label" style="margin-bottom:4px;">Add tasks by life area</p>
+      <p class="muted" style="font-size:12px; margin-bottom:12px;">Tap an area to add tasks for tomorrow</p>
+      <div id="pm-area-chips" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;"></div>
+      <div id="pm-area-task-inputs" style="display:flex; flex-direction:column; gap:12px;"></div>
+    </div>
+
+    <!-- HARD NO -->
+    <div>
+      <p class="label" style="margin-bottom:8px;">Hard-no tomorrow</p>
+      <input type="text" id="pm-tomorrow-hardno" placeholder="What are you protecting your energy from?" oninput="pmData.tomorrowHardNo=this.value" style="width:100%;">
+    </div>
+
+    <button class="btn-primary phase" onclick="buildPMTaskBreakdown()">Get ESTRAL's read →</button>
+  </div>
+</div>
+
+<!-- PM ESTRAL TASK BREAKDOWN (new screen between 8 and read) -->
+<div class="screen" id="screen-pm-breakdown" style="display:none; overflow-y:auto;">
+  <div class="section" style="padding-top:56px; gap:20px; padding-bottom:120px;">
+    <div class="morning-cycle-pill">🌙 ESTRAL · Task Read</div>
+    <h2 style="font-size:26px; line-height:1.3;" id="pm-breakdown-headline">Let's talk about tomorrow.</h2>
+
+    <!-- ESTRAL VERDICT -->
+    <div class="estral-voice card-voice" id="pm-breakdown-estral">
+      <span class="voice-label">ESTRAL</span>
+      <p id="pm-breakdown-text" style="font-size:15px; line-height:1.8;"></p>
+    </div>
+
+    <!-- TOMORROW FULL TASK LIST -->
+    <div>
+      <p class="label" style="color:var(--phase); margin-bottom:12px;">Tomorrow's full list</p>
+      <div id="pm-tomorrow-full-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
+
+    <!-- HARD NO -->
+    <div id="pm-hardno-display-block" style="display:none; padding:10px 14px; background:rgba(28,26,24,0.04); border-radius:10px;">
+      <span class="muted" style="font-size:11px; text-transform:uppercase; letter-spacing:0.1em;">Hard-no</span>
+      <div style="font-size:14px; margin-top:4px; color:var(--menstrual);" id="pm-hardno-final"></div>
+    </div>
+
+    <button class="btn-primary phase" onclick="completePMQuiz()">Save + close the day →</button>
   </div>
 </div>
 
 <!-- PM ESTRAL READ -->
-<div class="screen" id="screen-pm-read" style="display:none;">
+<div class="screen" id="screen-pm-read" style="display:none; overflow-y:auto;">
   <div class="section" style="padding-top:56px; gap:20px; padding-bottom:100px;">
     <div class="morning-cycle-pill">🌙 Day closed.</div>
     <h2 style="font-size:28px; line-height:1.2;">Today is done.<br>You showed up.</h2>
+
+    <!-- ESTRAL evening read -->
     <div class="estral-voice card-voice" id="pm-estral-read">
       <span class="voice-label">ESTRAL · Evening Read</span>
       <p id="pm-read-text" style="font-size:15px; line-height:1.8;"></p>
     </div>
-    <div class="card" id="pm-summary-card" style="display:flex; flex-direction:column; gap:10px;"></div>
-    <div id="pm-tomorrow-preview" style="display:none;">
-      <div class="card" style="border-left:3px solid var(--phase);">
-        <div class="label" style="margin-bottom:10px; color:var(--phase);">Tomorrow · One focus</div>
-        <div style="font-size:18px; font-weight:500;" id="pm-tomorrow-focus-display"></div>
-        <div style="margin-top:10px;" id="pm-tomorrow-must-display"></div>
+
+    <!-- Today summary -->
+    <div class="card" id="pm-summary-card" style="display:flex; flex-direction:column; gap:8px;"></div>
+
+    <!-- Tomorrow handoff card — the full picture -->
+    <div id="pm-tomorrow-handoff" style="display:none;">
+      <p class="label" style="color:var(--phase); margin-bottom:12px;">Tomorrow · Your game plan</p>
+      <div style="background:rgba(255,238,242,0.5); border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:14px; border:1px solid rgba(196,18,48,0.10);">
+        <div id="pm-handoff-focus" style="display:none;">
+          <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#C41230; margin-bottom:4px;">One focus</div>
+          <div style="font-size:18px; font-weight:600;" id="pm-handoff-focus-text"></div>
+        </div>
+        <div id="pm-handoff-tasks" style="display:flex; flex-direction:column; gap:8px;"></div>
+        <div id="pm-handoff-hardno" style="display:none; padding-top:10px; border-top:1px solid rgba(28,26,24,0.08);">
+          <span style="font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted);">Hard-no</span>
+          <div style="font-size:13px; color:var(--menstrual); margin-top:3px;" id="pm-handoff-hardno-text"></div>
+        </div>
       </div>
     </div>
-    <button class="btn-primary phase" onclick="switchTab('home')">Close the day →</button>
+
+    <button class="btn-primary phase" onclick="switchTab('home')">Sleep well →</button>
   </div>
 </div>
 
@@ -2223,8 +2278,8 @@ function addChatMessage(role, text) {
     inner.appendChild(label);
     const txt = document.createElement('div');
     // Split into paragraphs for breathing layout
-    const paras = content.split(/\n+/).filter(p => p.trim());
-    txt.innerHTML = paras.length > 1 ? paras.map(p => '<p>' + p + '</p>').join('') : content;
+    const paras = text.split(/\n+/).filter(p => p.trim());
+    txt.innerHTML = paras.length > 1 ? paras.map(p => '<p>' + p + '</p>').join('') : text;
     inner.appendChild(txt);
     d.appendChild(inner);
     c.appendChild(d);
@@ -2490,7 +2545,7 @@ function setPhaseTheme(phase) {
   if (dot) dot.style.fill = glow;
   const dotU = document.getElementById('cycleRingDotU');
   if (dotU) dotU.style.fill = glow;
-  // Update SVG radial gradient stops directly (CSS vars don't always work in SVG gradients)
+  // Update SVG radial gradient stops directly (CSS vars don\'t always work in SVG gradients)
   ['bloomGrad','bloomGrad2'].forEach(id => {
     const grad = document.getElementById(id);
     if (!grad) return;
@@ -3373,14 +3428,64 @@ function buildPMRead() {
     summary.innerHTML = items.map(item => `<div style="font-size:13px; padding:6px 0; border-bottom:1px solid rgba(28,26,24,0.06); color:var(--text);">${item}</div>`).join('');
   }
 
-  // Tomorrow preview
-  if (pmData.tomorrowFocus) {
-    const prev = document.getElementById('pm-tomorrow-preview');
-    if (prev) prev.style.display = 'block';
-    const focusEl = document.getElementById('pm-tomorrow-focus-display');
-    if (focusEl) focusEl.textContent = pmData.tomorrowFocus;
-    const mustEl = document.getElementById('pm-tomorrow-must-display');
-    if (mustEl) mustEl.innerHTML = pmData.tomorrowMust.filter(Boolean).map((t,i) => `<div style="font-size:13px; color:var(--muted); margin-top:4px;">${i+1}. ${t}</div>`).join('');
+  // Tomorrow handoff card
+  const handoff = document.getElementById('pm-tomorrow-handoff');
+  if (!handoff) return;
+
+  const carried = pmData.tasksCarried || [];
+  const newTasks = pmData.areaTasks ? Object.entries(pmData.areaTasks).flatMap(([area, tasks]) => tasks.filter(Boolean).map(t => ({ area, task: t }))) : [];
+  const focus = pmData.tomorrowFocus || '';
+  const hardNo = pmData.tomorrowHardNo || '';
+  const areas = getLifeAreas ? getLifeAreas() : [];
+  const areaMap = {};
+  areas.forEach(a => areaMap[a.name] = a.color);
+
+  const hasSomething = carried.length > 0 || newTasks.length > 0 || focus;
+  if (hasSomething) {
+    handoff.style.display = 'block';
+
+    if (focus) {
+      document.getElementById('pm-handoff-focus').style.display = 'block';
+      document.getElementById('pm-handoff-focus-text').textContent = focus;
+    }
+
+    const tasksEl = document.getElementById('pm-handoff-tasks');
+    tasksEl.innerHTML = '';
+
+    if (carried.length > 0) {
+      const carryDiv = document.createElement('div');
+      carryDiv.innerHTML = `<div style="font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#C41230; margin-bottom:5px;">↩ Carried over</div>`;
+      carried.forEach(t => {
+        const r = document.createElement('div');
+        r.style.cssText = 'font-size:13px; padding:7px 10px; background:rgba(196,18,48,0.06); border-radius:8px; border-left:2px solid #C41230; margin-bottom:4px;';
+        r.textContent = t;
+        carryDiv.appendChild(r);
+      });
+      tasksEl.appendChild(carryDiv);
+    }
+
+    const areaGroups = {};
+    newTasks.forEach(({ area, task }) => {
+      if (!areaGroups[area]) areaGroups[area] = [];
+      areaGroups[area].push(task);
+    });
+    Object.entries(areaGroups).forEach(([area, tasks]) => {
+      const color = areaMap[area] || '#888';
+      const div = document.createElement('div');
+      div.innerHTML = `<div style="font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:${color}; margin-bottom:5px; margin-top:8px;">${area}</div>`;
+      tasks.forEach(t => {
+        const r = document.createElement('div');
+        r.style.cssText = `font-size:13px; padding:7px 10px; background:${color}12; border-radius:8px; border-left:2px solid ${color}; margin-bottom:4px;`;
+        r.textContent = t;
+        div.appendChild(r);
+      });
+      tasksEl.appendChild(div);
+    });
+
+    if (hardNo) {
+      document.getElementById('pm-handoff-hardno').style.display = 'block';
+      document.getElementById('pm-handoff-hardno-text').textContent = hardNo;
+    }
   }
 }
 
@@ -4882,6 +4987,363 @@ function buildWeekTrayItems() {
   }
   requestAnimationFrame(loop);
 })();
+
+
+// ═══════════════════════════════════════════════════════
+// PM TASK REVIEW + TOMORROW PLANNER SYSTEM
+// ═══════════════════════════════════════════════════════
+
+// Extended pmData fields
+Object.assign(pmData, {
+  tasksCompleted: [],    // indices of completed today tasks
+  tasksCarried: [],      // task strings carried to tomorrow
+  areaTasks: {},         // { "Work": ["task1", "task2"], ... }
+  tomorrowFocus: pmData.tomorrowFocus || '',
+  tomorrowHardNo: pmData.tomorrowHardNo || ''
+});
+
+function buildPM8Screen() {
+  // ── Task review: today's must-dos from morningData
+  const tasks = (morningData && morningData.mustDo && morningData.mustDo.length)
+    ? morningData.mustDo.filter(Boolean)
+    : [];
+
+  const reviewEl = document.getElementById('pm-task-review');
+  if (!reviewEl) return;
+  reviewEl.innerHTML = '';
+
+  if (!tasks.length) {
+    reviewEl.innerHTML = '<p class="muted" style="font-size:13px;">No tasks were set this morning — that\'s okay.</p>';
+  } else {
+    tasks.forEach((task, i) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; align-items:center; gap:12px; padding:12px 14px; background:rgba(28,26,24,0.04); border-radius:12px; cursor:pointer; transition:background 0.2s;';
+      row.innerHTML = `
+        <div class="pm-task-check" data-idx="${i}" style="width:22px; height:22px; border-radius:50%; border:2px solid rgba(28,26,24,0.2); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all 0.2s;"></div>
+        <span style="font-size:14px; flex:1;" id="pm-task-text-${i}">${task}</span>
+      `;
+      row.onclick = () => togglePMTask(i, task, row);
+      reviewEl.appendChild(row);
+    });
+  }
+
+  // ── Life area chips
+  const areas = getLifeAreas();
+  const areaChipsEl = document.getElementById('pm-area-chips');
+  if (areaChipsEl) {
+    areaChipsEl.innerHTML = '';
+    areas.forEach(a => {
+      const btn = document.createElement('button');
+      btn.className = 'chip';
+      btn.textContent = a.name;
+      btn.style.cssText = `border-left:3px solid ${a.color};`;
+      btn.setAttribute('data-area', a.name);
+      btn.onclick = () => toggleAreaInput(a, btn);
+      areaChipsEl.appendChild(btn);
+    });
+  }
+}
+
+function togglePMTask(idx, task, row) {
+  const check = row.querySelector('.pm-task-check');
+  const textEl = row.querySelector('span');
+  const isNowDone = !pmData.tasksCompleted.includes(idx);
+
+  if (isNowDone) {
+    pmData.tasksCompleted.push(idx);
+    check.style.cssText = 'width:22px; height:22px; border-radius:50%; border:2px solid #4CAF7D; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#4CAF7D; transition:all 0.2s;';
+    check.innerHTML = '<span style="color:#fff; font-size:11px;">✓</span>';
+    textEl.style.textDecoration = 'line-through';
+    textEl.style.opacity = '0.5';
+    // Remove from carried if it was there
+    pmData.tasksCarried = pmData.tasksCarried.filter(t => t !== task);
+  } else {
+    pmData.tasksCompleted = pmData.tasksCompleted.filter(i => i !== idx);
+    check.style.cssText = 'width:22px; height:22px; border-radius:50%; border:2px solid rgba(28,26,24,0.2); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all 0.2s;';
+    check.innerHTML = '';
+    textEl.style.textDecoration = '';
+    textEl.style.opacity = '';
+  }
+  updateCarryForward();
+}
+
+function updateCarryForward() {
+  const tasks = (morningData && morningData.mustDo) ? morningData.mustDo.filter(Boolean) : [];
+  const unfinished = tasks.filter((_, i) => !pmData.tasksCompleted.includes(i));
+  pmData.tasksCarried = unfinished;
+
+  const notice = document.getElementById('pm-carry-forward-notice');
+  const carryText = document.getElementById('pm-carry-text');
+  if (!notice) return;
+
+  if (unfinished.length > 0) {
+    notice.style.display = 'block';
+    carryText.textContent = `${unfinished.length} unfinished task${unfinished.length > 1 ? 's' : ''} will roll to tomorrow`;
+  } else {
+    notice.style.display = 'none';
+  }
+}
+
+function toggleAreaInput(area, btn) {
+  const inputsEl = document.getElementById('pm-area-task-inputs');
+  const existing = document.getElementById('area-input-' + area.name);
+
+  if (existing) {
+    // Already open — close it
+    existing.remove();
+    btn.classList.remove('selected');
+    delete pmData.areaTasks[area.name];
+    return;
+  }
+
+  btn.classList.add('selected');
+  btn.style.cssText = `border-left:3px solid ${area.color}; background:${area.color}20;`;
+
+  const block = document.createElement('div');
+  block.id = 'area-input-' + area.name;
+  block.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+  block.innerHTML = `
+    <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
+      <div style="width:8px; height:8px; border-radius:50%; background:${area.color};"></div>
+      <span class="label" style="font-size:12px; color:${area.color};">${area.name}</span>
+    </div>
+    <div id="area-tasks-${area.name}" style="display:flex; flex-direction:column; gap:6px;"></div>
+    <button onclick="addAreaTaskRow('${area.name}', '${area.color}')" style="font-size:12px; color:var(--muted); background:none; border:1px dashed rgba(28,26,24,0.2); border-radius:8px; padding:6px 12px; cursor:pointer; text-align:left;">+ add task</button>
+  `;
+  inputsEl.appendChild(block);
+
+  // Add first row automatically
+  addAreaTaskRow(area.name, area.color);
+  if (!pmData.areaTasks[area.name]) pmData.areaTasks[area.name] = [];
+}
+
+function addAreaTaskRow(areaName, color) {
+  const container = document.getElementById('area-tasks-' + areaName);
+  if (!container) return;
+  if (!pmData.areaTasks[areaName]) pmData.areaTasks[areaName] = [];
+
+  const idx = pmData.areaTasks[areaName].length;
+  pmData.areaTasks[areaName].push('');
+
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex; gap:8px; align-items:center;';
+  row.innerHTML = `
+    <div style="width:6px; height:6px; border-radius:50%; background:${color}; flex-shrink:0;"></div>
+    <input type="text" placeholder="task..." style="flex:1; font-size:14px; padding:8px 12px; border-radius:8px;"
+      oninput="updateAreaTask('${areaName}', ${idx}, this.value)">
+  `;
+  container.appendChild(row);
+}
+
+function updateAreaTask(areaName, idx, value) {
+  if (!pmData.areaTasks[areaName]) pmData.areaTasks[areaName] = [];
+  pmData.areaTasks[areaName][idx] = value;
+}
+
+function getLifeAreas() {
+  try {
+    const saved = localStorage.getItem('estral_life_areas');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return [
+    { name:'Work', color:'#5B7FBF' }, { name:'Health', color:'#4CAF7D' },
+    { name:'Money', color:'#C4903A' }, { name:'Self', color:'#9B6BB5' },
+    { name:'Family', color:'#E07070' }, { name:'Social', color:'#3BAFD4' },
+    { name:'Home', color:'#8B7355' }, { name:'Creative', color:'#D4608A' }
+  ];
+}
+
+async function buildPMTaskBreakdown() {
+  // Collect all tomorrow tasks
+  const carried = pmData.tasksCarried || [];
+  const newTasks = [];
+  Object.entries(pmData.areaTasks || {}).forEach(([area, tasks]) => {
+    tasks.filter(Boolean).forEach(t => newTasks.push({ area, task: t }));
+  });
+  const focus = document.getElementById('pm-tomorrow-focus')?.value || '';
+  pmData.tomorrowFocus = focus;
+  const hardNo = document.getElementById('pm-tomorrow-hardno')?.value || '';
+  pmData.tomorrowHardNo = hardNo;
+
+  const totalTasks = carried.length + newTasks.length;
+
+  // Show breakdown screen
+  document.getElementById('screen-pm8').style.display = 'none';
+  const breakdownEl = document.getElementById('screen-pm-breakdown');
+  breakdownEl.style.display = 'flex';
+  breakdownEl.classList.add('active');
+
+  // Set headline based on load
+  const headlineEl = document.getElementById('pm-breakdown-headline');
+  if (totalTasks === 0) {
+    headlineEl.textContent = "A clean slate tomorrow.";
+  } else if (totalTasks <= 4) {
+    headlineEl.textContent = "This is manageable.";
+  } else if (totalTasks <= 7) {
+    headlineEl.textContent = "Okay. Let's be real.";
+  } else {
+    headlineEl.textContent = "Girll. We need to talk.";
+  }
+
+  // Build tomorrow full task list
+  const listEl = document.getElementById('pm-tomorrow-full-list');
+  listEl.innerHTML = '';
+
+  if (carried.length > 0) {
+    const carrySection = document.createElement('div');
+    carrySection.innerHTML = `<div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#C41230; margin-bottom:6px;">↩ Carried from today</div>`;
+    carried.forEach(t => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; align-items:center; gap:10px; padding:9px 12px; background:rgba(196,18,48,0.05); border-radius:10px; border-left:2px solid #C41230;';
+      row.innerHTML = `<span style="font-size:13px;">${t}</span>`;
+      carrySection.appendChild(row);
+    });
+    listEl.appendChild(carrySection);
+  }
+
+  const areas = getLifeAreas();
+  const areaMap = {};
+  areas.forEach(a => areaMap[a.name] = a.color);
+
+  const areaGroups = {};
+  newTasks.forEach(({ area, task }) => {
+    if (!areaGroups[area]) areaGroups[area] = [];
+    areaGroups[area].push(task);
+  });
+
+  Object.entries(areaGroups).forEach(([area, tasks]) => {
+    const color = areaMap[area] || '#888';
+    const section = document.createElement('div');
+    section.innerHTML = `<div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:${color}; margin-bottom:6px; margin-top:10px;">${area}</div>`;
+    tasks.forEach(t => {
+      const row = document.createElement('div');
+      row.style.cssText = `display:flex; align-items:center; gap:10px; padding:9px 12px; background:${color}12; border-radius:10px; border-left:2px solid ${color};`;
+      row.innerHTML = `<span style="font-size:13px;">${t}</span>`;
+      section.appendChild(row);
+    });
+    listEl.appendChild(section);
+  });
+
+  if (focus) {
+    // Focus already shown above list — nothing to add here
+  }
+  if (hardNo) {
+    document.getElementById('pm-hardno-display-block').style.display = 'block';
+    document.getElementById('pm-hardno-final').textContent = hardNo;
+  }
+
+  // ESTRAL breakdown via AI
+  const textEl = document.getElementById('pm-breakdown-text');
+  textEl.textContent = '...';
+
+  const phase = window._userProfile?.cyclePhase || 'follicular';
+  const areaList = Object.entries(areaGroups).map(([a, ts]) => `${a}: ${ts.join(', ')}`).join(' | ');
+  const prompt = `You are ESTRAL. The user just finished their evening review.
+
+Today's unfinished tasks carried to tomorrow: ${carried.length > 0 ? carried.join(', ') : 'none'}
+New tasks for tomorrow by area: ${areaList || 'none added'}
+Tomorrow's one focus: ${focus || 'not set'}
+Hard-no: ${hardNo || 'not set'}
+Total task count for tomorrow: ${totalTasks}
+Cycle phase: ${phase}
+Today's energy: morning ${pmData.energyAM}/10, afternoon ${pmData.energyMid}/10, evening ${pmData.energyEve}/10
+
+Give her a sharp, honest 2-3 sentence read on her tomorrow. If she has too much, call it out warmly — "girll" energy. If it's doable, tell her why and what to protect. Reference her phase. No therapy language. No bullet points. Specific to what she actually has on her list.`;
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 200,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const reply = data?.content?.[0]?.text || data?.content?.map?.(b => b.text||'').join('') || '';
+    textEl.textContent = reply || "You've got this. Rest now, execute tomorrow.";
+  } catch(e) {
+    // Fallback static reads
+    const fallbacks = {
+      follicular: totalTasks > 6
+        ? `girll. you have ${totalTasks} things on tomorrow's list and you're in follicular — your brain is saying yes to everything right now. it doesn't mean all of it needs to happen. pick the 3 that actually move the needle and let the rest be nice-to-haves.`
+        : `this is actually a clean list for where you are in your cycle. follicular energy is building — you can take on more than usual but you don't have to. protect the focus and execute.`,
+      ovulatory: totalTasks > 6
+        ? `this is a lot for one day, even ovulatory. you're magnetic right now but you're also saying yes to everything. protect at least one block of deep work and stop before your energy peaks out.`
+        : `solid list for ovulatory phase. your energy and presence are at their peak — use it well but don't overextend just because it feels possible.`,
+      luteal: totalTasks > 4
+        ? `luteal is not the phase to add more. your energy is contracting — that's not a bug, it's how you're built. cut this list in half and let that be enough.`
+        : `this is right-sized for luteal. finishing energy only — you're not starting anything new, you're closing loops. that's the move.`,
+      menstrual: totalTasks > 3
+        ? `you are in menstrual and you've put ${totalTasks} things on tomorrow's list. your body literally needs you to do less right now. what's the one thing that can\'t wait? just do that one.`
+        : `minimal list, which is exactly right for where you are. show up for the essentials and that's it. rest is the work right now.`
+    };
+    textEl.textContent = fallbacks[phase] || fallbacks.follicular;
+  }
+
+  // Save the full tomorrow plan to localStorage so morning can read it
+  saveTomorrowPlan(carried, newTasks, focus, hardNo);
+}
+
+function saveTomorrowPlan(carried, newTasks, focus, hardNo) {
+  const plan = {
+    date: getTomorrowKey(),
+    focus: focus,
+    hardNo: hardNo,
+    carriedTasks: carried,
+    areaTasks: newTasks,
+    savedAt: new Date().toISOString()
+  };
+  localStorage.setItem('estral_tomorrow_plan', JSON.stringify(plan));
+  localStorage.setItem('estral_tomorrow_date', getTomorrowKey());
+}
+
+function getTomorrowKey() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().split('T')[0];
+}
+
+// Load tomorrow plan into morning if it exists
+function loadTomorrowPlanIntoMorning() {
+  try {
+    const saved = localStorage.getItem('estral_tomorrow_plan');
+    const savedDate = localStorage.getItem('estral_tomorrow_date');
+    const todayKey = new Date().toISOString().split('T')[0];
+    if (!saved || savedDate !== todayKey) return;
+
+    const plan = JSON.parse(saved);
+    // Pre-fill morning must-dos with carried + area tasks
+    const allTasks = [
+      ...plan.carriedTasks,
+      ...plan.areaTasks.map(t => t.task)
+    ].filter(Boolean).slice(0, 3);
+    if (allTasks.length) {
+      morningData.mustDo = allTasks;
+      // Pre-fill the input fields if they exist
+      ['must1','must2','must3'].forEach((id, i) => {
+        const el = document.getElementById(id);
+        if (el && allTasks[i]) el.value = allTasks[i];
+      });
+    }
+    if (plan.focus) {
+      morningData.tomorrowFocus = plan.focus;
+    }
+  } catch(e) {}
+}
+
+// Hook into openPMQuiz to build the screen
+const _origOpenPM = typeof openPMQuiz === 'function' ? openPMQuiz : null;
+function openPMQuiz() {
+  if (_origOpenPM) _origOpenPM();
+  // Reset extended fields
+  pmData.tasksCompleted = [];
+  pmData.tasksCarried = [];
+  pmData.areaTasks = {};
+  // Build PM8 task review
+  setTimeout(buildPM8Screen, 50);
+}
 
 </script>
 
