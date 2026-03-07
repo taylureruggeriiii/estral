@@ -125,12 +125,117 @@ h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 700; letter-spacin
 h1 { font-size: 38px; line-height: 1.05; }
 h2 { font-size: 28px; line-height: 1.1; }
 h3 { font-size: 20px; line-height: 1.2; }
-.estral-voice { font-family: 'DM Sans', sans-serif; font-style: italic; color: #B5292A; background: #E8B4B0; padding: 18px 20px; border: none; line-height: 1.7; font-size: 16px; }
-.estral-voice.card-voice { padding: 20px; border: none; background: #E8B4B0; }
-.estral-voice .voice-label { font-family: 'DM Sans', sans-serif; font-style: normal; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #B5292A; margin-bottom: 10px; display: block; }
-.estral-voice, .estral-voice *, .estral-voice p, .estral-voice span, .estral-voice div, .estral-voice .label, .estral-voice .muted, .estral-voice .mono, .estral-voice .serif { color: #B5292A !important; font-family: 'DM Sans', sans-serif; font-style: italic; }
-.estral-voice .voice-label, .estral-voice h1, .estral-voice h2, .estral-voice h3 { color: #B5292A !important; font-family: 'DM Sans', sans-serif !important; font-style: normal !important; font-weight: 700 !important; }
-.estral-voice button { font-family: 'DM Sans', sans-serif !important; font-style: normal !important; color: var(--text) !important; }
+/* ESTRAL VOICE — free-bleed airbrush, ink in water, no borders or boxes */
+.estral-voice {
+  font-family: 'DM Sans', sans-serif;
+  font-style: italic;
+  color: #2A1218;
+  background: transparent;
+  padding: 22px 24px;
+  border: none;
+  border-image: none;
+  line-height: 1.85;
+  font-size: 15px;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 16px;
+}
+/* The watercolor bleed — animated, free, no shape */
+.estral-voice::before {
+  content: '';
+  position: absolute;
+  inset: -40px -30px;
+  background: transparent;
+  pointer-events: none;
+  z-index: 0;
+}
+.estral-voice > * { position: relative; z-index: 1; }
+
+  25%  {
+    background:
+      radial-gradient(ellipse 70% 80% at 25% 60%, rgba(196,18,48,0.15) 0%, transparent 55%),
+      radial-gradient(ellipse 80% 50% at 70% 20%, rgba(255,61,127,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 70% at 30% 80%, rgba(255,179,198,0.20) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 85% 50%, rgba(196,18,48,0.12) 0%, transparent 45%);
+    filter: blur(22px);
+    transform: scale(1.02) translateX(4px);
+  }
+  50%  {
+    background:
+      radial-gradient(ellipse 90% 50% at 60% 30%, rgba(255,61,127,0.20) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 90% at 20% 80%, rgba(196,18,48,0.13) 0%, transparent 55%),
+      radial-gradient(ellipse 70% 60% at 80% 60%, rgba(255,179,198,0.18) 0%, transparent 50%),
+      radial-gradient(ellipse 40% 50% at 10% 30%, rgba(255,61,127,0.12) 0%, transparent 45%);
+    filter: blur(20px);
+    transform: scale(0.99) translateX(-3px);
+  }
+  75%  {
+    background:
+      radial-gradient(ellipse 60% 70% at 40% 70%, rgba(255,179,198,0.22) 0%, transparent 55%),
+      radial-gradient(ellipse 80% 40% at 75% 25%, rgba(196,18,48,0.16) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 80% at 15% 50%, rgba(255,61,127,0.14) 0%, transparent 50%),
+      radial-gradient(ellipse 70% 50% at 60% 85%, rgba(196,18,48,0.10) 0%, transparent 45%);
+    filter: blur(24px);
+    transform: scale(1.01) translateX(2px);
+  }
+  100% {
+    background:
+      radial-gradient(ellipse 75% 65% at 20% 40%, rgba(255,61,127,0.17) 0%, transparent 58%),
+      radial-gradient(ellipse 55% 75% at 85% 65%, rgba(196,18,48,0.13) 0%, transparent 52%),
+      radial-gradient(ellipse 85% 45% at 45% 85%, rgba(255,179,198,0.19) 0%, transparent 48%),
+      radial-gradient(ellipse 45% 55% at 80% 15%, rgba(255,61,127,0.11) 0%, transparent 42%);
+    filter: blur(19px);
+    transform: scale(1) translateX(0px);
+  }
+}
+.estral-voice.card-voice {
+  padding: 22px 24px;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+.estral-voice .voice-label {
+  font-family: 'DM Sans', sans-serif;
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #C41230, #FF3D7F);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.estral-voice .voice-label::before {
+  content: '';
+  width: 18px;
+  height: 1.5px;
+  background: linear-gradient(90deg, #C41230, #FF3D7F);
+  border-radius: 2px;
+  flex-shrink: 0;
+  -webkit-text-fill-color: initial;
+}
+.estral-voice, .estral-voice p, .estral-voice span:not(.voice-label) {
+  color: #2A1218;
+  font-family: 'DM Sans', sans-serif;
+  font-style: italic;
+}
+.estral-voice .voice-label, .estral-voice h1, .estral-voice h2, .estral-voice h3 {
+  font-family: 'DM Sans', sans-serif !important;
+  font-style: normal !important;
+  font-weight: 700 !important;
+}
+.estral-voice button {
+  font-family: 'DM Sans', sans-serif !important;
+  font-style: normal !important;
+  color: var(--text) !important;
+}
 .card { background: var(--card); backdrop-filter: blur(20px); border: 1px solid var(--border); padding: 20px; }
 .card-dark { background: #1C1A18; padding: 20px; }
 .card-dark, .card-dark *, .card-dark p, .card-dark span, .card-dark div, .card-dark .label, .card-dark .muted, .card-dark .mono { color: #F5F1EB !important; }
@@ -357,8 +462,68 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
 .phase-modal-body { padding: 0 24px; display: flex; flex-direction: column; gap: 16px; }
 .phase-modal-section { display: flex; flex-direction: column; gap: 8px; }
 .phase-modal-section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
-.chat-bubble-ai { align-self: flex-start; max-width: 88%; background: #E8B4B0; border: none; padding: 16px 18px; font-size: 15px; line-height: 1.75; font-family: 'DM Sans', sans-serif; font-style: italic; color: #B5292A; }
-.chat-bubble-user { align-self: flex-end; max-width: 80%; background: var(--phase); color: #fff; padding: 12px 16px; border-radius: 18px 18px 4px 18px; font-size: 14px; line-height: 1.55; font-family: 'DM Sans', sans-serif; font-style: normal; }
+/* ESTRAL chat — airbrush crimson/pink/blush — permanent identity */
+:root {
+  --estral-crimson: #C41230;
+  --estral-hot: #FF3D7F;
+  --estral-blush: #FFB3C6;
+  --estral-blush-dim: rgba(255,179,198,0.15);
+  --estral-glow: rgba(196,18,48,0.10);
+}
+.chat-bubble-ai {
+  align-self: flex-start;
+  max-width: 90%;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 15px;
+  line-height: 1.8;
+  font-family: 'DM Sans', sans-serif;
+  font-style: italic;
+  color: #1C1A18;
+  position: relative;
+}
+.chat-bubble-ai .estral-bubble-inner {
+  background: transparent;
+  border-radius: 0;
+  padding: 16px 4px;
+  position: relative;
+}
+
+.chat-bubble-ai .estral-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--estral-crimson);
+  margin-bottom: 8px;
+  font-style: normal;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.chat-bubble-ai .estral-label::before {
+  content: '';
+  width: 16px;
+  height: 1.5px;
+  background: linear-gradient(90deg, var(--estral-crimson), var(--estral-hot));
+  border-radius: 2px;
+}
+.chat-bubble-ai p { margin: 0 0 10px; }
+.chat-bubble-ai p:last-child { margin-bottom: 0; }
+.chat-bubble-user {
+  align-self: flex-end;
+  max-width: 80%;
+  background: rgba(28,26,24,0.08);
+  color: var(--text);
+  padding: 12px 16px;
+  border-radius: 18px 18px 4px 18px;
+  font-size: 14px;
+  line-height: 1.55;
+  font-family: 'DM Sans', sans-serif;
+  font-style: normal;
+  border: 1px solid rgba(28,26,24,0.08);
+}
 
 /* Week columns new style */
 #weekColumns { overflow-x: auto; }
@@ -366,6 +531,21 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
 .week-col-body { transition: background 0.15s; }
 #week-tray-items { min-height: 32px; }
 #drag-tray-items { min-height: 32px; }
+
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+
+/* ESTRAL text backdrop — opaque gradient box behind text, above lava lamp */
+.estral-text-backdrop {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.6),
+    inset 0 -1px 0 rgba(255,180,200,0.3),
+    0 2px 16px rgba(196,18,48,0.08);
+}
 
 </style>
 </head>
@@ -1186,21 +1366,21 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
   <div style="display:flex; flex-direction:column; height:100vh; padding-top:56px;">
     <div style="padding:0 20px 12px; flex-shrink:0; border-bottom:1px solid rgba(28,26,24,0.08);">
       <div style="display:flex; align-items:center; gap:10px;">
-        <div style="width:34px; height:34px; background:var(--phase-dim); border:1px solid var(--phase-mid); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px;">✦</div>
+        <div style="width:36px; height:36px; background:linear-gradient(135deg,#C41230,#FF3D7F); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; box-shadow:0 2px 12px rgba(196,18,48,0.3), 0 0 0 3px rgba(255,61,127,0.12);">✦</div>
         <div>
-          <div style="font-size:14px; font-weight:500;">ESTRAL</div>
+          <div style="font-size:14px; font-weight:600; background:linear-gradient(90deg,#C41230,#FF3D7F); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">ESTRAL</div>
           <div class="muted" style="font-size:11px;" id="chat-context-line">Day — · — · —</div>
         </div>
         <div style="margin-left:auto;">
-          <div style="font-size:10px; color:var(--phase); letter-spacing:0.06em; text-transform:uppercase;">AI · Live</div>
+          <div style="font-size:10px; color:var(--estral-crimson); letter-spacing:0.06em; text-transform:uppercase; font-weight:600;">✦ live</div>
         </div>
       </div>
     </div>
-    <div id="chat-messages" style="flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:12px;"></div>
+    <div id="chat-messages" style="flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:16px; background:linear-gradient(180deg, rgba(255,240,244,0.3) 0%, rgba(240,236,228,0) 40%);"></div>
     <div id="chat-typing" style="display:none; padding:8px 20px;">
-      <div class="chat-bubble-ai" style="padding:12px 16px; font-size:13px;">✦ &nbsp;thinking...</div>
+      <div class="chat-bubble-ai"><div class="estral-bubble-inner"><div class="estral-label">ESTRAL</div><div style="display:flex;gap:5px;align-items:center;padding:2px 0;"><span style="width:6px;height:6px;border-radius:50%;background:linear-gradient(135deg,#C41230,#FF3D7F);animation:pulse 1.2s ease-in-out infinite;"></span><span style="width:6px;height:6px;border-radius:50%;background:linear-gradient(135deg,#FF3D7F,#FFB3C6);animation:pulse 1.2s ease-in-out 0.2s infinite;"></span><span style="width:6px;height:6px;border-radius:50%;background:#FFB3C6;animation:pulse 1.2s ease-in-out 0.4s infinite;"></span></div></div></div>
     </div>
-    <div style="padding:10px 20px 16px; border-top:1px solid rgba(28,26,24,0.08); background:rgba(240,236,228,0.95); backdrop-filter:blur(20px); padding-bottom:100px; flex-shrink:0;">
+    <div style="padding:10px 20px 16px; border-top:1px solid rgba(196,18,48,0.12); background:rgba(255,247,249,0.97); backdrop-filter:blur(20px); padding-bottom:100px; flex-shrink:0;">
       <div style="display:flex; gap:6px; margin-bottom:10px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none;" id="chat-suggestions">
         <button class="chip" onclick="sendSuggestion(this)" style="white-space:nowrap; font-size:12px;">What should I focus on today?</button>
         <button class="chip" onclick="sendSuggestion(this)" style="white-space:nowrap; font-size:12px;">How do I work with this phase?</button>
@@ -1210,7 +1390,7 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
         <input type="text" id="chat-input" placeholder="Ask ESTRAL anything..." style="flex:1;" onkeydown="if(event.key==='Enter')sendChat()">
-        <button onclick="sendChat()" id="chat-send-btn" style="background:var(--phase); color:#fff; border:none; width:38px; height:38px; border-radius:50%; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(74,143,168,0.35); flex-shrink:0; transition:opacity 0.2s;">→</button>
+        <button onclick="sendChat()" id="chat-send-btn" style="background:linear-gradient(135deg,#C41230,#FF3D7F); color:#fff; border:none; width:38px; height:38px; border-radius:50%; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 12px rgba(196,18,48,0.35); flex-shrink:0; transition:opacity 0.2s;">→</button>
       </div>
     </div>
   </div>
@@ -2034,6 +2214,23 @@ function addChatMessage(role, text) {
   const c=document.getElementById('chat-messages'); if(!c) return;
   const d=document.createElement('div');
   d.className = role==='user'?'chat-bubble-user':'chat-bubble-ai';
+  if (role !== 'user') {
+    const inner = document.createElement('div');
+    inner.className = 'estral-bubble-inner';
+    const label = document.createElement('div');
+    label.className = 'estral-label';
+    label.textContent = 'ESTRAL';
+    inner.appendChild(label);
+    const txt = document.createElement('div');
+    // Split into paragraphs for breathing layout
+    const paras = content.split(/\n+/).filter(p => p.trim());
+    txt.innerHTML = paras.length > 1 ? paras.map(p => '<p>' + p + '</p>').join('') : content;
+    inner.appendChild(txt);
+    d.appendChild(inner);
+    c.appendChild(d);
+    c.scrollTop = c.scrollHeight;
+    return;
+  }
   d.textContent=text; c.appendChild(d); c.scrollTop=c.scrollHeight;
   chatHistory.push({role,content:text});
 }
@@ -4542,6 +4739,150 @@ function buildWeekTrayItems() {
   });
 }
 
+
+// ═══════════════════════════════════════════════
+// ESTRAL LAVA LAMP — canvas-based, attaches to
+// every .estral-voice element automatically
+// ═══════════════════════════════════════════════
+
+(function() {
+  const BLOBS = [
+    { ox:0.15, oy:0.25, sx:0.55, sy:0.45, r:0.68, rgb:[196,18,48],    speed:0.00042 },
+    { ox:0.72, oy:0.65, sx:0.62, sy:0.55, r:0.62, rgb:[255,61,127],   speed:0.00055 },
+    { ox:0.45, oy:0.80, sx:0.50, sy:0.40, r:0.55, rgb:[230,40,90],    speed:0.00038 },
+    { ox:0.82, oy:0.18, sx:0.45, sy:0.50, r:0.50, rgb:[255,120,160],  speed:0.00060 },
+    { ox:0.28, oy:0.70, sx:0.58, sy:0.42, r:0.48, rgb:[255,179,198],  speed:0.00048 },
+    { ox:0.60, oy:0.40, sx:0.52, sy:0.48, r:0.44, rgb:[196,18,48],    speed:0.00035 },
+  ];
+
+  let globalT = Math.random() * 1000;
+
+  function attachCanvas(el) {
+    if (el._estralCanvas) return; // already attached
+    el.style.position = 'relative';
+    el.style.overflow = 'visible';
+    el.style.background = 'transparent';
+
+    // Canvas — the free-bleed lava lamp layer (behind everything)
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText = [
+      'position:absolute',
+      'inset:-20px -20px',
+      'width:calc(100% + 40px)',
+      'height:calc(100% + 40px)',
+      'pointer-events:none',
+      'z-index:0',
+      'filter:blur(28px)',
+      'opacity:0.90',
+      'border-radius:0',
+      'mix-blend-mode:normal',
+    ].join(';');
+    el.insertBefore(canvas, el.firstChild);
+    el._estralCanvas = canvas;
+
+    // Text backdrop — opaque gradient box sitting between canvas and text
+    const backdrop = document.createElement('div');
+    backdrop.className = 'estral-text-backdrop';
+    backdrop.style.cssText = [
+      'position:absolute',
+      'inset:0',
+      'border-radius:14px',
+      'pointer-events:none',
+      'z-index:1',
+      'background:linear-gradient(135deg, rgba(255,238,242,0.88) 0%, rgba(255,218,230,0.84) 35%, rgba(255,232,240,0.86) 65%, rgba(255,210,225,0.82) 100%)',
+    ].join(';');
+    el.insertBefore(backdrop, canvas.nextSibling);
+
+    // lift all other children above both canvas and backdrop
+    [...el.children].forEach(c => {
+      if (c !== canvas && c !== backdrop) {
+        c.style.position = 'relative';
+        c.style.zIndex = '2';
+      }
+    });
+  }
+
+  function drawAll(t) {
+    document.querySelectorAll('.estral-voice').forEach(el => {
+      attachCanvas(el);
+      const canvas = el._estralCanvas;
+      if (!canvas) return;
+
+      const W = el.offsetWidth + 100;
+      const H = el.offsetHeight + 120;
+      if (W < 10 || H < 10) return;
+
+      if (canvas.width !== W || canvas.height !== H) {
+        canvas.width = W;
+        canvas.height = H;
+      }
+
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, W, H);
+
+      BLOBS.forEach((b, i) => {
+        // Lava lamp: smooth organic sine motion with phase offset per blob
+        const phase = i * 1.3;
+        const x = (b.ox + Math.sin(t * b.speed * 1000 + phase) * b.sx) * W;
+        const y = (b.oy + Math.cos(t * b.speed * 800 + phase * 0.7) * b.sy) * H;
+
+        // Pulse radius — breathe in and out
+        const rPulse = 1 + Math.sin(t * b.speed * 600 + phase * 1.5) * 0.18;
+        const r = b.r * Math.min(W, H) * rPulse;
+
+        const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+        grad.addColorStop(0,   `rgba(${b.rgb[0]},${b.rgb[1]},${b.rgb[2]},0.88)`);
+        grad.addColorStop(0.3, `rgba(${b.rgb[0]},${b.rgb[1]},${b.rgb[2]},0.60)`);
+        grad.addColorStop(0.6, `rgba(${b.rgb[0]},${b.rgb[1]},${b.rgb[2]},0.28)`);
+        grad.addColorStop(1,   `rgba(${b.rgb[0]},${b.rgb[1]},${b.rgb[2]},0)`);
+
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    });
+
+    // Also handle chat bubbles
+    document.querySelectorAll('.chat-bubble-ai .estral-bubble-inner').forEach(el => {
+      attachCanvas(el);
+      const canvas = el._estralCanvas;
+      if (!canvas) return;
+      const W = el.offsetWidth + 100;
+      const H = el.offsetHeight + 120;
+      if (W < 10 || H < 10) return;
+      if (canvas.width !== W || canvas.height !== H) {
+        canvas.width = W; canvas.height = H;
+      }
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, W, H);
+      BLOBS.slice(0, 4).forEach((b, i) => {
+        const phase = i * 1.3 + 5; // offset so chat blobs drift differently
+        const x = (b.ox + Math.sin(t * b.speed * 1000 + phase) * b.sx) * W;
+        const y = (b.oy + Math.cos(t * b.speed * 800 + phase * 0.7) * b.sy) * H;
+        const rPulse = 1 + Math.sin(t * b.speed * 600 + phase * 1.5) * 0.18;
+        const r = b.r * Math.min(W, H) * rPulse;
+        const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+        grad.addColorStop(0,   `rgba(${b.rgb[0]},${b.rgb[1]},${b.rgb[2]},0.80)`);
+        grad.addColorStop(0.4, `rgba(${b.rgb[0]},${b.rgb[1]},${b.rgb[2]},0.45)`);
+        grad.addColorStop(1,   `rgba(${b.rgb[0]},${b.rgb[1]},${b.rgb[2]},0)`);
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    });
+  }
+
+  function loop(t) {
+    globalT = t * 0.001;
+    drawAll(globalT);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+
 </script>
 
 
@@ -4583,8 +4924,8 @@ function buildWeekTrayItems() {
     </div>
 
     <!-- ESTRAL on the moon -->
-    <div style="background:linear-gradient(135deg, rgba(28,26,24,0.06), rgba(28,26,24,0.03)); border-radius:16px; padding:20px; margin-bottom:20px; border-left:3px solid var(--phase);">
-      <div style="font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--phase); margin-bottom:10px;">ESTRAL on this moon</div>
+    <div style="background: radial-gradient(ellipse at 0% 0%, rgba(255,61,127,0.20) 0%, transparent 55%), radial-gradient(ellipse at 100% 100%, rgba(196,18,48,0.12) 0%, transparent 50%), linear-gradient(135deg, rgba(255,240,244,0.98), rgba(255,215,228,0.90)); border-radius:16px; padding:20px; margin-bottom:20px; box-shadow:0 0 0 1px rgba(255,61,127,0.14), 0 4px 20px rgba(196,18,48,0.07);">
+      <div style="font-size:9px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; background:linear-gradient(90deg,#C41230,#FF3D7F); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:10px; display:flex; align-items:center; gap:6px;"><span style="width:18px;height:1.5px;background:linear-gradient(90deg,#C41230,#FF3D7F);border-radius:2px;flex-shrink:0;display:inline-block;"></span>ESTRAL on this moon</div>
       <p id="moon-overlay-estral-note" style="font-size:15px; line-height:1.75; color:var(--text); font-style:italic; margin:0;">—</p>
     </div>
 
