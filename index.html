@@ -623,8 +623,8 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
   <div class="section" style="padding-top:0; gap:12px;">
     <div class="card" style="padding:20px;">
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
-        <span class="badge badge-phase" id="home-badge-phase">🌒 — · Day —</span>
-        <span class="badge badge-moon" id="home-badge-moon">🌙 — · —</span>
+        <span class="badge badge-phase" id="home-badge-phase" onclick="openPhaseOverlay()" style="cursor:pointer;">🌒 — · Day —</span>
+        <span class="badge badge-moon" id="home-badge-moon" onclick="openMoonOverlay()" style="cursor:pointer;">🌙 — · —</span>
       </div>
       <div class="lock-icon">🌱</div>
       <p class="muted" style="text-align:center; font-size:14px; margin-bottom:20px;">Complete your morning check-in<br>to unlock today's dashboard.</p>
@@ -1110,8 +1110,18 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     <!-- WEEK -->
     <div class="plan-view scroll-area" id="plan-week">
       <div style="padding:16px 16px 8px;">
-        <h3>Week of Mar 7</h3>
-        <p class="muted" style="font-size:13px; margin-top:4px;">Follicular phase · Building window</p>
+        <h3 id="plan-week-title">Week of Mar 7</h3>
+        <p class="muted" style="font-size:13px; margin-top:4px;" id="plan-week-subtitle">Follicular phase · Building window</p>
+      </div>
+      <!-- Moon card in planning -->
+      <div onclick="openMoonOverlay()" style="margin:0 16px 16px; background:linear-gradient(135deg, rgba(28,26,24,0.06), rgba(28,26,24,0.03)); border-radius:14px; padding:16px 18px; cursor:pointer; border:1px solid rgba(28,26,24,0.08); display:flex; align-items:center; gap:14px;">
+        <div id="plan-moon-emoji" style="font-size:32px;">🌙</div>
+        <div style="flex:1;">
+          <div id="plan-moon-phase-name" style="font-size:14px; font-weight:600; color:var(--text);">—</div>
+          <div id="plan-moon-sign-line" style="font-size:12px; color:var(--muted); margin-top:2px;">—</div>
+          <div id="plan-moon-one-liner" style="font-size:12px; color:var(--phase); margin-top:4px; font-style:italic;">—</div>
+        </div>
+        <div style="color:var(--muted); font-size:16px;">→</div>
       </div>
       <div class="week-strip" id="weekStrip"></div>
       <div style="padding:0 16px;"><div id="weekDayDetail" style="display:none; flex-direction:column; gap:0;"></div></div>
@@ -1480,7 +1490,7 @@ function switchTab(tab) {
   if (tab === 'chat') setTimeout(function(){ if(typeof initChatGreeting==='function') initChatGreeting(); }, 80);
   if (tab === 'log')  setTimeout(function(){ if(typeof renderLogContent==='function') renderLogContent(currentLogMonth||'mar'); if(typeof buildMilestonesSection==='function') buildMilestonesSection(); }, 80);
   if (tab === 'chart') setTimeout(function(){ if(typeof buildChartFromData==='function') buildChartFromData(); }, 80);
-  if (tab === 'plan') setTimeout(function(){ if(typeof checkBrainDumpFirstVisit==='function') checkBrainDumpFirstVisit(); }, 80);
+  if (tab === 'plan') setTimeout(function(){ if(typeof checkBrainDumpFirstVisit==='function') checkBrainDumpFirstVisit(); if(typeof updatePlanMoonCard==='function') updatePlanMoonCard(); }, 80);
 }
 
 function goToMorning() { currentMorningScreen = 1; showMorningScreen(1); updateProgress(); }
@@ -1709,7 +1719,7 @@ function unlockDashboard() {
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <span class="badge badge-phase">🌒 ${phaseCap}</span>
-        <span class="badge badge-moon" id="unlocked-moon-badge">🌙 —</span>
+        <span class="badge badge-moon" id="unlocked-moon-badge" onclick="openMoonOverlay()" style="cursor:pointer;">🌙 —</span>
         <span class="badge" style="background:rgba(74,143,168,0.1);color:var(--phase);border:1px solid var(--phase-mid);">⚡ ${tier}</span>
       </div>
       <div class="card">
@@ -3956,10 +3966,253 @@ function buildMilestonesSection() {
 // Init PM system when app loads
 document.addEventListener('DOMContentLoaded', function() {
   setTimeout(initPMSystem, 800);
-  setTimeout(updateMoonBadge, 1000);
+  setTimeout(updateMoonBadgeFull, 1000);
+  setTimeout(updatePlanMoonCard, 1200);
   setTimeout(buildMilestonesSection, 1200);
 });
 
+
+
+// ═══════════════════════════════════════════════════════
+// MOON + ASTROLOGY SYSTEM
+// ═══════════════════════════════════════════════════════
+
+// Get detailed moon phase (0-29.5 days in cycle)
+function getMoonCycleDay() {
+  const knownNewMoon = new Date('2024-01-11T11:57:00Z');
+  const lunarCycle = 29.53058867;
+  const now = new Date();
+  const daysSince = (now - knownNewMoon) / (1000 * 60 * 60 * 24);
+  return ((daysSince % lunarCycle) + lunarCycle) % lunarCycle;
+}
+
+function getDetailedMoonPhase() {
+  const d = getMoonCycleDay();
+  if (d < 1.85) return { name: 'New Moon', emoji: '🌑', key: 'new_moon', waxing: true };
+  if (d < 7.38) return { name: 'Waxing Crescent', emoji: '🌒', key: 'waxing_crescent', waxing: true };
+  if (d < 9.22) return { name: 'First Quarter', emoji: '🌓', key: 'first_quarter', waxing: true };
+  if (d < 14.77) return { name: 'Waxing Gibbous', emoji: '🌔', key: 'waxing_gibbous', waxing: true };
+  if (d < 16.61) return { name: 'Full Moon', emoji: '🌕', key: 'full_moon', waxing: false };
+  if (d < 22.15) return { name: 'Waning Gibbous', emoji: '🌖', key: 'waning_gibbous', waxing: false };
+  if (d < 23.99) return { name: 'Last Quarter', emoji: '🌗', key: 'last_quarter', waxing: false };
+  return { name: 'Waning Crescent', emoji: '🌘', key: 'waning_crescent', waxing: false };
+}
+
+// Moon zodiac transit — calculated from known positions
+function getMoonZodiacSign() {
+  // Moon moves ~13.2 degrees/day, full zodiac 360 degrees = 27.3 day sidereal cycle
+  const knownDate = new Date('2024-01-01T00:00:00Z');
+  const knownDeg = 60; // Moon was ~60° (Gemini) Jan 1 2024
+  const signs = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
+  const now = new Date();
+  const daysSince = (now - knownDate) / (1000 * 60 * 60 * 24);
+  const currentDeg = (knownDeg + daysSince * 13.176) % 360;
+  const signIndex = Math.floor(currentDeg / 30);
+  const degInSign = Math.floor(currentDeg % 30);
+  return { sign: signs[signIndex], degree: degInSign, index: signIndex };
+}
+
+// Rich ESTRAL data for each moon phase
+const MOON_PHASE_DATA = {
+  new_moon: {
+    estralNote: "the new moon is a blank page. she doesn't care about your old story. what you plant tonight — even just in your mind — is what grows. don't waste it on something you don't actually want.",
+    bodyEffect: "Energy is at its lowest in the lunar cycle. Your body is asking for rest, not output. Sleep longer. Eat warming foods. This is a biological reset — not a failure to produce.",
+    actions: ["Write your real intentions — not the acceptable ones", "Start something new you've been scared to begin", "Rest without guilt — it's literally the right call", "Set one word as your lunar theme"],
+    transitNote: (sign) => `New Moon in ${sign} — the intentions you set now carry ${sign} energy through the whole cycle.`
+  },
+  waxing_crescent: {
+    estralNote: "the crescent is momentum building. you set intentions, now you take the first actual step. not a big dramatic one — just the first one. the moon is building and so are you.",
+    bodyEffect: "Energy is gently rising. Good time to start new habits, begin projects, introduce new routines. Your body responds well to new inputs right now.",
+    actions: ["Take the first concrete step on your new moon intention", "Start a new habit — your body is receptive", "Research, plan, sketch out ideas", "Say yes to things that align with your intention"],
+    transitNote: (sign) => `Waxing Crescent in ${sign} — building energy with ${sign} flavour. Use it.`
+  },
+  first_quarter: {
+    estralNote: "this is the decision moon. you will hit resistance — internal or external — and you have to push through it. the first quarter is a test of how much you actually want what you said you wanted.",
+    bodyEffect: "Energy is rising strongly. You may feel tension or friction — this is the moon pushing you to act. Channel it into decisive movement rather than anxiety.",
+    actions: ["Make the decision you've been avoiding", "Push through the resistance — it's part of the process", "Take bold, visible action on your project", "Have the conversation you've been putting off"],
+    transitNote: (sign) => `First Quarter Moon in ${sign} — decision energy amplified by ${sign}. Move.`
+  },
+  waxing_gibbous: {
+    estralNote: "almost full. this is refinement energy — you can see what's working and what isn't, and you have time to adjust before the fullness hits. don't start anything new. polish what exists.",
+    bodyEffect: "Peak building energy. You may feel slightly restless or overstimulated. Good for detail work, editing, and fine-tuning. Your senses are heightened.",
+    actions: ["Refine and edit your work — don't just add more", "Prepare for a peak moment coming at full moon", "Tie up loose ends", "Get extra sleep — the full moon will amplify everything"],
+    transitNote: (sign) => `Waxing Gibbous in ${sign} — refinement and preparation. ${sign} shows you where to focus.`
+  },
+  full_moon: {
+    estralNote: "full illumination. the moon shows you everything — including what you'd rather not see. things come to a head at the full moon. releases happen, realizations happen, sometimes relationships shift. she's not subtle.",
+    bodyEffect: "Energy is at its peak — and so is everything else. Emotions run higher, sleep may be lighter, you may feel more sensitive or activated. This is biological, not dramatic.",
+    actions: ["Release what's no longer serving you — write it down and burn it (metaphorically)", "Celebrate what has grown since the new moon", "Have the full, honest conversation", "Do something that feels like completion"],
+    transitNote: (sign) => `Full Moon in ${sign} — illuminating ${sign} themes. What's being revealed in this area of your life?`
+  },
+  waning_gibbous: {
+    estralNote: "the gratitude moon. the full moon peak has passed and now it's time to receive what it brought. what came to light? what shifted? this is integration energy, not output energy.",
+    bodyEffect: "Energy begins to turn inward. Great time for reflection, sharing wisdom, and integration. Your body is processing the full moon intensity.",
+    actions: ["Journal what the full moon revealed", "Share what you've learned with someone you trust", "Give back — teach, mentor, help", "Reflect on your new moon intention — how far have you come?"],
+    transitNote: (sign) => `Waning Gibbous in ${sign} — integration and wisdom. ${sign} themes are being processed.`
+  },
+  last_quarter: {
+    estralNote: "the forgiveness moon. last quarter is for letting go of what didn't work this cycle — without drama, without a story. just release. you can't carry it into the new moon.",
+    bodyEffect: "Energy continues to decrease. Rest more than you think you need to. Your body is clearing — physically and energetically. This is a good time to fast, detox, or simplify.",
+    actions: ["Let go of something that didn't work — without blame", "Clear your space — physical clearing mirrors energetic clearing", "Forgive yourself for the gap between intention and action", "Rest. Seriously."],
+    transitNote: (sign) => `Last Quarter in ${sign} — releasing ${sign} patterns that no longer serve.`
+  },
+  waning_crescent: {
+    estralNote: "the darkest part of the cycle. surrender to it. this is the balsamic moon — the space between stories. don't rush to the next thing. rest in the not-knowing. the new moon is coming.",
+    bodyEffect: "Lowest energy of the lunar cycle. Your body needs maximum rest. Dreams may be vivid, intuition sharp. This is a time for silence, not production.",
+    actions: ["Sleep as much as you need to", "Spend time alone in quiet — this is a deeply intuitive window", "Dream journal — your subconscious is active", "Do nothing. Really. Let the cycle close."],
+    transitNote: (sign) => `Waning Crescent in ${sign} — the final exhale. ${sign} whispers what's ready to be released.`
+  }
+};
+
+// Moon sign data for transits
+const MOON_SIGN_DATA = {
+  Aries: { element: 'Fire', quality: 'Cardinal', vibe: 'Bold, impulsive, pioneering', estralNote: 'Moon in Aries wants action NOW. Use this energy to start things, be direct, and lead. Watch the impatience.', bodyNote: 'High physical energy. Good for workouts, bold moves, anything requiring courage.' },
+  Taurus: { element: 'Earth', quality: 'Fixed', vibe: 'Sensual, grounded, stubborn', estralNote: 'Moon in Taurus wants comfort, beauty, and slow pleasure. Great for creative work and self-care. Less great for rushing.', bodyNote: 'Body craves sensory pleasure. Eat well, move slowly, luxuriate.' },
+  Gemini: { element: 'Air', quality: 'Mutable', vibe: 'Curious, communicative, scattered', estralNote: 'Moon in Gemini wants to talk, learn, and connect dots. Perfect for writing, calls, and idea generation. Watch the mental overload.', bodyNote: 'Mind is buzzing. Good for communication, multi-tasking, learning.' },
+  Cancer: { element: 'Water', quality: 'Cardinal', vibe: 'Nurturing, emotional, intuitive', estralNote: 'Moon in Cancer is the most emotional transit. Feelings are close to the surface — honour them, don\'t suppress them. Home and family pull strongly.', bodyNote: 'Highly sensitive. Good for self-care, nesting, emotional processing.' },
+  Leo: { element: 'Fire', quality: 'Fixed', vibe: 'Creative, dramatic, generous', estralNote: 'Moon in Leo wants to be seen and to shine. Perfect for content creation, visibility, and celebrating yourself. Don\'t dim it.', bodyNote: 'Heart energy is high. Great for bold expression, performance, play.' },
+  Virgo: { element: 'Earth', quality: 'Mutable', vibe: 'Analytical, detail-oriented, perfectionist', estralNote: 'Moon in Virgo is the editor. Perfect for systems work, health routines, and cleaning up what\'s messy. Watch the self-criticism.', bodyNote: 'Body wants clean input. Good for health resets, detailed work, organisation.' },
+  Libra: { element: 'Air', quality: 'Cardinal', vibe: 'Harmonious, social, indecisive', estralNote: 'Moon in Libra wants beauty, balance, and connection. Great for collaborations, aesthetic decisions, and relationships. Less great for solo intensity.', bodyNote: 'Social energy is high. Good for meetings, creative partnerships, anything visual.' },
+  Scorpio: { element: 'Water', quality: 'Fixed', vibe: 'Intense, transformative, private', estralNote: 'Moon in Scorpio goes deep. This is not a surface-level transit. Research, shadow work, and power moves all happen here. Intensity is the point.', bodyNote: 'Feels everything more intensely. Good for deep work, therapy, transformation.' },
+  Sagittarius: { element: 'Fire', quality: 'Mutable', vibe: 'Optimistic, expansive, blunt', estralNote: 'Moon in Sagittarius wants freedom and big picture thinking. Great for vision work, travel, and anything that expands your worldview. Details can wait.', bodyNote: 'Restless energy. Good for outdoor activity, big thinking, adventure.' },
+  Capricorn: { element: 'Earth', quality: 'Cardinal', vibe: 'Ambitious, disciplined, strategic', estralNote: 'Moon in Capricorn is all business. Best transit for strategic moves, professional visibility, and building structures that last. Ambition is the energy.', bodyNote: 'Disciplined and focused. Good for long work sessions and building habits.' },
+  Aquarius: { element: 'Air', quality: 'Fixed', vibe: 'Innovative, detached, humanitarian', estralNote: 'Moon in Aquarius wants to shake things up and think differently. Great for innovation, group work, and challenging the norm. Emotions may feel distant.', bodyNote: 'Mental detachment from body. Good for intellectual work, community, future thinking.' },
+  Pisces: { element: 'Water', quality: 'Mutable', vibe: 'Dreamy, intuitive, dissolving', estralNote: 'Moon in Pisces is the most intuitive transit. Dreams are vivid, boundaries feel thin, creativity flows. Rest into it rather than forcing structure.', bodyNote: 'Highly sensitive and dreamy. Good for creative work, rest, spiritual practice.' }
+};
+
+// Cycle × Moon combo notes
+function getMoonCycleCombo(moonPhaseKey, cyclePhase) {
+  const combos = {
+    'follicular': {
+      'new_moon': 'Double new beginning energy. You are literally in the rising phase of your cycle AND the rising phase of the lunar cycle. What you begin now has serious momentum behind it.',
+      'waxing_crescent': 'Building on building. Your cycle and the moon are both in expansion mode. This is a powerful window for starting things and making them real.',
+      'first_quarter': 'Your cognitive peak meets decision energy. This is the window to make the moves you\'ve been thinking about. Stop planning, start doing.',
+      'waxing_gibbous': 'Your follicular clarity meets lunar refinement. Use the mental sharpness of this phase to fine-tune before the full moon peaks.',
+      'full_moon': 'Your creative peak meets full illumination. Anything you\'ve been building gets seen now. Good and uncomfortable.',
+      'waning_gibbous': 'Your rising energy meets integration. A slightly conflicted combo — your cycle wants to go, the moon wants to reflect. Do both.',
+      'last_quarter': 'Building energy meets releasing energy. Great time to let go of old patterns while stepping into your follicular expansion.',
+      'waning_crescent': 'Your cycle is rising as the moon is resting. Trust your own body\'s rhythm over the lunar pull right now.',
+    },
+    'ovulatory': {
+      'new_moon': 'Your peak visibility meets new moon intentions. Plant the seeds of what you want to be known for during your most magnetic window.',
+      'waxing_crescent': 'Magnetic energy building on building. You are in full expression mode.',
+      'first_quarter': 'Your social peak meets decision energy. The pitch, the ask, the bold move — do it today.',
+      'waxing_gibbous': 'Peak magnetism meets peak refinement. You\'re both visible AND polished. This is a powerful combo for public moments.',
+      'full_moon': 'Peak on peak. Full moon in your ovulatory phase is the most visible, most activated, most intense combo in the cycle. Use it wisely.',
+      'waning_gibbous': 'Your social high meets integration energy. Connect and then step back to process what the connections meant.',
+      'last_quarter': 'Your peak expression meets release energy. Let go of who you were performing for. Show up as exactly yourself.',
+      'waning_crescent': 'Your peak energy meets the moon\'s lowest point. Lean into the social window of your cycle — the moon will rest when you do.',
+    },
+    'luteal': {
+      'new_moon': 'Your finishing phase meets new beginnings. Tension here. Close what\'s open before you start anything new.',
+      'waxing_crescent': 'Inward energy meets outward building. You may feel this conflict. Complete more than you begin.',
+      'first_quarter': 'Your inner critic meets the decision moon. Be careful — the combination can make decisions feel impossibly loaded. Keep it simple.',
+      'waxing_gibbous': 'Detail-oriented luteal energy meets refinement energy. Actually a great combo — editing, systems, and deep focus work well here.',
+      'full_moon': 'Emotional sensitivity of late luteal meets full moon intensity. If you\'re going to feel something, you\'re going to feel it now. Don\'t suppress it.',
+      'waning_gibbous': 'Both are turning inward. Integration and deep reflection — this is a powerful rest-and-reflect window.',
+      'last_quarter': 'Double release energy. Your cycle wants to close and so does the moon. Let things go. Don\'t hold on.',
+      'waning_crescent': 'Both your cycle and the moon are in the rest and release phase. This is a biological permission slip to do less.',
+    },
+    'menstrual': {
+      'new_moon': 'New moon energy during your bleed is incredibly potent. Your intuition is sharpest here — the intentions you set carry deep personal truth.',
+      'waxing_crescent': 'Rest energy meets gentle building. You don\'t have to match the moon\'s building momentum. Rest first.',
+      'first_quarter': 'The moon wants decisions while your body wants rest. Trust your body. Defer the big calls if you can.',
+      'waxing_gibbous': 'The moon is building while you\'re in your most inward phase. Don\'t force output. Let the lunar energy be background music.',
+      'full_moon': 'Full moon during your bleed is ancient, powerful, and intense. Your emotional depth meets full illumination. Go gently.',
+      'waning_gibbous': 'Integration energy during your rest phase. Perfect for journaling, reflecting, and receiving insight.',
+      'last_quarter': 'Both are releasing. This is a powerful clearing window — physically, emotionally, energetically.',
+      'waning_crescent': 'Double rest, double release, double intuition. The darkest, most inward combo in the entire cycle. Honour it.',
+    }
+  };
+  const phase = cyclePhase || 'follicular';
+  const key = moonPhaseKey || 'waxing_crescent';
+  return combos[phase]?.[key] || 'Your cycle and the moon are in conversation. Pay attention to what your body is telling you.';
+}
+
+function openMoonOverlay() {
+  const moonPhase = getDetailedMoonPhase();
+  const moonSign = getMoonZodiacSign();
+  const moonData = MOON_PHASE_DATA[moonPhase.key];
+  const signData = MOON_SIGN_DATA[moonSign.sign];
+  const profile = window._userProfile || {};
+  const cyclePhase = profile.cyclePhase || 'follicular';
+
+  // Set emoji and names
+  document.getElementById('moon-overlay-emoji').textContent = moonPhase.emoji;
+  document.getElementById('moon-overlay-phase-name').textContent = moonPhase.name;
+  document.getElementById('moon-overlay-sign').textContent = 'Moon transiting ' + moonSign.sign + ' · ' + moonSign.degree + '°';
+
+  // ESTRAL note (combines phase + sign)
+  document.getElementById('moon-overlay-estral-note').textContent = moonData.estralNote;
+
+  // Body effect (phase + sign combo)
+  document.getElementById('moon-overlay-body-effect').textContent =
+    moonData.bodyEffect + ' ' + (signData ? signData.bodyNote : '');
+
+  // Cycle combo
+  document.getElementById('moon-overlay-cycle-combo').textContent =
+    getMoonCycleCombo(moonPhase.key, cyclePhase);
+
+  // Actions
+  const ul = document.getElementById('moon-overlay-actions');
+  ul.innerHTML = moonData.actions.map(a => '<li>' + a + '</li>').join('');
+
+  // Transit note
+  document.getElementById('moon-overlay-transits').innerHTML =
+    '<div style="margin-bottom:8px;">' + moonData.transitNote(moonSign.sign) + '</div>' +
+    (signData ? '<div style="color:var(--muted); font-size:12px; margin-top:8px;">' + signData.element + ' sign · ' + signData.quality + ' · ' + signData.vibe + '</div>' : '');
+
+  // Natal moon if profile has it
+  const natalCard = document.getElementById('moon-overlay-natal-card');
+  if (profile.moon) {
+    const natalData = MOON_SIGN_DATA[profile.moon];
+    document.getElementById('moon-overlay-natal-text').textContent =
+      'Your natal moon is in ' + profile.moon + '. ' +
+      (natalData ? natalData.estralNote : 'This shapes how you emotionally process everything.');
+    natalCard.style.display = 'block';
+  } else {
+    natalCard.style.display = 'none';
+  }
+
+  // Show overlay
+  const overlay = document.getElementById('moon-astro-overlay');
+  overlay.style.display = 'flex';
+  overlay.scrollTop = 0;
+}
+
+function closeMoonOverlay() {
+  document.getElementById('moon-astro-overlay').style.display = 'none';
+}
+
+// Update moon badge with sign
+function updateMoonBadgeFull() {
+  const moonPhase = getDetailedMoonPhase();
+  const moonSign = getMoonZodiacSign();
+  const label = moonPhase.emoji + ' ' + moonPhase.name + ' · ' + moonSign.sign;
+  const shortLabel = moonPhase.emoji + ' ' + moonPhase.name;
+  document.querySelectorAll('#home-badge-moon, #unlocked-moon-badge, .moon-badge-dynamic').forEach(el => {
+    if (el) el.textContent = el.id === 'home-badge-moon' ? label : shortLabel;
+  });
+  const chatCtx = document.getElementById('chat-context-line');
+  if (chatCtx) {
+    const p = window._userProfile || {};
+    chatCtx.textContent = 'Day ' + (p.cycleDay || '—') + ' · ' + ((p.cyclePhase||'follicular').charAt(0).toUpperCase()+(p.cyclePhase||'follicular').slice(1)) + ' · ' + moonPhase.emoji + ' ' + moonPhase.name + ' in ' + moonSign.sign;
+  }
+}
+
+
+function updatePlanMoonCard() {
+  try {
+    const moonPhase = getDetailedMoonPhase();
+    const moonSign = getMoonZodiacSign();
+    const moonData = MOON_PHASE_DATA[moonPhase.key];
+    const el = (id) => document.getElementById(id);
+    if (el('plan-moon-emoji')) el('plan-moon-emoji').textContent = moonPhase.emoji;
+    if (el('plan-moon-phase-name')) el('plan-moon-phase-name').textContent = moonPhase.name + ' in ' + moonSign.sign;
+    if (el('plan-moon-sign-line')) el('plan-moon-sign-line').textContent = MOON_SIGN_DATA[moonSign.sign]?.vibe || '';
+    if (el('plan-moon-one-liner')) el('plan-moon-one-liner').textContent = moonData?.actions[0] || '';
+  } catch(e) {}
+}
 
 </script>
 
@@ -3988,5 +4241,57 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
+
+<!-- MOON + ASTRO OVERLAY -->
+<div id="moon-astro-overlay" style="display:none; position:fixed; inset:0; z-index:800; background:var(--bg); overflow-y:auto; flex-direction:column;">
+  <div style="padding:56px 24px 100px; max-width:430px; margin:0 auto;">
+    <button onclick="closeMoonOverlay()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-bottom:24px;padding:0;">←</button>
+    
+    <!-- Moon phase hero -->
+    <div style="text-align:center; margin-bottom:32px;">
+      <div id="moon-overlay-emoji" style="font-size:64px; margin-bottom:12px;">🌙</div>
+      <div id="moon-overlay-phase-name" style="font-size:22px; font-weight:700; color:var(--text); margin-bottom:4px;">—</div>
+      <div id="moon-overlay-sign" style="font-size:15px; color:var(--muted);">Moon in —</div>
+    </div>
+
+    <!-- ESTRAL on the moon -->
+    <div style="background:linear-gradient(135deg, rgba(28,26,24,0.06), rgba(28,26,24,0.03)); border-radius:16px; padding:20px; margin-bottom:20px; border-left:3px solid var(--phase);">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--phase); margin-bottom:10px;">ESTRAL on this moon</div>
+      <p id="moon-overlay-estral-note" style="font-size:15px; line-height:1.75; color:var(--text); font-style:italic; margin:0;">—</p>
+    </div>
+
+    <!-- How it affects you -->
+    <div class="card" style="margin-bottom:16px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--phase); margin-bottom:12px;">How this moon affects you</div>
+      <p id="moon-overlay-body-effect" style="font-size:14px; line-height:1.7; color:var(--text); margin:0;">—</p>
+    </div>
+
+    <!-- Moon + your cycle combo -->
+    <div class="card" style="margin-bottom:16px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--phase); margin-bottom:12px;">Moon × your cycle phase</div>
+      <p id="moon-overlay-cycle-combo" style="font-size:14px; line-height:1.7; color:var(--text); margin:0;">—</p>
+    </div>
+
+    <!-- Your natal moon if set -->
+    <div class="card" style="margin-bottom:16px;" id="moon-overlay-natal-card">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--phase); margin-bottom:12px;">Your natal moon</div>
+      <p id="moon-overlay-natal-text" style="font-size:14px; line-height:1.7; color:var(--text); margin:0;">—</p>
+    </div>
+
+    <!-- What to do -->
+    <div style="background:rgba(28,26,24,0.04); border-radius:16px; padding:20px; margin-bottom:20px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-bottom:10px;">move with this energy</div>
+      <ul id="moon-overlay-actions" style="margin:0; padding-left:18px; font-size:14px; line-height:2; color:var(--text);"></ul>
+    </div>
+
+    <!-- Current transits -->
+    <div class="card" style="margin-bottom:16px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--phase); margin-bottom:12px;">Sky right now</div>
+      <div id="moon-overlay-transits" style="font-size:13px; line-height:1.8; color:var(--text);">—</div>
+    </div>
+
+    <button onclick="closeMoonOverlay()" class="btn-primary phase" style="width:100%; margin-top:8px;">Got it →</button>
+  </div>
+</div>
 </body>
 </html>
