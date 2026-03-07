@@ -1517,18 +1517,28 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
 
     </div>
     <!-- MONTH -->
-    <div class="plan-view scroll-area" id="plan-month" style="padding-bottom:20px;">
-      <div style="padding:16px 16px 8px; display:flex; justify-content:space-between; align-items:center;">
-        <h3>March 2026</h3>
-        <button id="generateMonthBtn" onclick="openEventsInputModal()" style="background:var(--phase); color:#fff; border:none; padding:7px 16px; border-radius:100px; font-size:12px; cursor:pointer;">✦ Generate month</button>
+    <div class="plan-view scroll-area" id="plan-month" style="padding-bottom:20px;"
+      ontouchstart="monthTouchStart(event)" ontouchend="monthTouchEnd(event)">
+      <!-- Month nav header -->
+      <div style="padding:12px 16px 6px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button onclick="changeMonth(-1)" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);padding:2px 6px;line-height:1;">‹</button>
+          <h3 id="monthViewTitle" style="font-size:17px; min-width:130px; text-align:center;">March 2026</h3>
+          <button onclick="changeMonth(1)" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);padding:2px 6px;line-height:1;">›</button>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button onclick="goToTodayMonth()" style="background:none;border:1px solid rgba(28,26,24,0.15);border-radius:100px;padding:4px 10px;font-size:11px;cursor:pointer;color:var(--muted);">Today</button>
+          <button onclick="openAddEventModal()" style="background:var(--phase);color:#fff;border:none;padding:6px 12px;border-radius:100px;font-size:11px;cursor:pointer;">+ Event</button>
+        </div>
       </div>
       <!-- Phase legend -->
-      <div style="display:flex; gap:10px; padding:0 16px 10px; flex-wrap:wrap; overflow-x:auto;">
-        <div style="display:flex; align-items:center; gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:var(--menstrual);"></div><span style="font-size:11px;" class="muted">Menstrual</span></div>
-        <div style="display:flex; align-items:center; gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:var(--follicular);"></div><span style="font-size:11px;" class="muted">Follicular</span></div>
-        <div style="display:flex; align-items:center; gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:var(--ovulatory);"></div><span style="font-size:11px;" class="muted">Ovulatory</span></div>
-        <div style="display:flex; align-items:center; gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:var(--luteal);"></div><span style="font-size:11px;" class="muted">Luteal</span></div>
-        <div style="display:flex; align-items:center; gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:#5B7FBF;"></div><span style="font-size:11px;" class="muted">Event 🔒</span></div>
+      <div style="display:flex; gap:10px; padding:0 16px 8px; flex-wrap:wrap; overflow-x:auto;">
+        <div style="display:flex; align-items:center; gap:5px;"><div style="width:8px;height:8px;border-radius:50%;background:var(--menstrual);"></div><span style="font-size:11px;" class="muted">Menstrual</span></div>
+        <div style="display:flex; align-items:center; gap:5px;"><div style="width:8px;height:8px;border-radius:50%;background:var(--follicular);"></div><span style="font-size:11px;" class="muted">Follicular</span></div>
+        <div style="display:flex; align-items:center; gap:5px;"><div style="width:8px;height:8px;border-radius:50%;background:var(--ovulatory);"></div><span style="font-size:11px;" class="muted">Ovulatory</span></div>
+        <div style="display:flex; align-items:center; gap:5px;"><div style="width:8px;height:8px;border-radius:50%;background:var(--luteal);"></div><span style="font-size:11px;" class="muted">Luteal</span></div>
+        <div style="display:flex; align-items:center; gap:5px;"><div style="width:8px;height:8px;border-radius:50%;background:#5B7FBF;"></div><span style="font-size:11px;" class="muted">Event</span></div>
+        <div style="display:flex; align-items:center; gap:5px;"><div style="width:8px;height:8px;border-radius:50%;background:#C41230;border:1.5px solid #C41230;"></div><span style="font-size:11px;" class="muted">Recurring 🔁</span></div>
       </div>
       <div class="day-label-row"><div class="day-label">Sun</div><div class="day-label">Mon</div><div class="day-label">Tue</div><div class="day-label">Wed</div><div class="day-label">Thu</div><div class="day-label">Fri</div><div class="day-label">Sat</div></div>
       <div class="month-grid" id="monthGrid"></div>
@@ -1902,6 +1912,7 @@ const MOON_ICONS = ['🌑','🌒','🌒','🌒','🌓','🌔','🌔','🌕','�
 const PHASE_GUIDE = { follicular:{energy:'High',guide:'Build · Create · Initiate',moon:'🌒'}, ovulatory:{energy:'Peak',guide:'Launch · Connect · Pitch',moon:'🌕'}, luteal:{energy:'Moderate',guide:'Refine · Finish · Analyse',moon:'🌖'}, menstrual:{energy:'Low',guide:'Rest · Reflect · Release',moon:'🌑'} };
 
 document.addEventListener('DOMContentLoaded', () => {
+  loadEvents();
   buildSliders();
   buildChips('mood-chips',['Calm','Focused','Happy','Anxious','Irritable','Low','Wired','Social','Creative','Tender','Overwhelmed','Grounded','Motivated','Sad'],'mood');
   buildChips('symptom-chips',['Cramps','Bloating','Headache','Nauseous','Sore + Heavy','Fatigued','Water Retention','Energised','Light','Strong','None'],'symptoms');
@@ -2213,6 +2224,7 @@ function unlockDashboard() {
 
 function switchPlanView(view) {
   if (view === 'dump') { setTimeout(renderDumpView, 0); }
+  if (view === 'month') { setTimeout(() => { buildMonthGrid(); updateMonthTitle(); }, 0); }
   document.querySelectorAll('.plan-tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.plan-view').forEach(v => v.classList.remove('active'));
   const views = ['dump','month','week','today'];
@@ -2395,6 +2407,218 @@ function populateMonth() {
   switchPlanView('month');
 }
 
+
+// ══════════════════════════════════════════════════════
+// MONTH NAVIGATION — 2 quarters back/forward
+// ══════════════════════════════════════════════════════
+
+const TODAY = new Date();
+let viewYear  = TODAY.getFullYear();
+let viewMonth = TODAY.getMonth(); // 0-indexed
+const MIN_MONTH = new Date(TODAY.getFullYear(), TODAY.getMonth() - 6, 1); // 2 quarters back
+const MAX_MONTH = new Date(TODAY.getFullYear(), TODAY.getMonth() + 6, 1); // 2 quarters forward
+
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function changeMonth(dir) {
+  const next = new Date(viewYear, viewMonth + dir, 1);
+  if (next < MIN_MONTH || next > MAX_MONTH) return;
+  viewMonth = next.getMonth();
+  viewYear  = next.getFullYear();
+  buildMonthGrid();
+  updateMonthTitle();
+}
+
+function goToTodayMonth() {
+  viewYear  = TODAY.getFullYear();
+  viewMonth = TODAY.getMonth();
+  buildMonthGrid();
+  updateMonthTitle();
+}
+
+function updateMonthTitle() {
+  const el = document.getElementById('monthViewTitle');
+  if (el) el.textContent = MONTH_NAMES[viewMonth] + ' ' + viewYear;
+}
+
+// ── Swipe support ──
+let _mTouchX = null;
+function monthTouchStart(e) { _mTouchX = e.touches[0].clientX; }
+function monthTouchEnd(e) {
+  if (_mTouchX === null) return;
+  const dx = e.changedTouches[0].clientX - _mTouchX;
+  _mTouchX = null;
+  if (Math.abs(dx) < 40) return;
+  changeMonth(dx < 0 ? 1 : -1);
+}
+
+// ══════════════════════════════════════════════════════
+// EVENTS STORAGE
+// ══════════════════════════════════════════════════════
+let allEvents = []; // { id, title, date:'YYYY-MM-DD', time, recurring, recurRule, color }
+
+function loadEvents() {
+  try { allEvents = JSON.parse(localStorage.getItem('estral_events') || '[]'); } catch(e) { allEvents = []; }
+}
+function saveEvents() {
+  try { localStorage.setItem('estral_events', JSON.stringify(allEvents)); } catch(e) {}
+}
+
+function getEventsForDate(dateStr) {
+  // Direct events
+  const direct = allEvents.filter(ev => ev.date === dateStr);
+  // Recurring events
+  const recur = allEvents.filter(ev => ev.recurring && matchesRecurRule(ev, dateStr));
+  // Dedupe by id
+  const seen = new Set(direct.map(e => e.id));
+  return [...direct, ...recur.filter(r => !seen.has(r.id))];
+}
+
+function matchesRecurRule(ev, dateStr) {
+  if (!ev.recurRule) return false;
+  const d = new Date(dateStr + 'T12:00:00');
+  const rule = ev.recurRule;
+  // rule: { type:'weekly'|'daily'|'monthly_day'|'monthly_nth', days:[0-6], nth, weekday }
+  if (rule.type === 'weekly') {
+    return rule.days.includes(d.getDay());
+  }
+  if (rule.type === 'daily') return true;
+  if (rule.type === 'monthly_day') {
+    return d.getDate() === rule.day;
+  }
+  if (rule.type === 'monthly_nth') {
+    // e.g. first Monday
+    const nth = rule.nth, wd = rule.weekday;
+    const first = new Date(d.getFullYear(), d.getMonth(), 1);
+    let count = 0, cur = new Date(first);
+    while (cur.getMonth() === d.getMonth()) {
+      if (cur.getDay() === wd) { count++; if (count === nth && cur.getDate() === d.getDate()) return true; }
+      cur.setDate(cur.getDate() + 1);
+    }
+    return false;
+  }
+  return false;
+}
+
+// ══════════════════════════════════════════════════════
+// RECURRING RULE PARSER — natural language
+// ══════════════════════════════════════════════════════
+const DAY_NAMES = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+const DAY_SHORT = ['sun','mon','tue','wed','thu','fri','sat'];
+const NTH_WORDS = {first:1,second:2,third:3,fourth:4,last:-1};
+
+function parseRecurRule(text) {
+  if (!text || text.trim().length < 2) return null;
+  const t = text.toLowerCase().replace(/[.,]/g,'').trim();
+  if (t.startsWith('no') || t === 'n' || t === 'nope') return null;
+
+  // "every day" / "daily"
+  if (/every day|daily/.test(t)) return { type:'daily', label:'Every day' };
+
+  // "every monday and wednesday" or "every tuesday"
+  const dayMatches = DAY_NAMES.map((d,i) => t.includes(d) ? i : -1).filter(i => i >= 0);
+  const dayShortMatches = DAY_SHORT.map((d,i) => t.includes(d) ? i : -1).filter(i => i >= 0);
+  const matchedDays = [...new Set([...dayMatches, ...dayShortMatches])];
+
+  if (matchedDays.length > 0) {
+    // Check for "first/second/third monday of the month"
+    for (const [word, nth] of Object.entries(NTH_WORDS)) {
+      if (t.includes(word)) {
+        const wd = matchedDays[0];
+        const dayLabel = DAY_NAMES[wd].charAt(0).toUpperCase() + DAY_NAMES[wd].slice(1);
+        return { type:'monthly_nth', nth, weekday: wd, label: `${word.charAt(0).toUpperCase()+word.slice(1)} ${dayLabel} of each month` };
+      }
+    }
+    const dayLabels = matchedDays.map(i => DAY_NAMES[i].charAt(0).toUpperCase() + DAY_NAMES[i].slice(1));
+    return { type:'weekly', days: matchedDays, label: `Every ${dayLabels.join(' & ')}` };
+  }
+
+  // "every 15th" or "every month on the 5th"
+  const numMatch = t.match(/every.*?(\d{1,2})(st|nd|rd|th)?(\s+of|\s+every)?/);
+  if (numMatch) {
+    const day = parseInt(numMatch[1]);
+    if (day >= 1 && day <= 31) return { type:'monthly_day', day, label: `Every month on the ${numMatch[1]}${numMatch[2]||'th'}` };
+  }
+
+  // "weekdays"
+  if (/weekday|work day/.test(t)) return { type:'weekly', days:[1,2,3,4,5], label:'Every weekday' };
+
+  // "weekends"
+  if (/weekend/.test(t)) return { type:'weekly', days:[0,6], label:'Every weekend' };
+
+  return null;
+}
+
+// ══════════════════════════════════════════════════════
+// ADD EVENT MODAL
+// ══════════════════════════════════════════════════════
+function openAddEventModal() {
+  loadEvents();
+  const modal = document.getElementById('add-event-modal');
+  if (!modal) return;
+  // Pre-fill date to current view month/day 1
+  const d = new Date(viewYear, viewMonth, new Date().getDate());
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(Math.min(d.getDate(), new Date(yyyy, d.getMonth()+1, 0).getDate())).padStart(2,'0');
+  const dateEl = document.getElementById('new-event-date');
+  if (dateEl) dateEl.value = `${yyyy}-${mm}-${dd}`;
+  document.getElementById('new-event-title').value = '';
+  document.getElementById('new-event-time').value = '';
+  document.getElementById('new-event-recur-input').value = '';
+  document.getElementById('recur-estral-confirm').style.display = 'none';
+  modal.style.display = 'block';
+
+  // Wire up the recur input to auto-parse
+  const recurInput = document.getElementById('new-event-recur-input');
+  recurInput.oninput = () => {
+    const rule = parseRecurRule(recurInput.value);
+    const confirm = document.getElementById('recur-estral-confirm');
+    const confirmText = document.getElementById('recur-confirm-text');
+    if (rule) {
+      confirmText.textContent = rule.label + ' — got it. i will add this across your calendar automatically.';
+      confirm.style.display = 'block';
+      setTimeout(() => { if (confirm.querySelector('.estral-voice')) attachCanvas(confirm.querySelector('.estral-voice')); }, 50);
+    } else if (recurInput.value.length > 2) {
+      confirmText.textContent = "hmm, i didn’t quite catch that — try: \"every Tuesday\" or \"every 1st Monday of the month\"";
+      confirm.style.display = 'block';
+    } else {
+      confirm.style.display = 'none';
+    }
+  };
+}
+
+function closeAddEventModal() {
+  document.getElementById('add-event-modal').style.display = 'none';
+}
+
+function saveNewEvent() {
+  const title = document.getElementById('new-event-title').value.trim();
+  const date  = document.getElementById('new-event-date').value;
+  const time  = document.getElementById('new-event-time').value;
+  const recurText = document.getElementById('new-event-recur-input').value.trim();
+  if (!title) { document.getElementById('new-event-title').focus(); return; }
+  if (!date)  { document.getElementById('new-event-date').focus(); return; }
+
+  const rule = parseRecurRule(recurText);
+  const ev = {
+    id: Date.now() + Math.random(),
+    title, date, time,
+    recurring: !!rule,
+    recurRule: rule || null,
+    recurText: recurText || null,
+    color: '#5B7FBF'
+  };
+  loadEvents();
+  allEvents.push(ev);
+  saveEvents();
+  closeAddEventModal();
+  buildMonthGrid();
+
+  // Haptic if available
+  if (navigator.vibrate) navigator.vibrate([20, 10, 20]);
+}
+
 function buildMonthGrid() {
   const grid = document.getElementById('monthGrid'); if (!grid) return;
   grid.innerHTML = '';
@@ -2409,12 +2633,84 @@ function buildMonthGrid() {
     const tasks = monthTasks[d] || [];
     const dots = tasks.map(t => `<div class="month-task-dot" style="background:${PHASE_COLORS[t.phase]};"></div>`).join('');
     cell.innerHTML = `<span class="month-day-num" style="color:${isToday?color:'rgba(28,26,24,0.75)'};">${d}</span><span class="month-moon-icon" style="color:${isToday?color:'rgba(28,26,24,0.5)'};">${moon}</span><div class="month-task-dots">${dots}</div>`;
-    cell.onclick = () => openDayModal(d, phase, tasks, moon);
+    const _d=d, _phase=phase, _tasks=tasks, _moon=moon, _dateStr=dateStr, _dayEvents=dayEvents;
+    cell.onclick = () => openDayModalFull(_d, _phase, _tasks, _moon, _dateStr, _dayEvents);
     grid.appendChild(cell);
   }
 }
 
+function openDayModalFull(day, phase, tasks, moon, dateStr, dayEvents) {
+  const color = PHASE_COLORS[phase];
+  const guide = PHASE_GUIDE[phase];
+  const modal = document.getElementById('dayModal');
+  const contentEl = document.getElementById('dayModalContent');
+  const yr = viewYear, mo = viewMonth;
+  const dateLabel = MONTH_NAMES[mo] + ' ' + day + ', ' + yr;
+
+  const eventsHtml = dayEvents.length > 0 ? `
+    <div style="margin-bottom:14px;">
+      <p class="label" style="margin-bottom:8px; color:#5B7FBF;">Events</p>
+      ${dayEvents.map(ev => `
+        <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:${ev.recurring?'rgba(196,18,48,0.06)':'rgba(91,127,191,0.08)'}; border-radius:10px; margin-bottom:6px; border-left:3px solid ${ev.recurring?'#C41230':'#5B7FBF'};">
+          <span style="font-size:13px; flex:1; font-weight:500;">${ev.recurring?'🔁 ':''}${ev.title}${ev.time?' · <span style=\"color:var(--muted);\">' + ev.time + '</span>':''}</span>
+          <button onclick="deleteEvent('${ev.id}','${dateStr}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 4px;">×</button>
+        </div>`).join('')}
+    </div>` : '';
+
+  contentEl.innerHTML = `
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+        <div><p class="label" style="margin-bottom:4px;color:${color};">${phase.charAt(0).toUpperCase()+phase.slice(1)} · Day ${day}</p><h3>${dateLabel}</h3></div>
+        <div style="text-align:right;"><div style="font-size:22px;">${moon}</div><div class="label" style="margin-top:2px;font-size:10px;">${guide.guide}</div></div>
+      </div>
+      <div class="estral-voice card-voice" style="margin-bottom:14px;">
+        <span class="voice-label">${phase.charAt(0).toUpperCase()+phase.slice(1)} energy</span>
+        ${getPhaseDesc(phase)}
+      </div>
+      ${eventsHtml}
+      ${tasks.length > 0 ? `<p class="label" style="margin-bottom:8px;">Tasks</p>${tasks.map(t=>`<div class="priority-item"><div class="priority-dot" style="background:${PHASE_COLORS[t.phase]||'#888'};"></div><span style="font-size:14px;flex:1;">${t.text}</span></div>`).join('')}` : ''}
+      <button class="btn-primary phase" style="width:100%; margin-top:16px;" onclick="openAddEventForDate('${dateStr}')">+ Add event this day</button>
+      <button class="btn-ghost" style="margin-top:8px;" onclick="closeDayModal()">Close</button>
+    </div>`;
+  setTimeout(() => { const v = contentEl.querySelector('.estral-voice'); if(v) attachCanvas(v); }, 50);
+  modal.classList.add('open');
+}
+
+function openAddEventForDate(dateStr) {
+  closeDayModal();
+  openAddEventModal();
+  setTimeout(() => {
+    const el = document.getElementById('new-event-date');
+    if (el) el.value = dateStr;
+  }, 50);
+}
+
+function deleteEvent(id, dateStr) {
+  loadEvents();
+  const ev = allEvents.find(e => String(e.id) === String(id));
+  if (!ev) { buildMonthGrid(); closeDayModal(); return; }
+  if (ev.recurring) {
+    if (confirm('Delete all occurrences of this recurring event?')) {
+      allEvents = allEvents.filter(e => String(e.id) !== String(id));
+    } else {
+      // Add exception date
+      if (!ev.exceptions) ev.exceptions = [];
+      ev.exceptions.push(dateStr);
+    }
+  } else {
+    allEvents = allEvents.filter(e => String(e.id) !== String(id));
+  }
+  saveEvents();
+  buildMonthGrid();
+  closeDayModal();
+}
+
 function openDayModal(day, phase, tasks, moon) {
+  // Legacy fallback
+  openDayModalFull(day, phase, tasks, moon, '', []);
+}
+
+function openDayModal_legacy(day, phase, tasks, moon) {
   const color = PHASE_COLORS[phase];
   const guide = PHASE_GUIDE[phase];
   const modal = document.getElementById('dayModal'); const content = document.getElementById('dayModalContent');
@@ -5023,30 +5319,64 @@ function getTaskAreaColor(item) {
 
 // ── MONTH GRID with drag-drop ──
 function buildMonthGrid() {
+  updateMonthTitle();
+  loadEvents();
   const grid = document.getElementById('monthGrid');
   if (!grid) return;
   grid.innerHTML = '';
-  // March 2026 starts on Sunday (day 0)
-  const startDay = 0;
-  for (let blank = 0; blank < startDay; blank++) {
+  const yr = viewYear, mo = viewMonth;
+  const firstDay = new Date(yr, mo, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(yr, mo + 1, 0).getDate();
+  const todayD = TODAY.getDate(), todayM = TODAY.getMonth(), todayY = TODAY.getFullYear();
+
+  // Cycle day offset: if profile has lastPeriod, calculate cycle day for this month
+  const p = window._userProfile || {};
+  const cycleLen = parseInt(p.cycleLength) || 28;
+  function getCycleDay(d) {
+    if (!p.lastPeriod) return d; // fallback
+    const ref = new Date(p.lastPeriod + 'T12:00:00');
+    const target = new Date(yr, mo, d);
+    const diff = Math.round((target - ref) / 86400000);
+    let cd = ((diff % cycleLen) + cycleLen) % cycleLen + 1;
+    if (cd > cycleLen) cd = cycleLen;
+    return cd;
+  }
+
+  for (let blank = 0; blank < firstDay; blank++) {
     grid.appendChild(document.createElement('div'));
   }
-  for (let d = 1; d <= 31; d++) {
-    const phase = PHASE_MAP[d] || 'follicular';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const cd = getCycleDay(d);
+    const phase = PHASE_MAP[cd] || 'follicular';
     const color = PHASE_COLORS[phase];
-    const isToday = d === (new Date().getDate());
+    const isToday = d === todayD && mo === todayM && yr === todayY;
     const cell = document.createElement('div');
     cell.className = 'month-day-cell' + (isToday ? ' today' : '');
     cell.style.background = `${color}${isToday ? '33' : '18'}`;
     cell.style.minHeight = '64px';
     cell.style.position = 'relative';
-    const moon = MOON_ICONS[((d - 1) % 28)];
+    const moon = MOON_ICONS[((cd - 1) % 28)];
     const tasks = monthTasks[d] || [];
-    const dots = tasks.map(t => {
+
+    // Get events for this date
+    const yyyy = yr, mm = String(mo+1).padStart(2,'0'), dd = String(d).padStart(2,'0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+    const dayEvents = getEventsForDate(dateStr);
+
+    const taskDots = tasks.map(t => {
       const c = t.locked ? '#5B7FBF' : getTaskAreaColor(t);
-      return `<div style="width:5px;height:5px;border-radius:50%;background:${c};flex-shrink:0;${t.locked ? 'outline:1.5px solid ' + c + ';outline-offset:1px;' : ''}"></div>`;
+      return `<div style="width:5px;height:5px;border-radius:50%;background:${c};flex-shrink:0;"></div>`;
     }).join('');
-    cell.innerHTML = `<span class="month-day-num" style="color:${isToday ? color : 'rgba(28,26,24,0.75)'};">${d}</span><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px;">${dots}</div>`;
+    const eventDots = dayEvents.map(ev =>
+      `<div style="width:5px;height:5px;border-radius:50%;background:${ev.recurring ? '#C41230' : '#5B7FBF'};flex-shrink:0;outline:1.5px solid ${ev.recurring ? '#C41230' : '#5B7FBF'};outline-offset:1px;"></div>`
+    ).join('');
+
+    // Event titles (up to 2, very small)
+    const eventLabels = dayEvents.slice(0,2).map(ev =>
+      `<div style="font-size:8px;color:${ev.recurring?'#C41230':'#5B7FBF'};line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;font-weight:600;">${ev.recurring?'🔁':''} ${ev.title}</div>`
+    ).join('');
+
+    cell.innerHTML = `<span class="month-day-num" style="color:${isToday ? color : 'rgba(28,26,24,0.75)'};">${d}</span><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:2px;">${taskDots}${eventDots}</div>${eventLabels}`;
     // Drag-drop onto day
     cell.addEventListener('dragover', e => { e.preventDefault(); cell.style.outline = `2px solid ${color}`; });
     cell.addEventListener('dragleave', () => { cell.style.outline = ''; });
@@ -5833,5 +6163,50 @@ function openPMQuiz() {
     <button onclick="saveLifeAreas()" class="btn-primary phase" style="width:100%;">Save →</button>
   </div>
 </div>
+
+<!-- ADD EVENT MODAL -->
+<div id="add-event-modal" style="display:none; position:fixed; inset:0; z-index:600; background:rgba(28,26,24,0.45); backdrop-filter:blur(6px);">
+  <div style="position:absolute; bottom:0; left:0; right:0; background:var(--bg); border-radius:24px 24px 0 0; padding:28px 24px 48px; max-height:85vh; overflow-y:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h3 style="font-size:18px;">Add event</h3>
+      <button onclick="closeAddEventModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);">×</button>
+    </div>
+
+    <!-- Event title -->
+    <div style="margin-bottom:14px;">
+      <label class="ob-label" style="font-size:12px; margin-bottom:6px; display:block;">Event name</label>
+      <input id="new-event-title" type="text" placeholder="e.g. Therapy, School run, Launch call..." style="width:100%; padding:12px 14px; border:1px solid rgba(28,26,24,0.15); border-radius:12px; font-size:14px; font-family:inherit; background:var(--bg); color:var(--text); box-sizing:border-box;">
+    </div>
+
+    <!-- Date -->
+    <div style="margin-bottom:14px;">
+      <label class="ob-label" style="font-size:12px; margin-bottom:6px; display:block;">Date</label>
+      <input id="new-event-date" type="date" style="width:100%; padding:12px 14px; border:1px solid rgba(28,26,24,0.15); border-radius:12px; font-size:14px; font-family:inherit; background:var(--bg); color:var(--text); box-sizing:border-box;">
+    </div>
+
+    <!-- Time (optional) -->
+    <div style="margin-bottom:20px;">
+      <label class="ob-label" style="font-size:12px; margin-bottom:6px; display:block;">Time <span style="color:var(--muted); font-weight:400;">(optional)</span></label>
+      <input id="new-event-time" type="time" style="width:100%; padding:12px 14px; border:1px solid rgba(28,26,24,0.15); border-radius:12px; font-size:14px; font-family:inherit; background:var(--bg); color:var(--text); box-sizing:border-box;">
+    </div>
+
+    <!-- Recurring question -->
+    <div style="margin-bottom:20px; padding:16px; background:rgba(196,18,48,0.04); border-radius:14px; border:1px solid rgba(196,18,48,0.10);">
+      <p style="font-size:13px; font-weight:600; color:var(--text); margin-bottom:6px;">Is this a recurring event?</p>
+      <p style="font-size:12px; color:var(--muted); margin-bottom:12px; line-height:1.6;">Just tell ESTRAL naturally — e.g. <em>"yes, recurring every Tuesday at 5pm"</em> or <em>"every Monday and Wednesday morning"</em> or <em>"first Monday of each month"</em></p>
+      <input id="new-event-recur-input" type="text" placeholder="yes, every Tuesday at 5pm..." style="width:100%; padding:12px 14px; border:1px solid rgba(28,26,24,0.15); border-radius:12px; font-size:14px; font-family:inherit; background:var(--bg); color:var(--text); box-sizing:border-box; margin-bottom:10px;">
+      <!-- ESTRAL parsed confirmation -->
+      <div id="recur-estral-confirm" style="display:none;">
+        <div class="estral-voice card-voice" style="font-size:13px; padding:12px 14px;">
+          <span class="voice-label">ESTRAL</span>
+          <span id="recur-confirm-text"></span>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-primary phase" onclick="saveNewEvent()" style="width:100%;">Save event →</button>
+  </div>
+</div>
+
 </body>
 </html>
