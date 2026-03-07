@@ -2936,7 +2936,7 @@ function toggleNoCycle(cb) {
 }
 function obNext() { if (obCurrentScreen < OB_TOTAL) { obShowScreen(obCurrentScreen + 1); if (obCurrentScreen === OB_TOTAL) obRunSetup(); } }
 function obBack() { if (obCurrentScreen > 0) obShowScreen(obCurrentScreen - 1); }
-function obSkipAll() { obRunSetup(); obShowScreen(OB_TOTAL); }
+function obSkipAll() { localStorage.setItem('estral_skipped_ob','1'); obRunSetup(); obShowScreen(OB_TOTAL); }
 
 function toggleObChip(btn, group) {
   btn.classList.toggle('selected');
@@ -3029,6 +3029,72 @@ function completeOnboarding() {
   }, 650);
 }
 
+
+function hasCycleData() {
+  const p = window._userProfile || {};
+  return !!(p.lastPeriod) && !localStorage.getItem('estral_nocycle');
+}
+
+function showNoCycleState() {
+  // Ring — hide dot, hide arc fills, show prompt text
+  const dot = document.getElementById('cycleRingDot');
+  const dotGlow = document.getElementById('cycleRingDotGlow');
+  if (dot) dot.style.display = 'none';
+  if (dotGlow) dotGlow.style.display = 'none';
+
+  // Replace day number with moon emoji
+  const dayNumEl = document.getElementById('cycleRingDayNum');
+  if (dayNumEl) { dayNumEl.textContent = '🌙'; dayNumEl.style.fontSize = '32px'; }
+
+  const ringOfEl = document.querySelector('.cycle-ring-of');
+  if (ringOfEl) ringOfEl.style.display = 'none';
+
+  const phaseNameEl = document.getElementById('cycleRingPhaseName');
+  if (phaseNameEl) { phaseNameEl.textContent = 'Log your period to begin'; phaseNameEl.style.fontSize = '11px'; phaseNameEl.style.lineHeight = '1.4'; phaseNameEl.style.maxWidth = '90px'; }
+
+  const daysLeftEl = document.getElementById('cycleRingDaysLeft');
+  if (daysLeftEl) daysLeftEl.style.display = 'none';
+
+  // Pill + badge — use moon phase only
+  const moonPhase = getCurrentMoonPhase();
+  const pillEl = document.getElementById('home-cycle-pill');
+  if (pillEl) pillEl.textContent = `🌙 ${moonPhase}`;
+
+  const badgePhase = document.getElementById('home-badge-phase');
+  if (badgePhase) badgePhase.textContent = `🌙 ${moonPhase}`;
+
+  const chatCtx = document.getElementById('chat-context-line');
+  if (chatCtx) chatCtx.textContent = `Moon: ${moonPhase}`;
+
+  // Add a small tap-to-log nudge below the ring
+  const ringWrap = document.getElementById('home-phase-ring');
+  if (ringWrap && !document.getElementById('no-cycle-nudge')) {
+    const nudge = document.createElement('div');
+    nudge.id = 'no-cycle-nudge';
+    nudge.style.cssText = 'font-size:10px;color:var(--muted);text-align:center;margin-top:6px;line-height:1.5;max-width:130px;';
+    nudge.textContent = 'your cycle information will load once you log your first period';
+    ringWrap.parentNode.insertBefore(nudge, ringWrap.nextSibling);
+  }
+}
+
+function getCurrentMoonPhase() {
+  // Simple moon phase calc
+  const synodicMonth = 29.53058867;
+  const knownNew = new Date('2000-01-06T18:14:00Z');
+  const now = new Date();
+  const diff = (now - knownNew) / (1000 * 60 * 60 * 24);
+  const phase = ((diff % synodicMonth) + synodicMonth) % synodicMonth;
+  if (phase < 1.85) return 'New Moon';
+  if (phase < 7.38) return 'Waxing Crescent';
+  if (phase < 9.22) return 'First Quarter';
+  if (phase < 14.77) return 'Waxing Gibbous';
+  if (phase < 16.61) return 'Full Moon';
+  if (phase < 22.15) return 'Waning Gibbous';
+  if (phase < 23.99) return 'Last Quarter';
+  if (phase < 29.53) return 'Waning Crescent';
+  return 'New Moon';
+}
+
 function applyProfileToApp() {
   const p = window._userProfile; if (!p) return;
   const firstName = p.name ? p.name.split(' ')[0] : '';
@@ -3047,29 +3113,34 @@ function applyProfileToApp() {
   const dateEl = document.getElementById('home-date');
   if (dateEl) dateEl.textContent = today.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
 
-  // Cycle pill
-  const pillEl = document.getElementById('home-cycle-pill');
-  if (pillEl) pillEl.textContent = `🌒 Day ${day} · ${phaseLabel}`;
+  if (hasCycleData()) {
+    // Cycle pill
+    const pillEl = document.getElementById('home-cycle-pill');
+    if (pillEl) pillEl.textContent = `🌒 Day ${day} · ${phaseLabel}`;
 
-  // Badges
-  const badgePhase = document.getElementById('home-badge-phase');
-  if (badgePhase) badgePhase.textContent = `🌒 ${phaseLabel} · Day ${day}`;
-  const badgeMoon = document.getElementById('home-badge-moon');
-  if (badgeMoon) badgeMoon.textContent = `🌙 —`;
+    // Badges
+    const badgePhase = document.getElementById('home-badge-phase');
+    if (badgePhase) badgePhase.textContent = `🌒 ${phaseLabel} · Day ${day}`;
+    const badgeMoon = document.getElementById('home-badge-moon');
+    if (badgeMoon) badgeMoon.textContent = `🌙 —`;
 
-  // Chat context line
-  const chatCtx = document.getElementById('chat-context-line');
-  if (chatCtx) chatCtx.textContent = `Day ${day} · ${phaseLabel}`;
+    // Chat context line
+    const chatCtx = document.getElementById('chat-context-line');
+    if (chatCtx) chatCtx.textContent = `Day ${day} · ${phaseLabel}`;
 
-  // Cycle ring
-  const dayNumEl = document.getElementById('cycleRingDayNum');
-  if (dayNumEl) dayNumEl.textContent = day;
-  const phaseNameEl = document.getElementById('cycleRingPhaseName');
-  if (phaseNameEl) phaseNameEl.textContent = phaseLabel;
-  const daysLeftEl = document.getElementById('cycleRingDaysLeft');
-  if (daysLeftEl) daysLeftEl.textContent = `${daysLeft > 0 ? daysLeft : 0} days to go`;
-  const ringOfEl = document.querySelector('.cycle-ring-of');
-  if (ringOfEl) ringOfEl.textContent = `of ${total} days`;
+    // Cycle ring — full data
+    const dayNumEl = document.getElementById('cycleRingDayNum');
+    if (dayNumEl) dayNumEl.textContent = day;
+    const phaseNameEl = document.getElementById('cycleRingPhaseName');
+    if (phaseNameEl) phaseNameEl.textContent = phaseLabel;
+    const daysLeftEl = document.getElementById('cycleRingDaysLeft');
+    if (daysLeftEl) daysLeftEl.textContent = `${daysLeft > 0 ? daysLeft : 0} days to go`;
+    const ringOfEl = document.querySelector('.cycle-ring-of');
+    if (ringOfEl) ringOfEl.textContent = `of ${total} days`;
+  } else {
+    // No cycle data — moon phases only
+    showNoCycleState();
+  }
 
   // Streak — calculate from logs
   let streak = 0, best = 0;
@@ -3233,6 +3304,14 @@ function closePhaseModal() { document.getElementById('phaseModal').classList.rem
 function initCycleRing(currentDay, totalDays, suffix) {
   suffix = suffix || '';
   totalDays = totalDays || 28;
+  if (!hasCycleData() && suffix === '') {
+    ['arcMenstrual','arcFollicular','arcOvulatory','arcLuteal'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    showNoCycleState();
+    return;
+  }
   const R = 50; const C = 2 * Math.PI * R;
   const GAP_PX = 5; // gap in pixels between phase segments
   const phases = [
