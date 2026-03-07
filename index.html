@@ -731,6 +731,22 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
       <p>We'll use this to calculate your cycle day, phase, and everything that flows from it.</p>
     </div>
     <div class="ob-body">
+      <!-- I don't know my cycle option -->
+      <div class="ob-field" style="margin-bottom:4px;">
+        <label style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:14px 16px; background:rgba(28,26,24,0.04); border-radius:12px; border:1.5px solid transparent; transition:all 0.2s;" id="ob-nocycle-label">
+          <input type="checkbox" id="ob-nocycle" onchange="toggleNoCycle(this)" style="width:18px; height:18px; accent-color:#C41230; cursor:pointer; flex-shrink:0;">
+          <span style="font-size:14px; color:var(--text);">I don't know anything about my cycle</span>
+        </label>
+      </div>
+      <!-- ESTRAL chime — shown when checkbox ticked -->
+      <div id="ob-nocycle-estral" style="display:none; margin-bottom:4px;">
+        <div class="estral-voice card-voice" style="font-size:14px; line-height:1.7;">
+          <span class="voice-label">ESTRAL</span>
+          if you know nothing about your cycle yet, we will use the app just to note your symptoms and logs. the first day of your bleed is day 1 of your cycle — that is where everything starts. just log when it comes and ESTRAL will build from there.
+        </div>
+      </div>
+      <!-- Cycle fields — hidden when "don't know" is checked -->
+      <div id="ob-cycle-fields">
       <div class="ob-field"><label class="ob-label">First day of your last period</label><input class="ob-input" id="ob-lastperiod" type="date"/></div>
       <div class="ob-grid-2">
         <div class="ob-field"><label class="ob-label">Average cycle length</label>
@@ -766,6 +782,7 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
       </div>
       <div class="ob-field"><label class="ob-label">Anything else about your cycle we should know?</label><textarea class="ob-textarea" id="ob-cyclenotes" placeholder="e.g. I'm on the pill, I have PCOS, my cycle is unpredictable..." rows="3"></textarea></div>
     </div>
+    </div><!-- /ob-cycle-fields -->
     <div class="ob-cta"><button class="ob-btn-primary" onclick="obNext()">Continue →</button></div>
   </div>
   <!-- SCREEN 3: Life Stage -->
@@ -844,6 +861,9 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     <div class="ob-hero">
       <button class="ob-back" onclick="obBack()">←</button>
       <span class="ob-step-label">Step 5 of 7 · What you're building</span>
+      <div style="display:flex; justify-content:flex-end; margin-bottom:4px;">
+        <button class="ob-btn-skip" onclick="obNext()" style="margin:0; padding:6px 14px; font-size:12px;">Fill this out later →</button>
+      </div>
       <h1>What are<br>you here<br>to do?</h1>
       <p>Light touch. We just need to know the direction you're pointed in.</p>
     </div>
@@ -864,6 +884,9 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     <div class="ob-hero">
       <button class="ob-back" onclick="obBack()">←</button>
       <span class="ob-step-label">Step 6 of 7 · Your vision</span>
+      <div style="display:flex; justify-content:flex-end; margin-bottom:4px;">
+        <button class="ob-btn-skip" onclick="obNext()" style="margin:0; padding:6px 14px; font-size:12px;">Fill this out later →</button>
+      </div>
       <h1>What does<br>the life look<br>like?</h1>
       <p>Words only for now. Describe the version of your life you're building toward.</p>
     </div>
@@ -1612,6 +1635,14 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
 
 <!-- LOG -->
 <div class="screen" id="screen-log">
+      <!-- Profile completion nudge — shown if steps 5/6 were skipped -->
+      <div id="log-profile-nudge" style="display:none; margin:16px 16px 0;">
+        <div class="estral-voice card-voice" style="cursor:pointer;" onclick="openProfileCompletion()">
+          <span class="voice-label">ESTRAL · Finish your setup</span>
+          <p style="font-size:14px; line-height:1.7; margin-bottom:10px;">you skipped your goals and vision during setup — no pressure, but when you're ready, filling these in helps ESTRAL give you much sharper reads.</p>
+          <span style="font-size:12px; color:#C41230; font-weight:600;">Tap to complete →</span>
+        </div>
+      </div>
   <div style="padding:56px 20px 0;">
     <h2>Your archive.</h2>
     <p class="muted" style="font-size:13px; margin-top:4px; margin-bottom:16px;">Every check-in, organised by cycle.</p>
@@ -1886,6 +1917,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function switchTab(tab) {
+  if (tab === 'log') {
+    const p = window._userProfile || {};
+    const nudge = document.getElementById('log-profile-nudge');
+    if (nudge) nudge.style.display = (!p.goal90 && !p.visionWork) ? 'block' : 'none';
+  }
   if (currentMorningScreen > 0 && currentMorningScreen < 12 && tab !== 'home') return;
   // Hide ALL screens — remove active class AND reset display
   document.querySelectorAll('.screen').forEach(s => {
@@ -2583,6 +2619,25 @@ function obShowScreen(n) {
   obCurrentScreen = n;
   obUpdateProgress();
 }
+
+function toggleNoCycle(cb) {
+  const fields = document.getElementById('ob-cycle-fields');
+  const estral = document.getElementById('ob-nocycle-estral');
+  const label  = document.getElementById('ob-nocycle-label');
+  if (cb.checked) {
+    fields.style.display = 'none';
+    estral.style.display = 'block';
+    label.style.borderColor = '#C41230';
+    label.style.background = 'rgba(196,18,48,0.05)';
+    // attach lava to the estral chime
+    setTimeout(() => attachCanvas(document.querySelector('#ob-nocycle-estral .estral-voice')), 50);
+  } else {
+    fields.style.display = 'block';
+    estral.style.display = 'none';
+    label.style.borderColor = 'transparent';
+    label.style.background = 'rgba(28,26,24,0.04)';
+  }
+}
 function obNext() { if (obCurrentScreen < OB_TOTAL) { obShowScreen(obCurrentScreen + 1); if (obCurrentScreen === OB_TOTAL) obRunSetup(); } }
 function obBack() { if (obCurrentScreen > 0) obShowScreen(obCurrentScreen - 1); }
 function obSkipAll() { obRunSetup(); obShowScreen(OB_TOTAL); }
@@ -2617,6 +2672,12 @@ function calcCycleDay(lastPeriodStr, cycleLengthDays) {
 }
 
 function obRunSetup() {
+  // Save no-cycle flag
+  const noCycle = document.getElementById('ob-nocycle');
+  if (noCycle && noCycle.checked) {
+    try { localStorage.setItem('estral_nocycle', '1'); } catch(e) {}
+  }
+
   const profile = {
     name: (document.getElementById('ob-name')?.value || 'You').trim(),
     dob: document.getElementById('ob-dob')?.value || '',
