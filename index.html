@@ -4238,9 +4238,15 @@ function openPMQuiz() {
   const intentEl = document.getElementById('pm-intention-display');
   if (intentEl) intentEl.textContent = morningData.intention || 'Not set this morning';
 
+  // Reset extended fields
+  pmData.tasksCompleted = [];
+  pmData.tasksCarried = [];
+  pmData.areaTasks = {};
   // Hide all main screens first
   document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
   goToPM(1);
+  // Build PM8 task review after screens are ready
+  setTimeout(buildPM8Screen, 100);
 }
 
 function buildPMChips(containerId, options, dataKey) {
@@ -6361,17 +6367,7 @@ function loadTomorrowPlanIntoMorning() {
   } catch(e) {}
 }
 
-// Hook into openPMQuiz to build the screen
-const _origOpenPM = typeof openPMQuiz === 'function' ? openPMQuiz : null;
-function openPMQuiz() {
-  if (_origOpenPM) _origOpenPM();
-  // Reset extended fields
-  pmData.tasksCompleted = [];
-  pmData.tasksCarried = [];
-  pmData.areaTasks = {};
-  // Build PM8 task review
-  setTimeout(buildPM8Screen, 50);
-}
+// openPMQuiz extended fields merged into main definition below
 
 
 // ══════════════════════════════════════════
