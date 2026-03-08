@@ -120,6 +120,7 @@ body::after {
 .nav-label { font-size: 9px; font-weight: 500; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
 .screen { display: none; flex-direction: column; min-height: 100vh; padding-bottom: 86px; animation: fadeUp 0.4s ease forwards; }
 .screen.active { display: flex; }
+[id^="screen-pm"].active { position: relative; z-index: 510; background: var(--bg); }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
 h1, h2, h3 { font-family: 'DM Sans', sans-serif; font-weight: 700; letter-spacing: -0.02em; }
 h1 { font-size: 38px; line-height: 1.05; }
@@ -129,7 +130,9 @@ h3 { font-size: 20px; line-height: 1.2; }
 .estral-voice {
   font-family: 'DM Sans', sans-serif;
   font-style: italic;
-  color: #1A0A0E;
+  color: #1A0A0E !important;
+  -webkit-text-fill-color: #1A0A0E !important;
+  color-scheme: light;
   background: transparent;
   padding: 22px 24px;
   border: none;
@@ -194,6 +197,7 @@ h3 { font-size: 20px; line-height: 1.2; }
   border: none;
   box-shadow: none;
   background: transparent;
+  color-scheme: light;
 }
 .estral-voice .voice-label {
   font-family: 'DM Sans', sans-serif;
@@ -756,6 +760,51 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
 }
 .estral-voice { gap: 6px !important; }
 
+
+/* ── ESTRAL VOICE DEFINITIVE ESPRESSO LOCK ──
+   .ev-text wraps every bare text node.
+   Solid background stops iOS Smart Invert.
+   color-scheme:light blocks system inversion.
+──────────────────────────────────────── */
+/* Solid card background — iOS Smart Invert
+   skips elements with opaque backgrounds */
+.estral-voice, .estral-voice.card-voice {
+  background: #FDF8F3 !important;
+  color-scheme: light !important;
+}
+/* The actual text wrapper — maximum specificity */
+.ev-text,
+.estral-voice .ev-text,
+.estral-lava .estral-voice .ev-text,
+[id^="screen-pm"] .estral-voice .ev-text {
+  color: #1A0A0E !important;
+  -webkit-text-fill-color: #1A0A0E !important;
+  color-scheme: light !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-style: italic !important;
+  display: block;
+}
+.estral-voice,
+.estral-voice.card-voice,
+.estral-lava .estral-voice,
+[id^="screen-pm"] .estral-voice,
+#pm-lock-overlay .estral-voice {
+  color: #1A0A0E !important;
+  -webkit-text-fill-color: #1A0A0E !important;
+  color-scheme: light !important;
+}
+.estral-voice *:not(.voice-label):not(button),
+.estral-lava .estral-voice *:not(.voice-label):not(button),
+[id^="screen-pm"] .estral-voice *:not(.voice-label):not(button),
+#pm-lock-overlay .estral-voice *:not(.voice-label):not(button),
+.estral-voice span:not(.voice-label),
+.estral-voice p,
+.estral-voice div:not(.estral-text-backdrop) {
+  color: #1A0A0E !important;
+  -webkit-text-fill-color: #1A0A0E !important;
+  color-scheme: light !important;
+  font-style: italic !important;
+}
 </style>
 </head>
 <body class="phase-follicular">
@@ -811,9 +860,8 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
       <!-- ESTRAL chime — shown when checkbox ticked -->
       <div id="ob-nocycle-estral" style="display:none; margin-bottom:4px;">
         <div class="estral-voice card-voice" style="font-size:14px; line-height:1.7;">
-          <span class="voice-label">ESTRAL</span>
-          if you know nothing about your cycle yet, we will use the app just to note your symptoms and logs. the first day of your bleed is day 1 of your cycle — that is where everything starts. just log when it comes and ESTRAL will build from there.
-        </div>
+          <span class="voice-label">Tip from ESTRAL</span>
+          <span class="ev-text">if you know nothing about your cycle yet, we will use the app just to note your symptoms and logs. the first day of your bleed is day 1 of your cycle — that is where everything starts. just log when it comes and ESTRAL will build from there.</span></div>
       </div>
       <!-- Cycle fields — hidden when "don't know" is checked -->
       <div id="ob-cycle-fields">
@@ -1077,8 +1125,7 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     <div class="morning-cycle-pill" style="display:inline-flex;" id="m1-cycle-pill">🌒 Day — · — · — · —</div>
     <div class="estral-voice card-voice">
       <span class="voice-label">Tip from ESTRAL</span>
-      <span id="m1-phase-tip">Your cycle is your intelligence. The morning check-in is how you tune in.</span>
-    </div>
+     <span class="ev-text"><span id="m1-phase-tip">Your cycle is your intelligence. The morning check-in is how you tune in.</span></span></div>
     <div class="card">
       <div class="label" style="margin-bottom:10px; color:var(--phase);" id="m1-phase-label">— · Day —</div>
       <p style="font-size:15px; line-height:1.65;" id="m1-phase-body">oestrogen is rising. your brain is literally building new neural connections right now — faster than any other point in your cycle. you're sharper, more verbal, more creative, and considerably less unhinged than you were last week. USE IT.</p>
@@ -1154,9 +1201,8 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
   <div class="section estral-lava" style="padding-top:56px;">
     <h2>Pick up where<br>you left off?</h2>
     <div class="estral-voice card-voice">
-      <span class="voice-label">ESTRAL</span>
-      yesterday's you made a list. today's you has to deal with it. let's see what actually got done and what's still hanging around being annoying.
-    </div>
+      <span class="voice-label">Tip from ESTRAL</span>
+      <span class="ev-text">yesterday's you made a list. today's you has to deal with it. let's see what actually got done and what's still hanging around being annoying.</span></div>
     <button class="btn-primary phase" onclick="nextMorning(9)">Yes, generate today's list →</button>
     <button class="btn-ghost" onclick="nextMorning(9)" style="margin-top:6px;">I'll enter manually</button>
   </div>
@@ -1212,8 +1258,7 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     <div class="morning-cycle-pill" style="display:inline-flex;">✦ ESTRAL Morning Read</div>
     <div class="estral-voice card-voice">
       <span class="voice-label">Tip from ESTRAL</span>
-      <p id="morning-read-text" style="font-size:17px; line-height:1.75;"></p>
-    </div>
+     <span class="ev-text"><p id="morning-read-text" style="font-size:17px; line-height:1.75;"></p></span></div>
     <div class="vitality-ring-wrap">
       <div class="vitality-ring-svg-wrap">
         <svg class="ring-svg" width="130" height="130" viewBox="0 0 130 130">
@@ -1255,9 +1300,8 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     <div class="morning-cycle-pill" id="pm1-pill">🌙 Evening Review · Day —</div>
     <h2 style="font-size:28px; line-height:1.2;">How did your<br>energy move today?</h2>
     <div class="estral-voice card-voice">
-      <span class="voice-label">ESTRAL</span>
-      okay so how did the day actually go. not the highlight reel version — the real one. morning, afternoon, evening. where did you have energy and where did it completely leave the building.
-    </div>
+      <span class="voice-label">Tip from ESTRAL</span>
+     <span class="ev-text"><span class="ev-text">okay so how did the day actually go. not the highlight reel version — the real one. morning, afternoon, evening. where did you have energy and where did it completely leave the building.</span></span></div>
     <div style="display:flex; flex-direction:column; gap:16px;">
       <div>
         <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span class="label">Morning</span><span class="mono" id="pm-energy-am-val">7</span></div>
@@ -1297,9 +1341,8 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     <div class="morning-cycle-pill">🌙 Evening · 3 of 8</div>
     <h2 style="font-size:28px;">Digestion check.</h2>
     <div class="estral-voice card-voice">
-      <span class="voice-label">ESTRAL</span>
-      yes we're tracking this. your gut shifts across your entire cycle — oestrogen speeds things up, progesterone is literally the reason you get bloated in luteal. this is actual data not just a weird question i promise.
-    </div>
+      <span class="voice-label">Tip from ESTRAL</span>
+      <span class="ev-text">yes we're tracking this. your gut shifts across your entire cycle — oestrogen speeds things up, progesterone is literally the reason you get bloated in luteal. this is actual data not just a weird question i promise.</span></div>
     <div>
       <p class="label" style="margin-bottom:12px; color:var(--phase);">Any bowel movements today?</p>
       <div style="display:flex; gap:10px;">
@@ -1364,9 +1407,8 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     <div class="morning-cycle-pill">🌙 Evening · 6 of 8</div>
     <h2 style="font-size:28px;">One moment<br>from today.</h2>
     <div class="estral-voice card-voice">
-      <span class="voice-label">ESTRAL</span>
-      good or hard or weird or confusing. what was THE moment today. the one that's still living in your head a little.
-    </div>
+      <span class="voice-label">Tip from ESTRAL</span>
+      <span class="ev-text">good or hard or weird or confusing. what was THE moment today. the one that's still living in your head a little.</span></div>
     <textarea id="pm-moment-input" placeholder="The moment that mattered most today..." style="min-height:120px;" oninput="pmData.moment=this.value"></textarea>
     <button class="btn-primary phase" onclick="goToPM(7)">Next →</button>
     <button class="btn-ghost" onclick="goToPM(7)">Skip</button>
@@ -1446,7 +1488,7 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
 
     <!-- ESTRAL VERDICT -->
     <div class="estral-voice card-voice" id="pm-breakdown-estral">
-      <span class="voice-label">ESTRAL</span>
+      <span class="voice-label">Tip from ESTRAL</span>
       <p id="pm-breakdown-text" style="font-size:15px; line-height:1.8;"></p>
     </div>
 
@@ -1474,7 +1516,7 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
 
     <!-- ESTRAL evening read -->
     <div class="estral-voice card-voice" id="pm-estral-read">
-      <span class="voice-label">ESTRAL · Evening Read</span>
+      <span class="voice-label">Tip from ESTRAL</span>
       <p id="pm-read-text" style="font-size:15px; line-height:1.55; color:#1A0A0E;"></p>
     </div>
 
@@ -1515,7 +1557,7 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
       <div style="font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--phase); margin-bottom:16px;">Plan · Brain Dump</div>
       <h2 style="font-size:28px; margin-bottom:12px; line-height:1.2;">Get it all out<br>of your head.</h2>
       <div class="estral-voice card-voice" style="margin-bottom:24px;">
-        <span class="voice-label">ESTRAL</span>
+        <span class="voice-label">Tip from ESTRAL</span>
         <span id="brain-dump-phase-message">okay so we do this in late luteal and menstrual usually but we'll get to that — let's just get you started.</span>
       </div>
       <p style="font-size:14px; color:var(--muted); line-height:1.7; margin-bottom:24px;">Pick the <strong style="color:var(--text);">4 areas of your life</strong> that have the most noise right now. Then brain-dump everything in each one — jobs, worries, dreams, half-baked ideas, things you're avoiding. nothing is too small or too unhinged.</p>
@@ -1552,7 +1594,7 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
       <!-- STATE A: No dump yet — ESTRAL intro (shown before dump exists) -->
       <div id="dump-empty-state" style="display:none; padding:24px 16px; display:flex; flex-direction:column; gap:16px;">
         <div class="estral-voice card-voice" id="dump-phase-intro-card">
-          <span class="voice-label">ESTRAL</span>
+          <span class="voice-label">Tip from ESTRAL</span>
           <p id="dump-phase-intro-text" style="font-size:15px; line-height:1.8;"></p>
         </div>
         <p class="muted" style="font-size:13px; line-height:1.7;" id="dump-instructions-text"></p>
@@ -1724,7 +1766,7 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
       <!-- Profile completion nudge — shown if steps 5/6 were skipped — sits below title -->
       <div id="log-profile-nudge" style="display:none; margin:0 16px 16px;">
         <div class="estral-voice card-voice" style="cursor:pointer;" onclick="openProfileCompletion()">
-          <span class="voice-label">ESTRAL · Finish your setup</span>
+          <span class="voice-label">Tip from ESTRAL</span>
           <p style="font-size:14px; line-height:1.55; margin-bottom:10px;">you skipped your goals and vision during setup — no pressure, but when you're ready, filling these in helps ESTRAL give you much sharper reads.</p>
           <span style="font-size:12px; color:#C41230; font-weight:600;">Tap to complete →</span>
         </div>
@@ -1758,7 +1800,7 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     <!-- ESTRAL Weekly Narrative — top of chart, most prominent -->
     <div id="estral-weekly-narrative" style="display:none; margin-bottom:16px;">
       <div class="estral-voice card-voice" style="border-left:3px solid var(--phase);">
-        <span class="voice-label">ESTRAL · This week</span>
+        <span class="voice-label">Tip from ESTRAL</span>
         <p id="weekly-narrative-text" style="font-size:15px; line-height:1.75;"></p>
       </div>
     </div>
@@ -1821,9 +1863,8 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     <!-- ESTRAL pattern read (3+ days) -->
     <div id="estral-pattern-read" style="display:none;">
       <div class="estral-voice card-voice">
-        <span class="voice-label">ESTRAL · Pattern Read</span>
-        <p id="pattern-read-text" style="font-size:15px; line-height:1.7;"></p>
-      </div>
+        <span class="voice-label">Tip from ESTRAL</span>
+       <span class="ev-text"><p id="pattern-read-text" style="font-size:15px; line-height:1.7;"></p></span></div>
     </div>
   </div>
 </div>
@@ -1842,8 +1883,8 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     <div style="font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--phase); margin-bottom:12px;">Evening Review</div>
     <h2 style="font-size:28px; line-height:1.25; margin-bottom:12px;">Close the day<br>before you rest.</h2>
     <div class="estral-voice card-voice" style="margin-bottom:28px; text-align:left; max-width:340px;">
-      <span class="voice-label">ESTRAL</span>
-      Your evening review is ready. Two minutes. Then the app is yours again.
+      <span class="voice-label">Tip from ESTRAL</span>
+      <span class="ev-text">Your evening review is ready. Two minutes. Then the app is yours again.</span>
     </div>
     <button class="btn-primary phase" onclick="startPMFromLock()" style="max-width:280px;">Open evening review ✦</button>
     <button class="btn-ghost" onclick="dismissPMLock()" style="margin-top:12px; font-size:12px; opacity:0.5;">Remind me in 30 min</button>
@@ -2839,8 +2880,7 @@ function openDayModalFull(day, phase, tasks, moon, dateStr, dayEvents) {
       </div>
       <div class="estral-voice card-voice" style="margin-bottom:14px;">
         <span class="voice-label">${phase.charAt(0).toUpperCase()+phase.slice(1)} energy</span>
-        ${getPhaseDesc(phase)}
-      </div>
+        <span class="ev-text">${getPhaseDesc(phase)}</span></div>
       ${eventsHtml}
       ${tasks.length > 0 ? `<p class="label" style="margin-bottom:8px;">Tasks</p>${tasks.map(t=>`<div class="priority-item"><div class="priority-dot" style="background:${PHASE_COLORS[t.phase]||'#888'};"></div><span style="font-size:14px;flex:1;">${t.text}</span></div>`).join('')}` : ''}
       <button class="btn-primary phase" style="width:100%; margin-top:16px;" onclick="openAddEventForDate('${dateStr}')">+ Add event this day</button>
@@ -2896,8 +2936,7 @@ function openDayModal_legacy(day, phase, tasks, moon) {
       </div>
       <div class="estral-voice card-voice" style="margin-bottom:16px;">
         <span class="voice-label">${phase.charAt(0).toUpperCase()+phase.slice(1)} energy</span>
-        ${getPhaseDesc(phase)}
-      </div>
+        <span class="ev-text">${getPhaseDesc(phase)}</span></div>
       ${tasks.length > 0 ? `<p class="label" style="margin-bottom:8px;">Tasks planned</p>${tasks.map(t=>`<div class="priority-item"><div class="priority-dot" style="background:${PHASE_COLORS[t.phase]};"></div><span style="font-size:14px;flex:1;">${t.text}</span></div>`).join('')}` : `<p class="muted" style="font-size:14px;">No tasks planned yet.</p>`}
       <button class="btn-ghost" style="margin-top:16px;" onclick="closeDayModal()">Close</button>
     </div>`;
@@ -4182,6 +4221,9 @@ let pmData = {
 let currentPMScreen = 0;
 
 function openPMQuiz() {
+  // Always hide the lock overlay first
+  var lockOverlay = document.getElementById('pm-lock-overlay');
+  if (lockOverlay) lockOverlay.style.display = 'none';
   // Reset data
   pmData = { energyAM:7, energyMid:6, energyEve:4, symptoms:[], skin:[], poop:null, poopQuality:[], bloat:null, food:'', cravings:[], nourish:null, mood:[], chest:'', moment:'', intentionHeld:null, intentionBlock:'', tomorrowFocus:'', tomorrowMust:[], tomorrowHardNo:'' };
 
@@ -5080,9 +5122,8 @@ function openMilestoneJournal(id) {
       <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mj-color);margin-bottom:4px;">${journal.subtitle}</div>
       <h2 style="font-size:24px;margin-bottom:16px;line-height:1.2;">${journal.title}</h2>
       <div class="estral-voice card-voice" style="margin-bottom:28px;border-left:3px solid var(--mj-color);">
-        <span class="voice-label">ESTRAL</span>
-        ${journal.intro}
-      </div>
+        <span class="voice-label">Tip from ESTRAL</span>
+        <span class="ev-text">${journal.intro}</span></div>
       ${questionsHtml}
       <button class="btn-primary" onclick="saveMilestoneJournal()" style="background:var(--mj-color);width:100%;margin-top:8px;">Save this entry ✦</button>
     </div>`;
@@ -6800,7 +6841,7 @@ function addReelToList(reelId, phase) {
       <!-- ESTRAL parsed confirmation -->
       <div id="recur-estral-confirm" style="display:none;">
         <div class="estral-voice card-voice" style="font-size:13px; padding:12px 14px;">
-          <span class="voice-label">ESTRAL</span>
+          <span class="voice-label">Tip from ESTRAL</span>
           <span id="recur-confirm-text"></span>
         </div>
       </div>
@@ -6828,7 +6869,7 @@ function addReelToList(reelId, phase) {
 
       <!-- ESTRAL voice card -->
       <div class="estral-voice card-voice" style="margin-bottom:28px;">
-        <span class="voice-label">ESTRAL</span>
+        <span class="voice-label">Tip from ESTRAL</span>
         <p id="cycle-explore-estral-text" style="font-size:15px;line-height:1.8;"></p>
       </div>
 
@@ -6860,7 +6901,7 @@ function addReelToList(reelId, phase) {
       <div style="margin-bottom:28px;">
         <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--phase);margin-bottom:14px;font-weight:700;">How to track</div>
         <div class="estral-voice card-voice" style="margin-bottom:14px;">
-          <span class="voice-label">ESTRAL</span>
+          <span class="voice-label">Tip from ESTRAL</span>
           <p style="font-size:14px;line-height:1.8;">start with just one thing: the first day of your bleed. that is day 1. log it every month. after 2–3 cycles you will see your pattern. everything else — mood, energy, symptoms, sleep — builds from that single data point. the app does the rest.</p>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px;">
@@ -6887,7 +6928,7 @@ function addReelToList(reelId, phase) {
       <div style="margin-bottom:32px;">
         <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--phase);margin-bottom:14px;font-weight:700;">Using the moon until your data builds</div>
         <div class="estral-voice card-voice" style="margin-bottom:16px;">
-          <span class="voice-label">ESTRAL</span>
+          <span class="voice-label">Tip from ESTRAL</span>
           <p style="font-size:14px;line-height:1.8;">before women had cycle tracking apps, they had the moon. a healthy cycle is approximately 29.5 days — the same as a lunar month. this is not a coincidence. the moon is an external rhythm you can sync to until your internal one becomes clear.</p>
         </div>
 
@@ -6948,7 +6989,7 @@ function addReelToList(reelId, phase) {
 
       <!-- ESTRAL spoken greeting — first thing they see -->
       <div class="estral-voice card-voice" style="margin-bottom:24px;" id="ceo-estral-intro">
-        <span class="voice-label">ESTRAL</span>
+        <span class="voice-label">Tip from ESTRAL</span>
         <p id="ceo-intro-text" style="font-size:14px;line-height:1.6;margin:0;">here is everything you need to know about tracking, what a healthy cycle looks like, and why understanding your rhythm changes everything.</p>
       </div>
 
@@ -6978,9 +7019,8 @@ function addReelToList(reelId, phase) {
       <div style="margin-bottom:28px;">
         <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--phase);margin-bottom:14px;">Why tracking changes everything</div>
         <div class="estral-voice card-voice">
-          <span class="voice-label">ESTRAL</span>
-          <p style="font-size:14px;line-height:1.55;margin:0;">your cycle is the most honest data you have about your body. when you track it — even just the first day of your bleed — you start to see patterns. why you feel unstoppable some weeks and completely offline others. why certain conversations wreck you at certain times. why your hunger, your sleep, your creativity all move in waves. this is not woo. this is biology. and once you see it, you cannot unsee it.</p>
-        </div>
+          <span class="voice-label">Tip from ESTRAL</span>
+         <span class="ev-text"><p style="font-size:14px;line-height:1.55;margin:0;">your cycle is the most honest data you have about your body. when you track it — even just the first day of your bleed — you start to see patterns. why you feel unstoppable some weeks and completely offline others. why certain conversations wreck you at certain times. why your hunger, your sleep, your creativity all move in waves. this is not woo. this is biology. and once you see it, you cannot unsee it.</p></span></div>
       </div>
 
       <!-- SECTION: How to track -->
@@ -7006,7 +7046,7 @@ function addReelToList(reelId, phase) {
       <div style="margin-bottom:32px;">
         <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--phase);margin-bottom:14px;">Using the moon until your data builds</div>
         <div class="estral-voice card-voice" style="margin-bottom:16px;">
-          <span class="voice-label">ESTRAL</span>
+          <span class="voice-label">Tip from ESTRAL</span>
           <p style="font-size:14px;line-height:1.55;margin:0;">before your cycle data is established, the moon is your rhythm map. every woman historically lived by it — before artificial light disrupted our internal clocks, most women bled at the new moon and ovulated at the full moon. you may not sync perfectly, but the energy of each phase mirrors your own.</p>
         </div>
         <!-- Moon phase map -->
