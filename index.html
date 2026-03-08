@@ -220,20 +220,41 @@ h3 { font-size: 20px; line-height: 1.2; }
   flex-shrink: 0;
   -webkit-text-fill-color: initial;
 }
-.estral-voice, .estral-voice p, .estral-voice span:not(.voice-label), .estral-voice div:not(.estral-text-backdrop) {
-  color: #1A0A0E;
-  font-family: 'DM Sans', sans-serif;
-  font-style: italic;
+.estral-voice,
+.estral-voice p,
+.estral-voice span:not(.voice-label),
+.estral-voice div:not(.estral-text-backdrop),
+.estral-voice li,
+.estral-voice strong,
+.estral-voice em {
+  color: #1A0A0E !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-style: italic !important;
+  -webkit-text-fill-color: #1A0A0E !important;
 }
-.estral-voice .voice-label, .estral-voice h1, .estral-voice h2, .estral-voice h3 {
+.estral-voice .voice-label,
+.estral-voice h1,
+.estral-voice h2,
+.estral-voice h3 {
   font-family: 'DM Sans', sans-serif !important;
   font-style: normal !important;
   font-weight: 700 !important;
+  /* label keeps its crimson gradient */
+  color: unset;
 }
 .estral-voice button {
   font-family: 'DM Sans', sans-serif !important;
   font-style: normal !important;
-  color: var(--text) !important;
+  color: #1A0A0E !important;
+  -webkit-text-fill-color: #1A0A0E !important;
+}
+/* Chat bubble ESTRAL text — same lock */
+.chat-bubble-ai,
+.chat-bubble-ai .estral-bubble-inner,
+.chat-bubble-ai p,
+.chat-bubble-ai span {
+  color: #1A0A0E !important;
+  -webkit-text-fill-color: #1A0A0E !important;
 }
 .card { background: var(--card); backdrop-filter: blur(20px); border: 1px solid var(--border); padding: 20px; }
 .card-dark { background: #1C1A18; padding: 20px; }
@@ -292,11 +313,12 @@ textarea { resize: none; min-height: 100px; }
 .serif { font-family: 'Instrument Serif', serif; }
 .mono { font-family: 'DM Mono', monospace; }
 .muted { color: var(--muted); }
-.vitality-ring-wrap { display: flex; flex-direction: column; align-items: center; padding: 20px 0; position: relative; }
-.ring-svg { transform: rotate(-90deg); }
+.vitality-ring-wrap { display: flex; flex-direction: column; align-items: center; padding: 20px 0; }
+.vitality-ring-svg-wrap { position: relative; width: 130px; height: 130px; flex-shrink: 0; }
+.ring-svg { transform: rotate(-90deg); display: block; }
 .ring-bg { fill: none; stroke: rgba(28,26,24,0.07); stroke-width: 9; }
 .ring-fill { fill: none; stroke: var(--phase); stroke-width: 9; stroke-linecap: round; stroke-dasharray: 283; stroke-dashoffset: 283; transition: stroke-dashoffset 1.4s cubic-bezier(0.4,0,0.2,1); }
-.ring-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
+.ring-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
 .ring-score { font-family: 'DM Sans', sans-serif; font-size: 44px; font-weight: 700; color: var(--text); line-height: 1; }
 .ring-tier { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--phase); font-weight: 500; margin-top: 2px; }
 .streak-flame { font-size: 28px; animation: pulse 2.2s ease infinite; }
@@ -370,10 +392,49 @@ textarea { resize: none; min-height: 100px; }
 .morning-header { padding: 56px 20px 16px; }
 .morning-cycle-pill { display: inline-flex; align-items: center; gap: 8px; background: var(--phase-dim); border: 1px solid var(--phase-mid); padding: 5px 13px; border-radius: 100px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--phase); margin-bottom: 16px; }
 .lock-icon { width: 56px; height: 56px; background: var(--phase-dim); border: 1px solid var(--phase-mid); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 16px; }
-.reel-card { background: var(--card); border: 1px solid var(--border); padding: 14px; flex: 1; }
-.reel-emoji { font-size: 20px; margin-bottom: 8px; }
-.reel-title { font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; line-height: 1.3; margin-bottom: 4px; }
+.reel-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 16px 14px 14px;
+  min-width: 148px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.reel-card:active { transform: scale(0.97); }
+.reel-card-tap-hint {
+  position: absolute;
+  top: 8px; right: 10px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--phase);
+  opacity: 0.7;
+}
+.reel-emoji { font-size: 22px; margin-bottom: 10px; }
+.reel-title { font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; line-height: 1.3; margin-bottom: 4px; color: var(--text); }
 .reel-meta { font-size: 11px; color: var(--muted); }
+
+/* Reel detail modal */
+.reel-modal { position: fixed; inset: 0; z-index: 700; background: rgba(26,10,14,0.5); backdrop-filter: blur(10px); display: none; align-items: flex-end; justify-content: center; }
+.reel-modal.open { display: flex; }
+.reel-modal-sheet { background: var(--bg); width: 100%; max-width: 430px; max-height: 92vh; overflow-y: auto; padding: 0 0 56px; animation: slideUp 0.36s cubic-bezier(0.32,0.72,0,1); }
+.reel-modal-hero { padding: 28px 24px 20px; position: relative; border-bottom: 1px solid var(--border); }
+.reel-modal-close { position: absolute; top: 18px; right: 18px; width: 30px; height: 30px; border-radius: 50%; background: rgba(28,26,24,0.08); border: none; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.reel-modal-tag { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--phase); margin-bottom: 8px; }
+.reel-modal-title { font-size: 26px; font-weight: 700; line-height: 1.15; margin-bottom: 6px; color: var(--text); }
+.reel-modal-sub { font-size: 13px; color: var(--muted); }
+.reel-modal-body { padding: 24px 24px 0; display: flex; flex-direction: column; gap: 20px; }
+.reel-modal-section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.reel-modal-body p { font-size: 15px; line-height: 1.75; color: var(--text); }
+.reel-modal-body ul { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.reel-modal-body ul li { font-size: 15px; line-height: 1.6; color: var(--text); }
+.reel-modal-cta { margin: 28px 24px 0; display: flex; flex-direction: column; gap: 10px; }
+.reel-add-btn { font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: #fff; background: var(--phase); border: none; padding: 15px 24px; cursor: pointer; width: 100%; transition: opacity 0.2s; }
+.reel-add-btn:hover { opacity: 0.88; }
+.reel-add-btn.added { background: rgba(28,26,24,0.12); color: var(--muted); pointer-events: none; }
+.reel-dismiss-btn { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--muted); background: none; border: none; cursor: pointer; text-align: center; padding: 4px; }
 .cycle-ring-wrap { display: flex; align-items: center; gap: 20px; padding: 4px 0 8px; }
 .cycle-ring-svg { flex-shrink: 0; overflow: visible; }
 .cycle-ring-track { fill: none; stroke: rgba(28,26,24,0.08); stroke-width: 7; }
@@ -1154,13 +1215,15 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
       <p id="morning-read-text" style="font-size:17px; line-height:1.75;"></p>
     </div>
     <div class="vitality-ring-wrap">
-      <svg class="ring-svg" width="130" height="130" viewBox="0 0 130 130">
-        <circle class="ring-bg" cx="65" cy="65" r="50"/>
-        <circle class="ring-fill" id="ringFill" cx="65" cy="65" r="50" style="stroke-dasharray:314; stroke-dashoffset:314;"/>
-      </svg>
-      <div class="ring-center" style="top:20px; left:0; right:0; bottom:20px;">
-        <div class="ring-score" id="vitalityScore">—</div>
-        <div class="ring-tier" id="vitalityTier">—</div>
+      <div class="vitality-ring-svg-wrap">
+        <svg class="ring-svg" width="130" height="130" viewBox="0 0 130 130">
+          <circle class="ring-bg" cx="65" cy="65" r="50"/>
+          <circle class="ring-fill" id="ringFill" cx="65" cy="65" r="50" style="stroke-dasharray:314; stroke-dashoffset:314;"/>
+        </svg>
+        <div class="ring-center">
+          <div class="ring-score" id="vitalityScore">—</div>
+          <div class="ring-tier" id="vitalityTier">—</div>
+        </div>
       </div>
     </div>
     <div>
@@ -1972,12 +2035,21 @@ function showMorningScreen(n) {
   if (s) { s.style.display = 'flex'; s.classList.add('active'); }
   updateProgress();
 }
+function hasYesterdayPMData() {
+  try {
+    const d = new Date(); d.setDate(d.getDate() - 1);
+    const key = d.toISOString().slice(0,10).replace(/-/g,'');
+    return !!localStorage.getItem('pm_done_' + key);
+  } catch(e) { return false; }
+}
 function nextMorning(n) {
   if (currentMorningScreen === 9) {
     morningData.mustDo = [document.getElementById('must1').value, document.getElementById('must2').value, document.getElementById('must3').value].filter(Boolean);
     morningData.hardNo = document.getElementById('hardno').value || 'Checking emails before 10am';
   }
   if (currentMorningScreen === 11) morningData.intention = document.getElementById('intention-input').value || 'present';
+  // Skip screen-m8 ("Pick up where you left off") if no evening review exists from yesterday
+  if (n === 8 && !hasYesterdayPMData()) { n = 9; }
   currentMorningScreen = n;
   showMorningScreen(n);
   if (n === 10) buildPriorityList();
@@ -2080,6 +2152,84 @@ function buildPriorityList() {
 function togglePriorityCheck(btn, item) {
   btn.classList.toggle('checked'); item.classList.toggle('done');
   btn.innerHTML = btn.classList.contains('checked') ? '<span class="check-anim" style="color:#fff;font-size:11px;">✓</span>' : '';
+}
+
+// ══════════════════════════════════════════
+// DAILY ESTRAL DASHBOARD MESSAGE
+// Seeds from today's date so it's stable
+// within the same day but fresh each morning.
+// Weaves: cycle phase + day, lunar phase,
+// zodiac, energy tier, mood, intention.
+// ══════════════════════════════════════════
+// DAILY ESTRAL DASHBOARD MESSAGE
+// Seeds from today's date — stable all day,
+// fresh each morning. Weaves phase, cycle day,
+// lunar phase + zodiac, energy, mood, intention.
+// ══════════════════════════════════════════
+function buildDailyESTRALMessage() {
+  var p = window._userProfile || {};
+  var phase = p.cyclePhase || 'follicular';
+  var day = p.cycleDay || 9;
+  var total = p.cycleTotal || 28;
+  var e = morningData.energy || 7;
+  var daysLeft = total - day;
+  var moodStr = (morningData.mood && morningData.mood.length) ? morningData.mood.join(' + ').toLowerCase() : '';
+  var intention = morningData.intention || '';
+  var moon = (typeof getMoonPhaseLabel === 'function') ? getMoonPhaseLabel().replace(/^\S+\s/, '') : 'waxing crescent';
+  var zodiac = (typeof getMoonZodiacSign === 'function') ? getMoonZodiacSign() : '';
+  var lunarCtx = moon + (zodiac ? ' in ' + zodiac : '');
+
+  var energyLine;
+  if (e >= 7) energyLine = 'energy is high. protect the window — use the sharpness on what actually matters, not the inbox.';
+  else if (e >= 4) energyLine = 'energy is steady at ' + e + '. pick the one thing and protect that block.';
+  else energyLine = 'energy is low at ' + e + '. one non-negotiable, then protect the baseline.';
+
+  var intentionLine = intention ? ('your word is ' + intention + '. run everything through it.') : 'what is the one thing that would make today feel worth it?';
+  var moodLine = moodStr ? ('you came in as ' + moodStr + '.') : '';
+
+  var now = new Date();
+  var seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+  function rng(n) { var x = Math.sin(seed + n) * 43758.5453; return x - Math.floor(x); }
+
+  var messages;
+  if (phase === 'follicular') {
+    var initLine = rng(3) > 0.5
+      ? 'the urge to initiate is real. if something has been in draft, today is the activation window.'
+      : 'depth over speed. go slower than you think you need to on the thing that matters.';
+    messages = [
+      'day ' + day + ' of ' + total + '. follicular. ' + lunarCtx + '. you are in the build window — estrogen is climbing and so is your capacity. ' + energyLine + ' ' + moodLine + ' ' + intentionLine,
+      lunarCtx + ' while your body is in follicular, day ' + day + '. precision over volume today. ' + energyLine + ' ' + moodLine + ' ' + daysLeft + ' days left this cycle.',
+      'follicular day ' + day + '. estrogen is doing its thing — clarity, social ease, creative access. ' + lunarCtx + '. ' + initLine + ' ' + energyLine + ' ' + intentionLine,
+    ];
+  } else if (phase === 'ovulatory') {
+    var magLine = e >= 7
+      ? 'use the magnetism. the pitch, the ask, the conversation you have been circling.'
+      : 'even at ' + e + ' you are more present than usual. lean into connection over output.';
+    messages = [
+      'day ' + day + '. ovulatory. LH has surged, testosterone is briefly elevated — you are the most socially capable version of yourself right now. ' + magLine + ' ' + lunarCtx + '. ' + moodLine + ' ' + daysLeft + ' days to the end of this cycle.',
+      lunarCtx + ' at your peak. ovulatory day ' + day + '. voice warmer, face more expressive, biologically built for influence. ' + energyLine + ' ' + intentionLine,
+    ];
+  } else if (phase === 'luteal') {
+    var gutLine = rng(2) > 0.5
+      ? 'that irritation or flatness is data, not a character flaw. what is it actually pointing at?'
+      : 'your gut is sharper here than in any other phase. trust the read you have right now.';
+    messages = [
+      'day ' + day + ' of ' + total + '. luteal. progesterone is running the show — this phase requires a different gear. ' + energyLine + ' ' + lunarCtx + '. ' + moodLine + ' ' + daysLeft + ' days until the reset.',
+      lunarCtx + ' in your luteal phase. day ' + day + '. the veil between how things look and how they actually are gets thinner here. ' + gutLine + ' ' + energyLine + ' ' + intentionLine,
+    ];
+  } else {
+    var restLine = rng(1) > 0.5
+      ? 'rest is not laziness right now. it is the protocol.'
+      : 'your body is shedding the last cycle. you do not have to perform your way through it.';
+    var shiftLine = daysLeft <= 3 ? 'follicular energy is close — you will feel the shift soon.' : 'stay low and let it move through.';
+    messages = [
+      'day ' + day + '. menstrual. progesterone and estrogen are at their floor — your body is doing real physical work even when you are still. ' + lunarCtx + '. ' + energyLine + ' ' + moodLine + ' intuition is at its peak this week.',
+      lunarCtx + ' while you bleed. day ' + day + '. the quietest, most inward point of the whole cycle. ' + restLine + ' ' + energyLine + ' ' + shiftLine,
+    ];
+  }
+
+  var idx = Math.floor(rng(0) * messages.length);
+  return messages[idx];
 }
 
 function buildMorningRead() {
@@ -2203,14 +2353,12 @@ function unlockDashboard() {
         <span class="voice-label">Today's intention</span>
         <div style="font-size:44px;">${intention}</div>
       </div>
-      <div class="estral-voice card-voice">
+      <div class="estral-voice card-voice" id="dashboard-estral-tip">
         <span class="voice-label">Tip from ESTRAL</span>
-        You are building. What are you building toward — is it actually yours?
+        <span id="dashboard-estral-tip-text"></span>
       </div>
       <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;">
-        <div class="reel-card" style="min-width:140px;"><div class="reel-emoji">🏋️</div><div class="reel-title">Follicular HIIT · 20 min</div><div class="reel-meta">Body · 20 min</div></div>
-        <div class="reel-card" style="min-width:140px;"><div class="reel-emoji">🧬</div><div class="reel-title">Estrogen and your creative peak</div><div class="reel-meta">Hormone · 90 sec</div></div>
-        <div class="reel-card" style="min-width:140px;"><div class="reel-emoji">📡</div><div class="reel-title">Founder briefing: March wk 2</div><div class="reel-meta">Field update · 60 sec</div></div>
+        <div id="dashboard-reels" style="display:contents;"></div>
       </div>
       <div class="card" style="display:flex;align-items:center;gap:14px;">
         <div style="font-size:26px;animation:pulse 2.2s ease infinite;">🔥</div>
@@ -2228,7 +2376,24 @@ function unlockDashboard() {
       </div>
     </div>`;
   switchTab('home');
-  setTimeout(() => initCycleRing(8, 28, 'U'), 200);
+  setTimeout(() => {
+    initCycleRing(8, 28, 'U');
+    // Build phase-matched reel cards
+    var _phase = (window._userProfile && window._userProfile.cyclePhase) || 'follicular';
+    buildDashboardReels(_phase);
+    // Populate daily ESTRAL message with espresso color enforced
+    const tipEl = document.getElementById('dashboard-estral-tip-text');
+    if (tipEl) {
+      tipEl.textContent = buildDailyESTRALMessage();
+      tipEl.style.color = '#1A0A0E';
+      tipEl.style.webkitTextFillColor = '#1A0A0E';
+    }
+    // Also ensure the parent card text is espresso
+    const card = document.getElementById('dashboard-estral-tip');
+    if (card) {
+      card.style.color = '#1A0A0E';
+    }
+  }, 200);
 }
 
 function switchPlanView(view) {
@@ -6167,6 +6332,314 @@ function openPMQuiz() {
   setTimeout(buildPM8Screen, 50);
 }
 
+
+// ══════════════════════════════════════════
+// REEL CONTENT LIBRARY
+// Phase-matched cards. Each has full content
+// for the detail modal + optional list add.
+// ══════════════════════════════════════════
+var REEL_LIBRARY = {
+  follicular: [
+    {
+      id: 'fol_hiit',
+      emoji: '🏋️',
+      tag: 'Body · Movement',
+      title: 'Follicular HIIT',
+      meta: 'Movement · 20 min',
+      why: 'Estrogen is rising. Your muscles recover faster, pain tolerance is higher, and your cardiovascular system is at its most efficient. This is the phase to push.',
+      what: 'A 20-minute high-intensity circuit built for follicular energy. Four rounds, five moves, minimal rest. Designed to meet the hormonal window.',
+      bullets: [
+        '5 min warm-up: hip circles, leg swings, arm crosses',
+        'Round 1–4: Jump squats × 12 / Push-ups × 10 / Reverse lunges × 10 each / Plank shoulder taps × 20 / Burpees × 8',
+        '90 sec rest between rounds',
+        '5 min cool-down: quad stretch, pigeon, forward fold'
+      ],
+      tip: 'If energy is high, add a 5th round. If energy is moderate, drop the burpees and replace with mountain climbers.',
+      listText: 'Follicular HIIT · 20 min'
+    },
+    {
+      id: 'fol_estrogen',
+      emoji: '🧬',
+      tag: 'Hormone Education',
+      title: 'Estrogen and your creative peak',
+      meta: 'Hormone · 5 min read',
+      why: 'Most women know estrogen exists. Very few understand what it is actually doing — and why follicular phase is when you are neurologically at your sharpest.',
+      what: 'Estrogen is not just a reproductive hormone. It is a neurotransmitter modulator, a mood regulator, and a cognitive enhancer. Here is what is happening in your brain right now.',
+      bullets: [
+        'Estrogen boosts dopamine and serotonin — which is why you feel more motivated and socially open',
+        'It increases synaptic density, meaning your brain is literally forming more connections per hour',
+        'Verbal fluency peaks — you are better at articulating, persuading, and thinking on your feet',
+        'Creative ideation is highest because estrogen lowers the filtering function of the prefrontal cortex slightly — more ideas get through',
+        'Your pain threshold is higher, which is why workouts feel easier and hard conversations feel more manageable'
+      ],
+      tip: 'Use this window for pitches, difficult conversations, creative briefs, and anything that requires you to be sharp and expressive. This is your cognitive peak.',
+      listText: 'Read: estrogen + creative peak'
+    },
+    {
+      id: 'fol_founder',
+      emoji: '📡',
+      tag: 'Field Intelligence',
+      title: 'The follicular founder window',
+      meta: 'Strategy · 4 min read',
+      why: 'Most productivity advice ignores the single biggest variable in a woman\'s output capacity: where she is in her cycle. This is the brief for the follicular phase.',
+      what: 'You have approximately 7-10 days where your brain is operating at peak capacity for initiation, ideation, and connection. Here is how to use it.',
+      bullets: [
+        'Front-load the bold decisions: pitches, hires, difficult conversations, new initiatives',
+        'This is the phase to start the thing you have been circling — the idea has been incubating, now it wants to move',
+        'Schedule your most demanding creative work in the morning when estrogen peaks',
+        'Use social energy strategically — networking, collaborating, visible work lands differently here',
+        'Do not waste the window on admin. Admin is for luteal.'
+      ],
+      tip: 'The one question to ask yourself every follicular morning: what is the thing I have been avoiding starting? That thing is today\'s priority.',
+      listText: 'Strategy: follicular founder window'
+    }
+  ],
+  ovulatory: [
+    {
+      id: 'ov_voice',
+      emoji: '🌕',
+      tag: 'Peak Performance',
+      title: 'The ovulatory advantage',
+      meta: 'Hormone · 4 min read',
+      why: 'LH has surged. An egg is releasing. Your body is doing something remarkable — and the side effects are worth understanding.',
+      what: 'Ovulation triggers a brief testosterone spike alongside peak estrogen. The result is the most confident, magnetic, and physically capable version of you.',
+      bullets: [
+        'Testosterone spike increases confidence, assertiveness, and libido',
+        'Your voice literally changes — it becomes warmer and more melodic (measurable in studies)',
+        'Face symmetry peaks and you are unconsciously perceived as more attractive',
+        'Pain tolerance is at its highest point of the entire cycle',
+        'Social processing is fastest — you can read rooms, pick up on subtleties, and respond in real time'
+      ],
+      tip: 'Book your most important meetings, presentations, and visible moments in this window. Not because you need to perform — but because your body is already there.',
+      listText: 'Read: the ovulatory advantage'
+    },
+    {
+      id: 'ov_pitch',
+      emoji: '🎯',
+      tag: 'Communication',
+      title: 'Pitch, ask, and be seen',
+      meta: 'Strategy · 3 min read',
+      why: 'You are neurologically wired for influence right now. Here is how to use it without burning the window on the wrong things.',
+      what: 'Ovulatory phase is the natural moment for visibility, high-stakes communication, and the conversations that require you to be fully present.',
+      bullets: [
+        'Say the thing you have been building to — the ask, the pitch, the boundary',
+        'Show up to the meeting you have been dreading. You will handle it better than you think',
+        'This is not the time to hide in your inbox — that is not what this energy is for',
+        'Invest in community: collaboration, mentoring, being seen by the people who matter',
+        'If a decision has been sitting — make it today. Clarity is high and so is confidence.'
+      ],
+      tip: 'The one thing ovulatory women consistently under-use: the ask. You are more persuasive right now than at any other point in your cycle. Use it.',
+      listText: 'Strategy: pitch and ask in ovulatory'
+    }
+  ],
+  luteal: [
+    {
+      id: 'lut_progesterone',
+      emoji: '🍂',
+      tag: 'Hormone Education',
+      title: 'What progesterone is actually doing',
+      meta: 'Hormone · 5 min read',
+      why: 'Progesterone gets blamed for PMS and then ignored. It is doing something far more nuanced than that.',
+      what: 'Progesterone is the hormone of nesting, depth, and discernment. It is not the enemy. It is asking you to slow down for a reason.',
+      bullets: [
+        'Progesterone has a natural sedating quality — it binds to GABA receptors, the same pathway as anti-anxiety medication',
+        'It lowers the threshold for what feels overwhelming or irritating — which is useful data if you listen to it',
+        'Detail orientation increases: you notice what is wrong, what is not working, what needs fixing',
+        'Verbal fluency decreases but analytical depth increases — swap brainstorming for editing and refining',
+        'The emotional intensity is not irrational. It is often the clearest signal of what actually needs attention.'
+      ],
+      tip: 'Luteal phase is for finishing, refining, and editing — not starting. The irritation you feel about unfinished things is useful. Use it to close loops.',
+      listText: 'Read: what progesterone is actually doing'
+    },
+    {
+      id: 'lut_protect',
+      emoji: '🛡️',
+      tag: 'Energy Management',
+      title: 'Protect the baseline',
+      meta: 'Strategy · 3 min read',
+      why: 'Most burnout in women happens in luteal phase because they are trying to perform at follicular capacity with half the hormonal support.',
+      what: 'A luteal protocol is not about doing less — it is about protecting the energy you have from the things that do not deserve it.',
+      bullets: [
+        'Audit your commitments: what is draining without giving back? That goes.',
+        'Move the social obligations that are not nourishing to a different week if possible',
+        'Deep work is still available — but it requires more warm-up time. Block longer, start slower.',
+        'Food: complex carbohydrates reduce the progesterone-driven blood sugar crashes that amplify PMS',
+        'Sleep priority is not optional in luteal — progesterone disrupts REM sleep. Protect the window.'
+      ],
+      tip: 'The single most useful luteal question: what can I say no to this week that I would say yes to next week?',
+      listText: 'Strategy: protect the baseline in luteal'
+    }
+  ],
+  menstrual: [
+    {
+      id: 'men_rest',
+      emoji: '🌑',
+      tag: 'Rest Protocol',
+      title: 'Rest is the protocol',
+      meta: 'Recovery · 4 min read',
+      why: 'Your body is doing significant physical work during menstruation. Prostaglandins are causing uterine contractions. Hormone levels are at their floor. This is not weakness — it is biology.',
+      what: 'A menstrual rest protocol is not about giving up. It is about working with the phase instead of against it.',
+      bullets: [
+        'Movement: gentle only — walking, yin yoga, stretching. No HIIT until bleeding lightens.',
+        'Nutrition: iron-rich foods (leafy greens, lentils, red meat if that is your preference), magnesium for cramps',
+        'Heat: abdominal heat reduces prostaglandin intensity — use it without guilt',
+        'Work: one non-negotiable per day, then stop. The creativity of follicular is 4-5 days away.',
+        'Social: opt out where you can. Introversion here is not a mood — it is a signal.'
+      ],
+      tip: 'The follicular phase energy you are waiting for is coming. You do not need to rush it. Every day you rest now is a day of better capacity next week.',
+      listText: 'Read: menstrual rest protocol'
+    },
+    {
+      id: 'men_intuition',
+      emoji: '🔮',
+      tag: 'Inner Intelligence',
+      title: 'Your intuition is loudest now',
+      meta: 'Reflection · 4 min read',
+      why: 'The thinning of hormonal noise during menstruation creates something counterintuitive: your clearest access to what you actually think, want, and need.',
+      what: 'Menstrual phase is associated with heightened right-brain activity — intuitive, pattern-recognising, holistic. The things you have been avoiding knowing tend to surface here.',
+      bullets: [
+        'What has been bothering you that you have been too busy to sit with?',
+        'What relationships feel off? What commitments feel wrong?',
+        'What are you doing out of obligation that no longer has meaning?',
+        'Journal without editing — do not perform even for yourself',
+        'Decisions made in menstrual phase tend to be the most aligned with your actual values, not your performance anxiety'
+      ],
+      tip: 'Do not make impulsive decisions in late luteal. But the clarity that arrives in menstrual phase — trust it. It is the cycle\'s built-in calibration moment.',
+      listText: 'Reflection: menstrual intuition window'
+    }
+  ]
+};
+
+var currentReelId = null;
+
+function buildDashboardReels(phase) {
+  var container = document.getElementById('dashboard-reels');
+  if (!container) return;
+  var cards = REEL_LIBRARY[phase] || REEL_LIBRARY.follicular;
+  container.innerHTML = '';
+  cards.forEach(function(reel) {
+    var div = document.createElement('div');
+    div.className = 'reel-card';
+    div.setAttribute('onclick', 'openReelModal("' + reel.id + '","' + phase + '")');
+    div.innerHTML =
+      '<div class="reel-card-tap-hint">Read →</div>' +
+      '<div class="reel-emoji">' + reel.emoji + '</div>' +
+      '<div class="reel-title">' + reel.title + '</div>' +
+      '<div class="reel-meta">' + reel.meta + '</div>';
+    container.appendChild(div);
+  });
+}
+
+function findReel(reelId, phase) {
+  var pool = REEL_LIBRARY[phase] || REEL_LIBRARY.follicular;
+  for (var i = 0; i < pool.length; i++) {
+    if (pool[i].id === reelId) return pool[i];
+  }
+  // Fallback: search all phases
+  var allPhases = ['follicular','ovulatory','luteal','menstrual'];
+  for (var p = 0; p < allPhases.length; p++) {
+    var arr = REEL_LIBRARY[allPhases[p]];
+    for (var j = 0; j < arr.length; j++) {
+      if (arr[j].id === reelId) return arr[j];
+    }
+  }
+  return null;
+}
+
+function openReelModal(reelId, phase) {
+  var reel = findReel(reelId, phase || (window._userProfile && window._userProfile.cyclePhase) || 'follicular');
+  if (!reel) return;
+  currentReelId = reelId;
+
+  var hero = document.getElementById('reelModalHero');
+  var body = document.getElementById('reelModalBody');
+  var cta  = document.getElementById('reelModalCta');
+
+  hero.innerHTML =
+    '<button class="reel-modal-close" onclick="closeReelModal()">×</button>' +
+    '<div style="font-size:32px;margin-bottom:12px;">' + reel.emoji + '</div>' +
+    '<div class="reel-modal-tag">' + reel.tag + '</div>' +
+    '<div class="reel-modal-title">' + reel.title + '</div>' +
+    '<div class="reel-modal-sub">' + reel.meta + '</div>';
+
+  var bulletsHtml = '<ul>' + reel.bullets.map(function(b) { return '<li>' + b + '</li>'; }).join('') + '</ul>';
+  var tipHtml = reel.tip
+    ? '<div style="background:rgba(196,18,48,0.06);border-left:2px solid var(--phase);padding:14px 16px;">' +
+      '<div class="reel-modal-section-label" style="color:var(--phase);margin-bottom:6px;">Tip from ESTRAL</div>' +
+      '<p style="font-family:DM Sans,sans-serif;font-style:italic;color:#1A0A0E;font-size:14px;line-height:1.7;-webkit-text-fill-color:#1A0A0E;">' + reel.tip + '</p>' +
+      '</div>'
+    : '';
+
+  body.innerHTML =
+    '<div><div class="reel-modal-section-label">Why now</div><p>' + reel.why + '</p></div>' +
+    '<div><div class="reel-modal-section-label">What this is</div><p>' + reel.what + '</p></div>' +
+    '<div>' + bulletsHtml + '</div>' +
+    tipHtml;
+
+  // Check if already added
+  var alreadyAdded = false;
+  if (window.morningData && window.morningData.mustDo) {
+    alreadyAdded = morningData.mustDo.indexOf(reel.listText) > -1;
+  }
+
+  var addLabel = alreadyAdded ? '\u2713 Added to today\'s list' : '+ Add to today\'s list';
+  var addedCls = alreadyAdded ? ' added' : '';
+  var addBtn = document.createElement('button');
+  addBtn.className = 'reel-add-btn' + addedCls;
+  addBtn.id = 'reel-add-btn-main';
+  addBtn.textContent = addLabel;
+  addBtn.dataset.reelId = reelId;
+  addBtn.dataset.phase = phase || 'follicular';
+  addBtn.onclick = function() { addReelToList(this.dataset.reelId, this.dataset.phase); };
+  var dismissBtn = document.createElement('button');
+  dismissBtn.className = 'reel-dismiss-btn';
+  dismissBtn.textContent = 'Not today';
+  dismissBtn.onclick = closeReelModal;
+  cta.innerHTML = '';
+  cta.appendChild(addBtn);
+  cta.appendChild(dismissBtn);
+
+  document.getElementById('reelModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeReelModal() {
+  document.getElementById('reelModal').classList.remove('open');
+  document.body.style.overflow = '';
+  currentReelId = null;
+}
+
+function addReelToList(reelId, phase) {
+  var reel = findReel(reelId, phase);
+  if (!reel) return;
+  // Add to morningData.mustDo
+  if (!morningData.mustDo) morningData.mustDo = [];
+  if (morningData.mustDo.indexOf(reel.listText) === -1) {
+    morningData.mustDo.push(reel.listText);
+  }
+  // Update the add button
+  var btn = document.getElementById('reel-add-btn-main');
+  if (btn) {
+    btn.textContent = '\u2713 Added to today\'s list';
+    btn.classList.add('added');
+  }
+  // Refresh the priorities card on the dashboard if visible
+  var prioContainer = document.querySelector('.priority-item') ? document.querySelector('.priority-item').parentNode : null;
+  if (prioContainer) {
+    var existing = document.querySelectorAll('[id^="dp-"]');
+    var idx = existing.length;
+    var newItem = document.createElement('div');
+    newItem.className = 'priority-item';
+    newItem.id = 'dp-' + idx;
+    newItem.innerHTML = '<span class="priority-text" style="font-size:14px;flex:1;">' + reel.listText + '</span>';
+    var chk = document.createElement('div');
+    chk.className = 'priority-check';
+    (function(itemEl) { chk.onclick = function() { togglePriorityCheck(chk, itemEl); }; })(newItem);
+    newItem.appendChild(chk);
+    prioContainer.appendChild(newItem);
+  }
+}
+// ── END REEL SYSTEM ──
 </script>
 
 
@@ -6568,6 +7041,20 @@ function openPMQuiz() {
       <button class="btn-ghost" style="margin-top:10px;" onclick="closeCycleExploreOverlay()">Close</button>
 
     </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     REEL DETAIL MODAL
+══════════════════════════════════════ -->
+<div class="reel-modal" id="reelModal" onclick="closeReelModal()">
+  <div class="reel-modal-sheet" onclick="event.stopPropagation()">
+    <div class="reel-modal-hero" id="reelModalHero">
+      <button class="reel-modal-close" onclick="closeReelModal()">×</button>
+    </div>
+    <div class="reel-modal-body" id="reelModalBody"></div>
+    <div class="reel-modal-cta" id="reelModalCta"></div>
   </div>
 </div>
 
