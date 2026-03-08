@@ -484,6 +484,7 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
   border-radius: 0;
   padding: 16px 4px;
   position: relative;
+  line-height: 1.55;
 }
 
 .chat-bubble-ai .estral-label {
@@ -685,6 +686,14 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
 .estral-voice.card-voice .estral-text-card {
   border-radius: 16px;
 }
+
+
+/* ESTRAL voice — tight readable spacing */
+.estral-voice p, .estral-bubble-inner p, #ceo-intro-text {
+  line-height: 1.55 !important;
+  margin-bottom: 0 !important;
+}
+.estral-voice { gap: 6px !important; }
 
 </style>
 </head>
@@ -929,7 +938,7 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     <div class="morning-cycle-pill" id="home-cycle-pill">🌒 Day — · —</div>
     <h1>Good morning,<br><span id="home-greeting-name">there</span>.</h1>
     <p class="muted" style="margin-top:6px; font-size:14px;" id="home-date"></p>
-    <div class="cycle-ring-wrap" id="home-phase-ring" onclick="" style="cursor:pointer;">
+    <div class="cycle-ring-wrap" id="home-phase-ring" onclick="openCycleExploreOverlay()" style="cursor:pointer;">
       <svg class="cycle-ring-svg" id="cycleRingSvg" width="130" height="130" viewBox="0 0 130 130">
         <defs>
           <!-- Soft atmospheric bloom gradient — like reference image -->
@@ -1403,7 +1412,7 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     <!-- ESTRAL evening read -->
     <div class="estral-voice card-voice" id="pm-estral-read">
       <span class="voice-label">ESTRAL · Evening Read</span>
-      <p id="pm-read-text" style="font-size:15px; line-height:1.8;"></p>
+      <p id="pm-read-text" style="font-size:15px; line-height:1.55; color:#1A0A0E;"></p>
     </div>
 
     <!-- Today summary -->
@@ -1645,18 +1654,18 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
 
 <!-- LOG -->
 <div class="screen" id="screen-log">
-      <!-- Profile completion nudge — shown if steps 5/6 were skipped -->
-      <div id="log-profile-nudge" style="display:none; margin:16px 16px 0;">
-        <div class="estral-voice card-voice" style="cursor:pointer;" onclick="openProfileCompletion()">
-          <span class="voice-label">ESTRAL · Finish your setup</span>
-          <p style="font-size:14px; line-height:1.7; margin-bottom:10px;">you skipped your goals and vision during setup — no pressure, but when you're ready, filling these in helps ESTRAL give you much sharper reads.</p>
-          <span style="font-size:12px; color:#C41230; font-weight:600;">Tap to complete →</span>
-        </div>
-      </div>
   <div style="padding:56px 20px 0;">
     <h2>Your archive.</h2>
     <p class="muted" style="font-size:13px; margin-top:4px; margin-bottom:16px;">Every check-in, organised by cycle.</p>
   </div>
+      <!-- Profile completion nudge — shown if steps 5/6 were skipped — sits below title -->
+      <div id="log-profile-nudge" style="display:none; margin:0 16px 16px;">
+        <div class="estral-voice card-voice" style="cursor:pointer;" onclick="openProfileCompletion()">
+          <span class="voice-label">ESTRAL · Finish your setup</span>
+          <p style="font-size:14px; line-height:1.55; margin-bottom:10px;">you skipped your goals and vision during setup — no pressure, but when you're ready, filling these in helps ESTRAL give you much sharper reads.</p>
+          <span style="font-size:12px; color:#C41230; font-weight:600;">Tap to complete →</span>
+        </div>
+      </div>
   <!-- Month tabs -->
   <div style="display:flex; overflow-x:auto; padding:0 20px 0; gap:0; border-bottom:1px solid rgba(28,26,24,0.1); scrollbar-width:none; background:rgba(240,236,228,0.95); backdrop-filter:blur(20px); position:sticky; top:0; z-index:50;">
     <button class="plan-tab-btn active" onclick="switchLogMonth(this,'mar')" id="log-month-mar">March</button>
@@ -2578,7 +2587,7 @@ function openAddEventModal() {
     if (rule) {
       confirmText.textContent = rule.label + ' — got it. i will add this across your calendar automatically.';
       confirm.style.display = 'block';
-      setTimeout(() => { if (confirm.querySelector('.estral-voice')) attachCanvas(confirm.querySelector('.estral-voice')); }, 50);
+      setTimeout(() => { if (confirm.querySelector('.estral-voice') && typeof attachCanvas === 'function') attachCanvas(confirm.querySelector('.estral-voice')); }, 50);
     } else if (recurInput.value.length > 2) {
       confirmText.textContent = "hmm, i didn’t quite catch that — try: \"every Tuesday\" or \"every 1st Monday of the month\"";
       confirm.style.display = 'block';
@@ -2672,7 +2681,7 @@ function openDayModalFull(day, phase, tasks, moon, dateStr, dayEvents) {
       <button class="btn-primary phase" style="width:100%; margin-top:16px;" onclick="openAddEventForDate('${dateStr}')">+ Add event this day</button>
       <button class="btn-ghost" style="margin-top:8px;" onclick="closeDayModal()">Close</button>
     </div>`;
-  setTimeout(() => { const v = contentEl.querySelector('.estral-voice'); if(v) attachCanvas(v); }, 50);
+  setTimeout(() => { const v = contentEl.querySelector('.estral-voice'); if(v && typeof attachCanvas === 'function') attachCanvas(v); }, 50);
   modal.classList.add('open');
 }
 
@@ -2926,7 +2935,7 @@ function toggleNoCycle(cb) {
     label.style.borderColor = '#C41230';
     label.style.background = 'rgba(196,18,48,0.05)';
     // attach lava to the estral chime
-    setTimeout(() => attachCanvas(document.querySelector('#ob-nocycle-estral .estral-voice')), 50);
+    setTimeout(() => { const el = document.querySelector('#ob-nocycle-estral .estral-voice'); if (el && typeof attachCanvas === 'function') attachCanvas(el); }, 50);
   } else {
     fields.style.display = 'block';
     estral.style.display = 'none';
@@ -5192,6 +5201,47 @@ function getMoonCycleCombo(moonPhaseKey, cyclePhase) {
   return combos[phase]?.[key] || 'Your cycle and the moon are in conversation. Pay attention to what your body is telling you.';
 }
 
+
+// ══════════════════════════════════════════════════════
+// CYCLE EXPLORE OVERLAY
+// ══════════════════════════════════════════════════════
+function openCycleExploreOverlay() {
+  const overlay = document.getElementById('cycle-explore-overlay');
+  if (!overlay) return;
+
+  const noCycle = !hasCycleData();
+  const p = window._userProfile || {};
+  const phase = p.cyclePhase || 'follicular';
+  const day = parseInt(p.cycleDay) || 1;
+  const phaseCap = phase.charAt(0).toUpperCase() + phase.slice(1);
+
+  const eyebrow = document.getElementById('ceo-eyebrow');
+  const title = document.getElementById('ceo-title');
+  const introText = document.getElementById('ceo-intro-text');
+
+  if (noCycle) {
+    if (eyebrow) eyebrow.textContent = 'Your rhythm starts here';
+    if (title) title.innerHTML = 'Your cycle is<br>your superpower.';
+    if (introText) introText.textContent = 'here is everything you need to know about tracking, what a healthy cycle looks like, and why understanding your rhythm changes everything. you do not need to know anything yet — even one data point starts building your picture.';
+  } else {
+    if (eyebrow) eyebrow.textContent = 'Day ' + day + ' · ' + phaseCap;
+    if (title) title.innerHTML = 'You are in<br>' + phaseCap + ' phase.';
+    if (introText) introText.textContent = 'here is everything you need to know about tracking, what a healthy cycle looks like, and why understanding your rhythm changes everything. day ' + day + ' — ' + phase + ' energy. use it.';
+  }
+
+  overlay.style.display = 'block';
+  overlay.scrollTop = 0;
+  setTimeout(() => {
+    overlay.querySelectorAll('.estral-voice').forEach(el => { if (typeof attachCanvas === 'function') attachCanvas(el); });
+  }, 60);
+}
+
+function closeCycleExploreOverlay() {
+  const overlay = document.getElementById('cycle-explore-overlay');
+  if (overlay) overlay.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
 function openMoonOverlay() {
   const moonPhase = getDetailedMoonPhase();
   const moonSign = getMoonZodiacSign();
@@ -6284,6 +6334,240 @@ function openPMQuiz() {
     </div>
 
     <button class="btn-primary phase" onclick="saveNewEvent()" style="width:100%;">Save event →</button>
+  </div>
+</div>
+
+
+<!-- CYCLE EXPLORE OVERLAY -->
+<div id="cycle-explore-overlay" style="display:none; position:fixed; inset:0; z-index:550; background:rgba(18,10,14,0.6); backdrop-filter:blur(10px); overflow-y:auto; -webkit-overflow-scrolling:touch;">
+  <div style="min-height:100%; padding-bottom:env(safe-area-inset-bottom,20px);">
+    <div style="background:var(--bg); border-radius:28px 28px 0 0; margin-top:48px; padding:32px 24px 60px; position:relative;">
+
+      <!-- Close -->
+      <button onclick="closeCycleExploreOverlay()" style="position:absolute;top:20px;right:20px;background:rgba(28,26,24,0.08);border:none;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);">×</button>
+
+      <!-- Dynamic header — changes based on whether user has cycle data -->
+      <div id="cycle-explore-header" style="margin-bottom:28px;">
+        <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#C41230;margin-bottom:8px;">ESTRAL · Cycle Intelligence</div>
+        <h2 style="font-size:26px;line-height:1.2;margin-bottom:10px;" id="cycle-explore-title">Your cycle is data.</h2>
+        <p style="font-size:14px;color:var(--muted);line-height:1.7;" id="cycle-explore-subtitle">Everything you need to know about tracking and why it changes everything.</p>
+      </div>
+
+      <!-- ESTRAL voice card -->
+      <div class="estral-voice card-voice" style="margin-bottom:28px;">
+        <span class="voice-label">ESTRAL</span>
+        <p id="cycle-explore-estral-text" style="font-size:15px;line-height:1.8;"></p>
+      </div>
+
+      <!-- SECTION: What is a healthy cycle -->
+      <div style="margin-bottom:28px;">
+        <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--phase);margin-bottom:14px;font-weight:700;">A healthy menstrual cycle</div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="padding:14px 16px;background:rgba(28,26,24,0.03);border-radius:14px;border-left:3px solid #D4326B;">
+            <div style="font-size:12px;font-weight:700;color:#D4326B;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em;">Length</div>
+            <div style="font-size:14px;line-height:1.6;">21–35 days is normal. 28 days is the average — not the rule. Your cycle is yours.</div>
+          </div>
+          <div style="padding:14px 16px;background:rgba(28,26,24,0.03);border-radius:14px;border-left:3px solid #3BAFD4;">
+            <div style="font-size:12px;font-weight:700;color:#3BAFD4;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em;">Bleed</div>
+            <div style="font-size:14px;line-height:1.6;">3–7 days. Flow goes from moderate to light. Clots smaller than a 10p coin are normal. Pain that stops your life is not.</div>
+          </div>
+          <div style="padding:14px 16px;background:rgba(28,26,24,0.03);border-radius:14px;border-left:3px solid #F0C040;">
+            <div style="font-size:12px;font-weight:700;color:#B8860B;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em;">Hormones</div>
+            <div style="font-size:14px;line-height:1.6;">Oestrogen rises through follicular, peaks at ovulation. Progesterone takes over in luteal. If either flatlines, you feel it — mood, energy, sleep, all of it.</div>
+          </div>
+          <div style="padding:14px 16px;background:rgba(28,26,24,0.03);border-radius:14px;border-left:3px solid #C47830;">
+            <div style="font-size:12px;font-weight:700;color:#C47830;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em;">Signs of imbalance</div>
+            <div style="font-size:14px;line-height:1.6;">Severe PMS, cycles under 21 or over 35 days, missing periods, extreme fatigue, or pain that stops you — these are signals, not your normal.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: How to track -->
+      <div style="margin-bottom:28px;">
+        <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--phase);margin-bottom:14px;font-weight:700;">How to track</div>
+        <div class="estral-voice card-voice" style="margin-bottom:14px;">
+          <span class="voice-label">ESTRAL</span>
+          <p style="font-size:14px;line-height:1.8;">start with just one thing: the first day of your bleed. that is day 1. log it every month. after 2–3 cycles you will see your pattern. everything else — mood, energy, symptoms, sleep — builds from that single data point. the app does the rest.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:rgba(196,18,48,0.04);border-radius:12px;">
+            <span style="font-size:18px;flex-shrink:0;">1️⃣</span>
+            <div><div style="font-size:13px;font-weight:600;margin-bottom:2px;">Log day 1 of your period</div><div style="font-size:12px;color:var(--muted);line-height:1.5;">The first day of real flow — not spotting. This resets your cycle clock.</div></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:rgba(196,18,48,0.04);border-radius:12px;">
+            <span style="font-size:18px;flex-shrink:0;">2️⃣</span>
+            <div><div style="font-size:13px;font-weight:600;margin-bottom:2px;">Note your energy daily</div><div style="font-size:12px;color:var(--muted);line-height:1.5;">Just a number. 1–10. After a month you will see it move with your phases.</div></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:rgba(196,18,48,0.04);border-radius:12px;">
+            <span style="font-size:18px;flex-shrink:0;">3️⃣</span>
+            <div><div style="font-size:13px;font-weight:600;margin-bottom:2px;">Track symptoms without judgment</div><div style="font-size:12px;color:var(--muted);line-height:1.5;">Bloating, mood dips, brain fog, cravings. These are messages, not problems.</div></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:rgba(196,18,48,0.04);border-radius:12px;">
+            <span style="font-size:18px;flex-shrink:0;">4️⃣</span>
+            <div><div style="font-size:13px;font-weight:600;margin-bottom:2px;">Be consistent for 3 cycles</div><div style="font-size:12px;color:var(--muted);line-height:1.5;">That is when the patterns become undeniable. That is when ESTRAL gets sharp.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: Moon as a guide -->
+      <div style="margin-bottom:32px;">
+        <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--phase);margin-bottom:14px;font-weight:700;">Using the moon until your data builds</div>
+        <div class="estral-voice card-voice" style="margin-bottom:16px;">
+          <span class="voice-label">ESTRAL</span>
+          <p style="font-size:14px;line-height:1.8;">before women had cycle tracking apps, they had the moon. a healthy cycle is approximately 29.5 days — the same as a lunar month. this is not a coincidence. the moon is an external rhythm you can sync to until your internal one becomes clear.</p>
+        </div>
+
+        <!-- Moon phase map -->
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:rgba(28,26,24,0.04);border-radius:14px;">
+            <div style="font-size:28px;flex-shrink:0;">🌑</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;margin-bottom:3px;">New Moon → Menstrual</div>
+              <div style="font-size:12px;color:var(--muted);line-height:1.5;">Rest. Release. Turn inward. The slate clears. Low energy is purposeful — your body is doing deep work. Do not fight it.</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:rgba(28,26,24,0.04);border-radius:14px;">
+            <div style="font-size:28px;flex-shrink:0;">🌒</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;margin-bottom:3px;">Waxing Crescent → Follicular</div>
+              <div style="font-size:12px;color:var(--muted);line-height:1.5;">Energy builds. New ideas emerge. Start things. Your oestrogen mirrors the growing light — curiosity, creativity, and momentum return.</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:rgba(28,26,24,0.04);border-radius:14px;">
+            <div style="font-size:28px;flex-shrink:0;">🌕</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;margin-bottom:3px;">Full Moon → Ovulation</div>
+              <div style="font-size:12px;color:var(--muted);line-height:1.5;">Peak energy. Peak magnetism. Be seen. Pitch, connect, launch, show up fully. This is your most outward, electric window.</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:rgba(28,26,24,0.04);border-radius:14px;">
+            <div style="font-size:28px;flex-shrink:0;">🌘</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;margin-bottom:3px;">Waning Moon → Luteal</div>
+              <div style="font-size:12px;color:var(--muted);line-height:1.5;">Edit, refine, close loops. Your inner critic gets loud — use that precision. Finish what follicular started. Say no to what does not belong.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA — log period -->
+      <div id="cycle-explore-cta" style="display:none; padding:20px; background:rgba(196,18,48,0.05); border-radius:16px; border:1px solid rgba(196,18,48,0.12); text-align:center;">
+        <p style="font-size:14px;line-height:1.7;margin-bottom:14px;color:var(--text);">When your next period starts, log it in the app. That is step one. Everything else builds from there.</p>
+        <button class="btn-primary phase" onclick="closeCycleExploreOverlay(); switchTab('log');" style="width:100%;">Log my period →</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- CYCLE EXPLORE OVERLAY -->
+<div id="cycle-explore-overlay" style="display:none; position:fixed; inset:0; z-index:500; overflow-y:auto;">
+  <div style="min-height:100%; background:rgba(28,26,24,0.55); backdrop-filter:blur(10px); display:flex; align-items:flex-end; padding-top:60px;">
+    <div style="width:100%; max-width:480px; margin:0 auto; background:var(--bg); border-radius:28px 28px 0 0; padding:32px 24px 72px; position:relative;">
+
+      <!-- close -->
+      <button onclick="closeCycleExploreOverlay()" style="position:absolute;top:20px;right:20px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);">×</button>
+
+      <!-- eyebrow -->
+      <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#C41230;margin-bottom:16px;" id="ceo-eyebrow">Your rhythm</div>
+
+      <!-- ESTRAL spoken greeting — first thing they see -->
+      <div class="estral-voice card-voice" style="margin-bottom:24px;" id="ceo-estral-intro">
+        <span class="voice-label">ESTRAL</span>
+        <p id="ceo-intro-text" style="font-size:14px;line-height:1.6;margin:0;">here is everything you need to know about tracking, what a healthy cycle looks like, and why understanding your rhythm changes everything.</p>
+      </div>
+
+      <!-- section title -->
+      <h2 style="font-size:22px;line-height:1.2;margin-bottom:24px;" id="ceo-title">Understanding<br>your cycle.</h2>
+
+      <!-- SECTION: What a healthy cycle looks like -->
+      <div style="margin-bottom:28px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--phase);margin-bottom:14px;">A healthy menstrual cycle</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="padding:14px 16px;background:rgba(196,18,48,0.05);border-radius:14px;border-left:3px solid #C41230;">
+            <div style="font-size:12px;font-weight:700;color:#C41230;margin-bottom:4px;">Length</div>
+            <div style="font-size:13px;color:var(--text);line-height:1.6;">21–35 days is normal. 28 days is average but not the rule. Your cycle is healthy if it is consistent for <em>you</em>.</div>
+          </div>
+          <div style="padding:14px 16px;background:rgba(196,18,48,0.05);border-radius:14px;border-left:3px solid #FF3D7F;">
+            <div style="font-size:12px;font-weight:700;color:#FF3D7F;margin-bottom:4px;">Bleed</div>
+            <div style="font-size:13px;color:var(--text);line-height:1.6;">3–7 days. Light to moderate flow. Some cramping is normal — debilitating pain is not. Your bleed is data, not an inconvenience.</div>
+          </div>
+          <div style="padding:14px 16px;background:rgba(196,18,48,0.05);border-radius:14px;border-left:3px solid #FFB3C6;">
+            <div style="font-size:12px;font-weight:700;color:#8B1A4A;margin-bottom:4px;">Energy pattern</div>
+            <div style="font-size:13px;color:var(--text);line-height:1.6;">Energy naturally rises through follicular into ovulation, then softens through luteal into bleed. If yours feels flat all cycle — that is worth paying attention to.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: Why tracking matters -->
+      <div style="margin-bottom:28px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--phase);margin-bottom:14px;">Why tracking changes everything</div>
+        <div class="estral-voice card-voice">
+          <span class="voice-label">ESTRAL</span>
+          <p style="font-size:14px;line-height:1.55;margin:0;">your cycle is the most honest data you have about your body. when you track it — even just the first day of your bleed — you start to see patterns. why you feel unstoppable some weeks and completely offline others. why certain conversations wreck you at certain times. why your hunger, your sleep, your creativity all move in waves. this is not woo. this is biology. and once you see it, you cannot unsee it.</p>
+        </div>
+      </div>
+
+      <!-- SECTION: How to track -->
+      <div style="margin-bottom:28px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--phase);margin-bottom:14px;">How to track — start here</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:rgba(28,26,24,0.04);border-radius:12px;">
+            <div style="font-size:18px;flex-shrink:0;">1.</div>
+            <div style="font-size:13px;color:var(--text);line-height:1.6;"><strong>Day 1 is the first day of your bleed</strong> — not spotting, actual flow. Log it here in ESTRAL every cycle. That single data point builds your whole picture.</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:rgba(28,26,24,0.04);border-radius:12px;">
+            <div style="font-size:18px;flex-shrink:0;">2.</div>
+            <div style="font-size:13px;color:var(--text);line-height:1.6;"><strong>Note how you feel each day</strong> — energy, mood, sleep, body. You do not need to be detailed. Even one word is enough. Over time patterns emerge on their own.</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:rgba(28,26,24,0.04);border-radius:12px;">
+            <div style="font-size:18px;flex-shrink:0;">3.</div>
+            <div style="font-size:13px;color:var(--text);line-height:1.6;"><strong>Do not try to fix or optimise yet</strong> — just observe. Three cycles of honest tracking will show you more about yourself than any productivity book.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: Moon as a guide -->
+      <div style="margin-bottom:32px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--phase);margin-bottom:14px;">Using the moon until your data builds</div>
+        <div class="estral-voice card-voice" style="margin-bottom:16px;">
+          <span class="voice-label">ESTRAL</span>
+          <p style="font-size:14px;line-height:1.55;margin:0;">before your cycle data is established, the moon is your rhythm map. every woman historically lived by it — before artificial light disrupted our internal clocks, most women bled at the new moon and ovulated at the full moon. you may not sync perfectly, but the energy of each phase mirrors your own.</p>
+        </div>
+        <!-- Moon phase map -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="padding:14px;background:linear-gradient(135deg,rgba(28,26,24,0.08),rgba(28,26,24,0.04));border-radius:14px;">
+            <div style="font-size:20px;margin-bottom:6px;">🌑</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px;">New Moon</div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.5;">Menstrual energy. Rest, release, turn inward. Not the time to launch or decide.</div>
+          </div>
+          <div style="padding:14px;background:linear-gradient(135deg,rgba(28,26,24,0.08),rgba(28,26,24,0.04));border-radius:14px;">
+            <div style="font-size:20px;margin-bottom:6px;">🌒</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px;">Waxing Crescent</div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.5;">Follicular rising. Set intentions, start new things, energy building.</div>
+          </div>
+          <div style="padding:14px;background:linear-gradient(135deg,rgba(28,26,24,0.08),rgba(28,26,24,0.04));border-radius:14px;">
+            <div style="font-size:20px;margin-bottom:6px;">🌕</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px;">Full Moon</div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.5;">Ovulatory peak. Maximum energy and magnetism. Be seen, connect, launch.</div>
+          </div>
+          <div style="padding:14px;background:linear-gradient(135deg,rgba(28,26,24,0.08),rgba(28,26,24,0.04));border-radius:14px;">
+            <div style="font-size:20px;margin-bottom:6px;">🌘</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px;">Waning</div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.5;">Luteal wind-down. Finish, edit, release what is not working. Go quieter.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <button class="btn-primary phase" style="width:100%;" onclick="closeCycleExploreOverlay(); switchTab('log');">
+        Start logging your cycle →
+      </button>
+      <button class="btn-ghost" style="margin-top:10px;" onclick="closeCycleExploreOverlay()">Close</button>
+
+    </div>
   </div>
 </div>
 
