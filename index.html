@@ -41,6 +41,7 @@
   color-scheme: light only;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+button, [onclick] { touch-action: manipulation; cursor: pointer; }
 html { color-scheme: light; background: #C8DFE8; }
 body {
   font-family: 'DM Sans', sans-serif;
@@ -268,10 +269,10 @@ h3 { font-size: 20px; line-height: 1.2; }
 .chip { padding: 8px 16px; border-radius: 100px; border: 1px solid rgba(28,26,24,0.2); font-size: 13px; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--text); }
 .chip:hover { border-color: var(--phase); }
 .chip.selected { background: var(--phase); border-color: var(--phase); color: #fff; }
-.btn-primary { width: 100%; padding: 16px; background: var(--text); color: #F5F1EB; border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s; }
+.btn-primary { width: 100%; padding: 16px; background: var(--text); color: #F5F1EB; border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .btn-primary:hover { opacity: 0.8; }
 .btn-primary.phase { background: var(--phase); }
-.btn-ghost { width: 100%; padding: 14px; background: transparent; color: var(--text); border: 1px solid rgba(28,26,24,0.25); border-radius: 100px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+.btn-ghost { width: 100%; padding: 14px; background: transparent; color: var(--text); border: 1px solid rgba(28,26,24,0.25); border-radius: 100px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .btn-ghost:hover { border-color: var(--phase); color: var(--phase); }
 .slider-wrap { margin: 14px 0; }
 .slider-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -1787,8 +1788,21 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
 <!-- CHART -->
 <div class="screen" id="screen-chart">
   <div style="padding:56px 20px 20px; overflow-y:auto; padding-bottom:86px;">
-    <h2>Your patterns.</h2>
-    <p class="muted" style="font-size:13px; margin-top:4px; margin-bottom:20px;">Connections build as you log. <span id="chart-days-logged">0</span> days tracked.</p>
+
+    <!-- Days logged stat hero -->
+    <div style="margin-bottom:28px;">
+      <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--phase); margin-bottom:6px;">Your patterns.</div>
+      <div style="display:flex; align-items:flex-end; gap:10px; margin-bottom:6px;">
+        <span id="chart-days-logged" style="font-family:'DM Sans',sans-serif; font-size:72px; font-weight:700; line-height:1; color:var(--text);">0</span>
+        <span style="font-size:18px; font-weight:500; color:var(--muted); padding-bottom:10px;">days logged</span>
+      </div>
+      <div id="chart-days-milestone" style="font-size:13px; color:var(--muted); line-height:1.5;">Start logging to reveal your patterns.</div>
+      <!-- Progress bar toward next milestone -->
+      <div style="margin-top:12px; height:3px; background:rgba(28,26,24,0.08); border-radius:100px; overflow:hidden;">
+        <div id="chart-milestone-bar" style="height:100%; width:0%; background:var(--phase); border-radius:100px; transition:width 0.6s ease;"></div>
+      </div>
+      <div id="chart-milestone-label" style="font-size:10px; color:var(--muted); margin-top:5px; letter-spacing:0.04em;"></div>
+    </div>
 
     <!-- No data state -->
     <div id="chart-no-data" style="text-align:center; padding:40px 0; display:none;">
@@ -1871,7 +1885,7 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
 
 
 <!-- PM LOCK OVERLAY -->
-<div id="pm-lock-overlay" style="display:none; position:fixed; inset:0; z-index:500; flex-direction:column; background:var(--bg);">
+<div id="pm-lock-overlay" style="display:none; position:fixed; inset:0; z-index:500; flex-direction:column; background:var(--bg); touch-action:manipulation; -webkit-overflow-scrolling:touch;">
   <!-- AM summary strip at top -->
   <div id="pm-lock-am-summary" style="background:var(--phase-dim); border-bottom:1px solid var(--phase-mid); padding:14px 20px; display:none;">
     <div style="font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--phase); margin-bottom:6px;">This morning you logged</div>
@@ -1886,8 +1900,8 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
       <span class="voice-label">Tip from ESTRAL</span>
       <span class="ev-text">Your evening review is ready. Two minutes. Then the app is yours again.</span>
     </div>
-    <button class="btn-primary phase" onclick="startPMFromLock()" style="max-width:280px;">Open evening review ✦</button>
-    <button class="btn-ghost" onclick="dismissPMLock()" style="margin-top:12px; font-size:12px; opacity:0.5;">Remind me in 30 min</button>
+    <button class="btn-primary phase" id="pm-lock-open-btn" style="max-width:280px;">Open evening review ✦</button>
+    <button class="btn-ghost" id="pm-lock-dismiss-btn" style="margin-top:12px; font-size:12px; opacity:0.5;">Remind me in 30 min</button>
   </div>
 </div>
 
@@ -2025,6 +2039,26 @@ const MOON_ICONS = ['🌑','🌒','🌒','🌒','🌓','🌔','🌔','🌕','�
 const PHASE_GUIDE = { follicular:{energy:'High',guide:'Build · Create · Initiate',moon:'🌒'}, ovulatory:{energy:'Peak',guide:'Launch · Connect · Pitch',moon:'🌕'}, luteal:{energy:'Moderate',guide:'Refine · Finish · Analyse',moon:'🌖'}, menstrual:{energy:'Low',guide:'Rest · Reflect · Release',moon:'🌑'} };
 
 document.addEventListener('DOMContentLoaded', () => {
+  // PM lock buttons — use touchend for instant iOS response, click as fallback
+  function bindTap(id, fn) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var fired = false;
+    el.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      if (fired) return; fired = true;
+      setTimeout(function(){ fired = false; }, 600);
+      fn();
+    }, { passive: false });
+    el.addEventListener('click', function(e) {
+      if (fired) return; fired = true;
+      setTimeout(function(){ fired = false; }, 600);
+      fn();
+    });
+  }
+  bindTap('pm-lock-open-btn', startPMFromLock);
+  bindTap('pm-lock-dismiss-btn', dismissPMLock);
+
   loadEvents();
   buildSliders();
   buildChips('mood-chips',['Calm','Focused','Happy','Anxious','Irritable','Low','Wired','Social','Creative','Tender','Overwhelmed','Grounded','Motivated','Sad'],'mood');
@@ -3847,6 +3881,33 @@ function buildChartFromData() {
   let realLogs = []; try { realLogs = JSON.parse(localStorage.getItem('estral_logs')||'[]'); } catch(e) {}
   const daysEl = document.getElementById('chart-days-logged');
   if (daysEl) daysEl.textContent = realLogs.length;
+
+  // Milestone messaging + progress bar
+  const n = realLogs.length;
+  const milestones = [7, 14, 30, 60, 90, 180, 365];
+  const next = milestones.find(m => m > n) || 365;
+  const prev = milestones[milestones.indexOf(next) - 1] || 0;
+  const pct = Math.min(100, Math.round(((n - prev) / (next - prev)) * 100));
+  const bar = document.getElementById('chart-milestone-bar');
+  const label = document.getElementById('chart-milestone-label');
+  const milestone = document.getElementById('chart-days-milestone');
+  if (bar) bar.style.width = pct + '%';
+  if (label) label.textContent = n < next ? (next - n) + ' days to ' + next + '-day milestone' : '✦ ' + n + '-day milestone reached';
+  if (milestone) {
+    const msgs = {
+      0:  'Start logging to reveal your patterns.',
+      1:  'Day one. The data starts here.',
+      7:  '7 days in — your first full week of data.',
+      14: 'Two weeks tracked. Patterns are forming.',
+      30: '30 days. A full cycle of data. This is where it gets interesting.',
+      60: 'Two months. ESTRAL is learning your rhythm.',
+      90: '90 days — a full quarter. Your patterns are real.',
+      180:'Half a year of data. You know your body.',
+      365:'A full year. You have closed the loop. 🖤'
+    };
+    const key = milestones.slice().reverse().find(m => n >= m) || 0;
+    milestone.textContent = n === 0 ? msgs[0] : (msgs[key] || (n + ' days of data. Keep going.'));
+  }
 
   const noData = document.getElementById('chart-no-data');
   if (realLogs.length === 0) {
@@ -5812,6 +5873,7 @@ function buildWeekColumns() {
     const body = document.createElement('div');
     body.style.cssText = `flex:1;padding:6px 5px;display:flex;flex-direction:column;gap:4px;min-height:130px;`;
     body.dataset.day = dateNum;
+    body.classList.add('week-day-col');
 
     // Locked events
     dayEvents.forEach(ev => {
@@ -5877,6 +5939,185 @@ function buildWeekTrayItems() {
     tray.appendChild(chip);
   });
 }
+
+
+
+
+// ══════════════════════════════════════════════════════
+// TOUCH DRAG SYSTEM — iOS-compatible drag-to-calendar
+// HTML5 drag API does not work on iOS Safari.
+// This uses touchstart/touchmove/touchend with a
+// floating clone that follows the finger.
+// ══════════════════════════════════════════════════════
+
+var _touchDragItem = null;      // the task object being dragged
+var _touchDragClone = null;     // the floating DOM clone
+var _touchDragSource = null;    // 'tray' | 'week-tray'
+
+function _createDragClone(chip, touch) {
+  var clone = chip.cloneNode(true);
+  var rect = chip.getBoundingClientRect();
+  clone.style.cssText = [
+    'position:fixed',
+    'z-index:9999',
+    'pointer-events:none',
+    'opacity:0.9',
+    'transform:scale(1.08)',
+    'transition:transform 0.1s',
+    'left:' + (touch.clientX - rect.width / 2) + 'px',
+    'top:' + (touch.clientY - rect.height / 2) + 'px',
+    'width:' + rect.width + 'px',
+    'box-shadow:0 8px 24px rgba(28,26,24,0.18)',
+  ].join(';');
+  document.body.appendChild(clone);
+  return clone;
+}
+
+function _moveDragClone(touch) {
+  if (!_touchDragClone) return;
+  var rect = _touchDragClone.getBoundingClientRect();
+  _touchDragClone.style.left = (touch.clientX - rect.width / 2) + 'px';
+  _touchDragClone.style.top  = (touch.clientY - rect.height / 2) + 'px';
+}
+
+function _removeDragClone() {
+  if (_touchDragClone) { _touchDragClone.remove(); _touchDragClone = null; }
+}
+
+// Find the element under the touch point (ignoring the clone)
+function _elementFromTouch(touch) {
+  if (_touchDragClone) _touchDragClone.style.display = 'none';
+  var el = document.elementFromPoint(touch.clientX, touch.clientY);
+  if (_touchDragClone) _touchDragClone.style.display = '';
+  return el;
+}
+
+function _getDropCell(el) {
+  // Walk up to find a month-day-cell or week-day-col
+  while (el && el !== document.body) {
+    if (el.classList && (el.classList.contains('month-day-cell') || el.classList.contains('week-day-col'))) return el;
+    el = el.parentElement;
+  }
+  return null;
+}
+
+var _lastHighlight = null;
+function _highlightCell(cell, color) {
+  if (_lastHighlight && _lastHighlight !== cell) {
+    _lastHighlight.style.outline = '';
+    _lastHighlight = null;
+  }
+  if (cell) {
+    cell.style.outline = '2px solid ' + (color || 'var(--phase)');
+    _lastHighlight = cell;
+  }
+}
+
+function _clearHighlight() {
+  if (_lastHighlight) { _lastHighlight.style.outline = ''; _lastHighlight = null; }
+}
+
+// Attach touch drag to a chip element
+function attachTouchDrag(chip, item, source) {
+  chip.addEventListener('touchstart', function(e) {
+    _touchDragItem = item;
+    _touchDragSource = source;
+    _touchDragClone = _createDragClone(chip, e.touches[0]);
+    chip.style.opacity = '0.4';
+  }, { passive: true });
+
+  chip.addEventListener('touchmove', function(e) {
+    e.preventDefault(); // stops page scroll while dragging
+    var t = e.touches[0];
+    _moveDragClone(t);
+    var el = _elementFromTouch(t);
+    var cell = _getDropCell(el);
+    var color = item.phase ? (PHASE_COLORS[item.phase] || 'var(--phase)') : 'var(--phase)';
+    _highlightCell(cell, color);
+  }, { passive: false });
+
+  chip.addEventListener('touchend', function(e) {
+    chip.style.opacity = '1';
+    _removeDragClone();
+    _clearHighlight();
+    var t = e.changedTouches[0];
+    var el = _elementFromTouch(t);
+    var cell = _getDropCell(el);
+    if (cell && _touchDragItem) {
+      _handleTouchDrop(cell, _touchDragItem, _touchDragSource);
+    }
+    _touchDragItem = null;
+    _touchDragSource = null;
+  }, { passive: true });
+}
+
+function _handleTouchDrop(cell, item, source) {
+  // Month cell drop
+  if (cell.classList.contains('month-day-cell')) {
+    var d = parseInt(cell.querySelector('.month-day-num') && cell.querySelector('.month-day-num').textContent);
+    if (!d || isNaN(d)) {
+      // fallback: read data-day attribute
+      d = parseInt(cell.dataset.day);
+    }
+    if (!d || isNaN(d)) return;
+    if (!monthTasks[d]) monthTasks[d] = [];
+    if (!monthTasks[d].find(function(t){ return t.text === item.text; })) {
+      monthTasks[d].push(Object.assign({}, item));
+    }
+    buildMonthGrid();
+    buildDragTray();
+  }
+  // Week col drop — keyed by day number (same as monthTasks)
+  if (cell.classList.contains('week-day-col')) {
+    var dayNum = parseInt(cell.dataset.day);
+    if (!dayNum || isNaN(dayNum)) return;
+    if (!monthTasks[dayNum]) monthTasks[dayNum] = [];
+    if (!monthTasks[dayNum].find(function(t){ return t.text === item.text; })) {
+      monthTasks[dayNum].push(Object.assign({}, item));
+    }
+    buildWeekColumns();
+    buildWeekTrayItems();
+    buildDragTray();
+  }
+}
+
+// Patch buildDragTray to also attach touch handlers
+var _origBuildDragTray = buildDragTray;
+buildDragTray = function() {
+  _origBuildDragTray();
+  var tray = document.getElementById('drag-tray-items');
+  if (!tray) return;
+  tray.querySelectorAll('[draggable]').forEach(function(chip, idx) {
+    var item = brainDumpItems.filter(function(it){
+      var placed = Object.values(monthTasks).flat().some(function(t){ return t.text === it.text && !t.locked; });
+      return !placed;
+    })[idx];
+    if (item) attachTouchDrag(chip, item, 'tray');
+  });
+};
+
+// Patch buildWeekTrayItems to also attach touch handlers
+var _origBuildWeekTrayItems = buildWeekTrayItems;
+buildWeekTrayItems = function() {
+  _origBuildWeekTrayItems();
+  var tray = document.getElementById('week-tray-items');
+  if (!tray) return;
+  tray.querySelectorAll('[draggable]').forEach(function(chip, idx) {
+    var item = brainDumpItems[idx];
+    if (item) attachTouchDrag(chip, item, 'week-tray');
+  });
+};
+
+// Patch buildMonthGrid to stamp data-day on each cell
+var _origBuildMonthGrid = buildMonthGrid;
+buildMonthGrid = function() {
+  _origBuildMonthGrid();
+  var cells = document.querySelectorAll('.month-day-cell');
+  cells.forEach(function(cell) {
+    var numEl = cell.querySelector('.month-day-num');
+    if (numEl) cell.dataset.day = numEl.textContent.trim();
+  });
+};
 
 
 // ═══════════════════════════════════════════════
