@@ -1113,17 +1113,7 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
       <p class="muted" style="text-align:center; font-size:14px; margin-bottom:20px;">Complete your morning check-in<br>to unlock today's dashboard.</p>
       <button class="btn-primary phase" onclick="goToMorning()">Open Morning ✦</button>
     </div>
-    <div class="card" style="display:flex; align-items:center; gap:14px;">
-      <div class="streak-flame">🔥</div>
-      <div>
-        <div style="font-family:'DM Mono'; font-size:26px; color:var(--phase);" id="home-streak-count">0</div>
-        <div class="label">Day streak</div>
-      </div>
-      <div style="margin-left:auto; text-align:right;">
-        <div class="muted" style="font-size:11px;">Best</div>
-        <div class="mono" style="font-size:20px;" id="home-streak-best">0</div>
-      </div>
-    </div>
+
 
     <!-- Settings button -->
     <div style="padding:8px 0 4px; text-align:center;">
@@ -1681,9 +1671,13 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     <!-- WEEK -->
     <div class="plan-view scroll-area" id="plan-week" style="padding-bottom:20px;">
       <div style="padding:16px 16px 8px; display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <h3 id="plan-week-title">Week of Mar 7</h3>
-          <p class="muted" style="font-size:13px; margin-top:2px;" id="plan-week-subtitle">Follicular · Building window</p>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button id="week-prev-btn" onclick="shiftWeek(-1)" style="width:30px;height:30px;border-radius:50%;border:1px solid rgba(28,26,24,0.15);background:none;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);touch-action:manipulation;">‹</button>
+          <div>
+            <h3 id="plan-week-title">Week of Mar 7</h3>
+            <p class="muted" style="font-size:13px; margin-top:2px;" id="plan-week-subtitle">Follicular · Building window</p>
+          </div>
+          <button id="week-next-btn" onclick="shiftWeek(1)" style="width:30px;height:30px;border-radius:50%;border:1px solid rgba(28,26,24,0.15);background:none;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);touch-action:manipulation;">›</button>
         </div>
         <button onclick="openLifeAreaSettings()" style="background:none;border:1px solid rgba(28,26,24,0.15);border-radius:100px;padding:5px 12px;font-size:11px;cursor:pointer;color:var(--muted);">⚙ Areas</button>
       </div>
@@ -1704,8 +1698,16 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
       </div>
       <!-- Drag tray for week -->
       <div id="week-drag-tray" style="padding:14px 16px 4px;">
-        <div style="font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); margin-bottom:8px;">Drag onto any day ↑</div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted);">Drag onto any day ↑</div>
+        </div>
         <div id="week-tray-items" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+        <!-- Remove zone: drag placed tasks here to unplan -->
+        <div id="week-remove-zone" style="margin-top:12px; border:1.5px dashed rgba(180,60,60,0.3); border-radius:10px; padding:10px 14px; display:flex; align-items:center; gap:8px; color:rgba(180,60,60,0.5); font-size:11px; font-weight:600; letter-spacing:0.04em; transition:all 0.2s; min-height:38px;">
+          <span style="font-size:14px;">✕</span> Drag here to remove from plan
+        </div>
+        <!-- Phase brain dump suggestions -->
+        <div id="week-phase-suggestions" style="margin-top:14px;"></div>
       </div>
     </div>
     <!-- TODAY -->
@@ -2064,6 +2066,32 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
   </div>
 </div>
 
+<!-- SWIPE CARD DECK MODAL -->
+<div id="swipeDeckModal" style="display:none;position:fixed;inset:0;z-index:700;background:rgba(15,12,10,0.75);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);align-items:flex-end;justify-content:center;">
+  <div id="swipeDeckSheet" style="width:100%;max-width:430px;height:92vh;background:var(--bg);border-radius:24px 24px 0 0;overflow:hidden;display:flex;flex-direction:column;animation:slideUp 0.4s cubic-bezier(0.32,0.72,0,1);">
+    <!-- Progress bar -->
+    <div style="height:3px;background:rgba(28,26,24,0.08);position:relative;flex-shrink:0;">
+      <div id="swipeDeckProgress" style="height:100%;background:var(--phase);transition:width 0.35s ease;width:0%;"></div>
+    </div>
+    <!-- Close + counter -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 0;flex-shrink:0;">
+      <button onclick="closeSwipeDeck()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);padding:4px;">×</button>
+      <div style="font-size:11px;color:var(--muted);letter-spacing:0.06em;" id="swipeDeckCounter">1 / 6</div>
+      <div style="width:28px;"></div>
+    </div>
+    <!-- Card area -->
+    <div id="swipeDeckTrack" style="flex:1;position:relative;overflow:hidden;">
+      <div id="swipeDeckCards" style="display:flex;height:100%;transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);"></div>
+    </div>
+    <!-- Bottom nav -->
+    <div style="padding:16px 24px 32px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-top:1px solid rgba(28,26,24,0.06);">
+      <button id="swipeDeckBack" onclick="swipeDeckNav(-1)" style="padding:10px 22px;border-radius:100px;border:1.5px solid rgba(28,26,24,0.18);background:none;font-size:13px;cursor:pointer;color:var(--muted);touch-action:manipulation;font-family:DM Sans,sans-serif;">← Back</button>
+      <div id="swipeDeckDots" style="display:flex;gap:6px;align-items:center;"></div>
+      <button id="swipeDeckNext" onclick="swipeDeckNav(1)" style="padding:10px 22px;border-radius:100px;background:var(--phase);border:none;font-size:13px;font-weight:700;cursor:pointer;color:#fff;touch-action:manipulation;font-family:DM Sans,sans-serif;">Next →</button>
+    </div>
+  </div>
+</div>
+
 <!-- NAV -->
 <nav class="nav" id="mainNav">
   <div class="nav-item active" onclick="switchTab('home')" id="nav-home"><div class="nav-icon">◎</div><div class="nav-label">Home</div></div>
@@ -2215,7 +2243,7 @@ function buildSliders() {
     w.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <span style="font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text);">${emoji} ${label}</span>
-        <span class="slider-val" id="val-${k}" style="font-family:'DM Mono',monospace; font-size:22px; font-weight:400; color:var(--phase);">${val}</span>
+        <span class="slider-val" id="val-${k}" style="font-family:DM Mono,monospace; font-size:22px; font-weight:400; color:var(--phase);">${val}</span>
       </div>
       <div style="position:relative;">
         <input type="range" min="1" max="10" value="${val}" style="--progress:${pct}%" oninput="updateSlider('${k}',this.value); updateSliderTrack(this)">
@@ -2432,76 +2460,90 @@ function unlockDashboard() {
   const today = new Date();
   const dateStr = today.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
   home.innerHTML = `
-    <div class="section" style="padding-top:56px;">
-      <div class="morning-cycle-pill" style="display:inline-flex;">🌒 Day ${day} · ${phaseCap}</div>
-      <h1>Day ${day}.</h1>
-      <p class="muted" style="font-size:13px;margin-top:4px;">${dateStr}</p>
-      <div class="cycle-ring-wrap" onclick="openPhaseModal('${phase}')" style="cursor:pointer; padding:8px 0 4px;">
-        <svg class="cycle-ring-svg" id="cycleRingSvgUnlocked" width="130" height="130" viewBox="0 0 130 130">
-          <defs>
-            <radialGradient id="bloomGrad2" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="var(--phase)" stop-opacity="0.28"/>
-              <stop offset="55%" stop-color="var(--phase)" stop-opacity="0.08"/>
-              <stop offset="100%" stop-color="var(--phase)" stop-opacity="0"/>
-            </radialGradient>
-            <filter id="bloomBlur2" x="-60%" y="-60%" width="220%" height="220%">
-              <feGaussianBlur stdDeviation="9"/>
-            </filter>
-            <filter id="arcSoftGlow2" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="2.5" result="blur"/>
-              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-          <circle class="ring-bloom" cx="65" cy="65" r="56" fill="url(#bloomGrad2)" filter="url(#bloomBlur2)"/>
-          <circle class="cycle-ring-track" cx="65" cy="65" r="50"/>
-          <circle class="cycle-ring-phase arc-menstrual"  cx="65" cy="65" r="50" id="arcMenstrualU"  filter="url(#arcSoftGlow2)"/>
-          <circle class="cycle-ring-phase arc-follicular" cx="65" cy="65" r="50" id="arcFollicularU" filter="url(#arcSoftGlow2)"/>
-          <circle class="cycle-ring-phase arc-ovulatory"  cx="65" cy="65" r="50" id="arcOvulatoryU"  filter="url(#arcSoftGlow2)"/>
-          <circle class="cycle-ring-phase arc-luteal"     cx="65" cy="65" r="50" id="arcLutealU"     filter="url(#arcSoftGlow2)"/>
-          <circle id="cycleRingDotGlowU" cx="65" cy="15" r="11" fill="#2C1810" opacity="0.08" filter="url(#bloomBlur2)"/>
-          <circle class="cycle-ring-dot" id="cycleRingDotU" cx="65" cy="15" r="5.5" fill="#2C1810"/>
-        </svg>
-        <div class="cycle-ring-info">
-          <div class="cycle-ring-day" id="cycleRingDayNumU">${day}</div>
-          <div class="cycle-ring-of">of ${total} days</div>
-          <div class="cycle-ring-phase-name" style="color:var(--phase);">${phaseCap}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;">${daysLeft} days to go</div>
-          <div style="font-size:10px;color:var(--phase);margin-top:8px;letter-spacing:0.06em;">Tap to explore →</div>
+    <div class="section" style="padding-top:56px; gap:0;">
+
+      <!-- HEADER -->
+      <div style="margin-bottom:4px;">
+        <div class="morning-cycle-pill" style="display:inline-flex; margin-bottom:8px;">🌒 Day ${day} · ${phaseCap}</div>
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <h1 style="margin-bottom:2px;">Day ${day}.</h1>
+            <p class="muted" style="font-size:13px;">${dateStr}</p>
+          </div>
+          <div onclick="openPhaseModal('${phase}')" style="cursor:pointer; flex-shrink:0;">
+            <svg width="64" height="64" viewBox="0 0 130 130">
+              <defs>
+                <radialGradient id="bG2" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="var(--phase)" stop-opacity="0.3"/><stop offset="100%" stop-color="var(--phase)" stop-opacity="0"/></radialGradient>
+                <filter id="bF2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="9"/></filter>
+                <filter id="aG2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              </defs>
+              <circle cx="65" cy="65" r="56" fill="url(#bG2)" filter="url(#bF2)"/>
+              <circle class="cycle-ring-track" cx="65" cy="65" r="50"/>
+              <circle class="cycle-ring-phase arc-menstrual"  cx="65" cy="65" r="50" id="arcMenstrualU"  filter="url(#aG2)"/>
+              <circle class="cycle-ring-phase arc-follicular" cx="65" cy="65" r="50" id="arcFollicularU" filter="url(#aG2)"/>
+              <circle class="cycle-ring-phase arc-ovulatory"  cx="65" cy="65" r="50" id="arcOvulatoryU"  filter="url(#aG2)"/>
+              <circle class="cycle-ring-phase arc-luteal"     cx="65" cy="65" r="50" id="arcLutealU"     filter="url(#aG2)"/>
+              <circle id="cycleRingDotGlowU" cx="65" cy="15" r="11" fill="#2C1810" opacity="0.1" filter="url(#bF2)"/>
+              <circle class="cycle-ring-dot" id="cycleRingDotU" cx="65" cy="15" r="5.5" fill="#2C1810"/>
+            </svg>
+          </div>
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
+          <span class="badge badge-phase">🌒 ${phaseCap}</span>
+          <span class="badge badge-moon" id="unlocked-moon-badge" onclick="openMoonOverlay()" style="cursor:pointer;">🌙 —</span>
+          <span class="badge" style="background:rgba(74,143,168,0.1);color:var(--phase);border:1px solid var(--phase-mid);">⚡ ${tier}</span>
         </div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <span class="badge badge-phase">🌒 ${phaseCap}</span>
-        <span class="badge badge-moon" id="unlocked-moon-badge" onclick="openMoonOverlay()" style="cursor:pointer;">🌙 —</span>
-        <span class="badge" style="background:rgba(74,143,168,0.1);color:var(--phase);border:1px solid var(--phase-mid);">⚡ ${tier}</span>
-      </div>
-      <div class="card">
-        <div class="label" style="margin-bottom:10px;color:var(--phase);">Today's priorities</div>
-        ${morningData.mustDo.length > 0 ? morningData.mustDo.map((t,i)=>`<div class="priority-item" id="dp-${i}"><span class="priority-text" style="font-size:14px;flex:1;">${t}</span><div class="priority-check" onclick="togglePriorityCheck(this,document.getElementById('dp-${i}'))"></div></div>`).join('') : '<p class="muted" style="font-size:13px;">Complete morning check-in to set priorities.</p>'}
-        <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(28,26,24,0.06);"><span class="muted" style="font-size:11px;">Hard-no: </span><span style="font-size:13px;color:var(--menstrual);">${morningData.hardNo||'—'}</span></div>
-      </div>
-      <div class="estral-voice card-voice" style="text-align:center;padding:24px;">
-        <span class="voice-label">Today's intention</span>
-        <div style="font-size:44px;">${intention}</div>
-      </div>
-      <div class="estral-voice card-voice" id="dashboard-estral-tip">
+
+      <!-- ESTRAL TIP -->
+      <div class="estral-voice card-voice" id="dashboard-estral-tip" style="margin-top:16px;">
         <span class="voice-label">Tip from ESTRAL</span>
-        <span id="dashboard-estral-tip-text"></span>
-      </div>
-      <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;">
-        <div id="dashboard-reels" style="display:contents;"></div>
+        <span class="ev-text" id="dashboard-estral-tip-text"></span>
       </div>
 
-      <!-- ── DAY LOG ──────────────────────────────── -->
-      <div style="padding:0;">
+      <!-- TOP 3 PRIORITIES -->
+      <div class="card" style="margin-top:12px; padding:18px 20px;">
+        <div class="label" style="color:var(--phase); margin-bottom:12px;">Top 3 today</div>
+        ${morningData.mustDo.length > 0
+          ? morningData.mustDo.slice(0,3).map((t,i) => `
+            <div class="priority-item" id="dp-${i}" style="padding:10px 0; border-bottom:1px solid rgba(28,26,24,0.06);">
+              <div style="display:flex; align-items:center; gap:12px; width:100%;">
+                <div style="width:22px;height:22px;border-radius:50%;border:2px solid var(--phase);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--phase);">${i+1}</div>
+                <span class="priority-text" style="font-size:14px;flex:1;">${t}</span>
+                <div class="priority-check" onclick="togglePriorityCheck(this,document.getElementById('dp-${i}'))"></div>
+              </div>
+            </div>`).join('')
+          : '<p class="muted" style="font-size:13px;">Complete morning check-in to set priorities.</p>'
+        }
+        ${morningData.hardNo ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(28,26,24,0.06);display:flex;gap:6px;align-items:baseline;"><span class="muted" style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;flex-shrink:0;">Hard no</span><span style="font-size:13px;color:var(--menstrual);">${morningData.hardNo}</span></div>` : ''}
+      </div>
 
-        <!-- Energy sparkline card -->
-        <div class="card" style="padding:18px 20px 14px;margin-bottom:10px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <!-- WEEKLY OVERVIEW -->
+      <div class="card" style="margin-top:12px; padding:18px 20px;">
+        <div class="label" style="color:var(--phase); margin-bottom:14px;">This week</div>
+        <div style="display:flex; align-items:flex-end; gap:4px; height:56px; margin-bottom:5px;" id="dash-week-bars"></div>
+        <div style="display:flex; gap:4px; margin-bottom:12px;" id="dash-week-labels"></div>
+        <div style="display:flex; gap:2px; border-radius:6px; overflow:hidden; height:5px; margin-bottom:6px;" id="dash-week-phase-strip"></div>
+        <div style="font-size:12px; color:var(--muted); line-height:1.5;" id="dash-week-phase-note"></div>
+      </div>
+
+      <!-- INTENTION -->
+      <div class="estral-voice card-voice" style="text-align:center; padding:24px; margin-top:12px;">
+        <span class="voice-label">Today's intention</span>
+        <div class="ev-text" style="font-size:44px; font-style:normal !important;">${intention}</div>
+      </div>
+
+      <!-- DAY LOG -->
+      <div style="margin-top:12px;">
+
+        <!-- Sparkline -->
+        <div class="card" style="padding:18px 20px 14px; margin-bottom:10px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
             <div class="label" style="color:var(--phase);">Energy today</div>
-            <div style="font-size:10px;color:var(--muted);" id="daylog-count">—</div>
+            <span style="font-size:10px; color:var(--muted);" id="daylog-count">—</span>
           </div>
-          <canvas class="daylog-sparkline" id="daylog-sparkline" height="64"></canvas>
-          <div style="display:flex;justify-content:space-between;margin-top:4px;">
+          <canvas class="daylog-sparkline" id="daylog-sparkline" height="60"></canvas>
+          <div style="display:flex; justify-content:space-between; margin-top:4px;">
             <span style="font-size:9px;color:var(--muted);">6am</span>
             <span style="font-size:9px;color:var(--muted);">12pm</span>
             <span style="font-size:9px;color:var(--muted);">6pm</span>
@@ -2509,13 +2551,19 @@ function unlockDashboard() {
           </div>
         </div>
 
-        <!-- Quick log input card -->
-        <div class="card" style="padding:16px 20px;margin-bottom:10px;">
-          <div class="label" style="color:var(--phase);margin-bottom:12px;">Log right now</div>
-          <!-- Tag row -->
-          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;" id="quicklog-tags">
+        <!-- Log input -->
+        <div class="card" style="padding:18px 20px; margin-bottom:10px;">
+          <div class="label" style="color:var(--phase); margin-bottom:3px;">How are you feeling?</div>
+          <p class="muted" style="font-size:12px; margin-bottom:12px; line-height:1.5;">Log anything — brain fog, what you ate, a win, how your body feels right now.</p>
+
+          <textarea id="quicklog-text" rows="2"
+            style="width:100%;background:rgba(28,26,24,0.03);border:1.5px solid rgba(28,26,24,0.12);border-radius:12px;padding:12px 14px;font-size:15px;font-family:DM Sans,sans-serif;color:var(--text);outline:none;resize:none;line-height:1.5;margin-bottom:12px;-webkit-text-fill-color:var(--text);display:block;"
+            placeholder="e.g. really brain foggy today, can't focus at all…"></textarea>
+
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px;" id="quicklog-tags">
+            <button class="quicklog-tag-btn" data-tag="brain fog">🌫 brain fog</button>
+            <button class="quicklog-tag-btn" data-tag="can't focus">😶 can't focus</button>
             <button class="quicklog-tag-btn" data-tag="focused">🧠 focused</button>
-            <button class="quicklog-tag-btn" data-tag="distracted">😶 distracted</button>
             <button class="quicklog-tag-btn" data-tag="tired">😮‍💨 tired</button>
             <button class="quicklog-tag-btn" data-tag="wired">⚡ wired</button>
             <button class="quicklog-tag-btn" data-tag="anxious">😤 anxious</button>
@@ -2523,66 +2571,142 @@ function unlockDashboard() {
             <button class="quicklog-tag-btn" data-tag="sad">🌧 sad</button>
             <button class="quicklog-tag-btn" data-tag="motivated">🔥 motivated</button>
             <button class="quicklog-tag-btn" data-tag="bloated">🫁 bloated</button>
+            <button class="quicklog-tag-btn" data-tag="cramps">🌀 cramps</button>
             <button class="quicklog-tag-btn" data-tag="craving">🍫 craving</button>
             <button class="quicklog-tag-btn" data-tag="ate">🥗 ate</button>
             <button class="quicklog-tag-btn" data-tag="pain">⚠️ pain</button>
             <button class="quicklog-tag-btn" data-tag="win">✦ win</button>
             <button class="quicklog-tag-btn" data-tag="low">📉 low</button>
           </div>
-          <!-- Text input -->
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-            <input class="quicklog-input" id="quicklog-text" placeholder="What's happening right now…" />
-            <button id="quicklog-submit-btn" style="flex-shrink:0;width:40px;height:40px;border-radius:50%;background:var(--phase);border:none;color:#fff;font-size:22px;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;justify-content:center;line-height:1;">+</button>
-          </div>
-          <!-- Energy slider -->
-          <div style="display:flex;align-items:center;gap:10px;">
-            <span style="font-size:11px;color:var(--muted);white-space:nowrap;min-width:72px;">Energy now</span>
+
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:11px;color:var(--muted);white-space:nowrap;">Energy</span>
             <input type="range" min="1" max="10" value="7" id="quicklog-energy" style="flex:1;" oninput="document.getElementById('quicklog-energy-val').textContent=this.value">
-            <span class="mono" id="quicklog-energy-val" style="font-size:14px;font-weight:700;min-width:16px;color:var(--phase);">7</span>
+            <span class="mono" id="quicklog-energy-val" style="font-size:14px;font-weight:700;min-width:18px;color:var(--phase);">7</span>
+            <button id="quicklog-submit-btn" style="flex-shrink:0;padding:10px 20px;border-radius:100px;background:var(--phase);border:none;color:#fff;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;font-family:DM Sans,sans-serif;">Log it</button>
           </div>
         </div>
 
-        <!-- Log feed card -->
+        <!-- Feed -->
         <div class="card" style="padding:16px 20px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
             <div class="label" style="color:var(--phase);">Today's entries</div>
             <button onclick="clearTodayLog()" style="font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer;touch-action:manipulation;padding:2px 6px;">clear</button>
           </div>
           <div id="daylog-feed"></div>
         </div>
+      </div>
 
+      <!-- REELS -->
+      <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;margin-top:12px;">
+        <div id="dashboard-reels" style="display:contents;"></div>
       </div>
-      <!-- ── / DAY LOG ─────────────────────────────── -->
-      <button class="btn-ghost" onclick="openPMQuiz()">Open evening review ✦</button>
-      <div style="padding:16px 0 8px;">
-        <p class="label" style="margin-bottom:10px;text-align:center;">✦ Preview phase backgrounds</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <button onclick="setPhaseBackground('menstrual')" style="padding:10px;background:rgba(92,45,74,0.12);border:1px solid rgba(92,45,74,0.25);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">🌑 Menstrual</button>
-          <button onclick="setPhaseBackground('follicular')" style="padding:10px;background:rgba(74,143,168,0.12);border:1px solid rgba(74,143,168,0.25);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">🌒 Follicular</button>
-          <button onclick="setPhaseBackground('ovulatory')" style="padding:10px;background:rgba(184,134,11,0.12);border:1px solid rgba(184,134,11,0.25);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">🌕 Ovulatory</button>
-          <button onclick="setPhaseBackground('luteal')" style="padding:10px;background:rgba(139,94,60,0.12);border:1px solid rgba(139,94,60,0.25);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">🌖 Luteal</button>
-        </div>
-      </div>
+
+      <!-- EVENING REVIEW -->
+      <button class="btn-ghost" onclick="openPMQuiz()" style="margin-top:12px;">Open evening review ✦</button>
+
     </div>`;
   switchTab('home');
   setTimeout(() => {
     initCycleRing(8, 28, 'U');
-    // Build phase-matched reel cards
     var _phase = (window._userProfile && window._userProfile.cyclePhase) || 'follicular';
     buildDashboardReels(_phase);
-    // Populate daily ESTRAL message with espresso color enforced
     const tipEl = document.getElementById('dashboard-estral-tip-text');
     if (tipEl) {
       tipEl.textContent = buildDailyESTRALMessage();
       tipEl.style.color = '#1A0A0E';
       tipEl.style.webkitTextFillColor = '#1A0A0E';
     }
-    // Also ensure the parent card text is espresso
     const card = document.getElementById('dashboard-estral-tip');
-    if (card) {
-      card.style.color = '#1A0A0E';
-    }
+    if (card) card.style.color = '#1A0A0E';
+    // Day log + weekly overview
+    initDayLog();
+    buildDashWeekly();
   }, 200);
+}
+
+function buildDashWeekly() {
+  var bars = document.getElementById('dash-week-bars');
+  var labels = document.getElementById('dash-week-labels');
+  var strip = document.getElementById('dash-week-phase-strip');
+  var note = document.getElementById('dash-week-phase-note');
+  if (!bars) return;
+
+  var realLogs = [];
+  try { realLogs = JSON.parse(localStorage.getItem('estral_logs') || '[]'); } catch(e) {}
+
+  var today = new Date();
+  var dayNames = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  var phaseCounts = {};
+  bars.innerHTML = ''; labels.innerHTML = '';
+  if (strip) strip.innerHTML = '';
+
+  for (var i = 6; i >= 0; i--) {
+    var d = new Date(today);
+    d.setDate(today.getDate() - i);
+    var dStr = d.toLocaleDateString('en-GB', {day:'numeric', month:'short'});
+    var log = realLogs.find(function(l){ return l.date === dStr; });
+
+    // Get energy from morning log + intraday logs
+    var energy = (log && log.am && log.am.energy) ? log.am.energy : null;
+    var dKey = 'daylog_' + d.getFullYear() + '_' + (d.getMonth()+1) + '_' + d.getDate();
+    try {
+      var dEntries = JSON.parse(localStorage.getItem(dKey) || '[]');
+      var readings = dEntries.filter(function(e){ return e.energy; }).map(function(e){ return e.energy; });
+      if (readings.length) {
+        var avg = readings.reduce(function(a,b){ return a+b; }, 0) / readings.length;
+        energy = energy ? (energy * 0.6 + avg * 0.4) : avg;
+      }
+    } catch(ex) {}
+
+    var isToday = i === 0;
+    var phase = (log && log.phase) || (window._userProfile && window._userProfile.cyclePhase) || 'follicular';
+    var color = (window.PHASE_COLORS && PHASE_COLORS[phase]) || 'var(--phase)';
+    phaseCounts[phase] = (phaseCounts[phase] || 0) + 1;
+
+    // Bar
+    var bar = document.createElement('div');
+    bar.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;height:100%;';
+    var pct = energy ? Math.round((energy / 10) * 100) : 0;
+    var barInner = document.createElement('div');
+    barInner.style.cssText = 'width:100%;border-radius:4px 4px 0 0;transition:height 0.5s ease;min-height:' + (energy ? '4' : '2') + 'px;';
+    barInner.style.height = (energy ? pct : 8) + '%';
+    barInner.style.background = energy ? color : 'rgba(28,26,24,0.07)';
+    if (isToday && energy) barInner.style.boxShadow = '0 0 8px ' + color + '66';
+    bar.appendChild(barInner);
+    if (energy) {
+      var val = document.createElement('div');
+      val.style.cssText = 'font-size:8px;color:' + (isToday ? color : 'var(--muted)') + ';';
+      val.textContent = Math.round(energy);
+      bar.appendChild(val);
+    }
+    bars.appendChild(bar);
+
+    // Label
+    var lbl = document.createElement('div');
+    lbl.style.cssText = 'flex:1;text-align:center;font-size:9px;font-weight:' + (isToday ? '700' : '400') + ';color:' + (isToday ? color : 'var(--muted)') + ';';
+    lbl.textContent = dayNames[d.getDay()];
+    labels.appendChild(lbl);
+
+    // Phase strip segment
+    if (strip) {
+      var seg = document.createElement('div');
+      seg.style.cssText = 'flex:1;background:' + color + ';opacity:' + (isToday ? 1 : 0.5) + ';';
+      strip.appendChild(seg);
+    }
+  }
+
+  // Phase note
+  if (note && Object.keys(phaseCounts).length) {
+    var dominant = Object.keys(phaseCounts).sort(function(a,b){ return phaseCounts[b]-phaseCounts[a]; })[0];
+    var phaseNotes = {
+      follicular: 'Building week — estrogen rising, clarity up.',
+      ovulatory: 'Peak week — high output, visibility, connection.',
+      luteal: 'Finishing week — go deep, protect your energy.',
+      menstrual: 'Reset week — rest, reflect, restore.'
+    };
+    note.textContent = phaseNotes[dominant] || '';
+  }
 }
 
 function switchPlanView(view) {
@@ -3297,7 +3421,7 @@ function toggleNoCycle(cb) {
 }
 function obNext() { if (obCurrentScreen < OB_TOTAL) { obShowScreen(obCurrentScreen + 1); if (obCurrentScreen === OB_TOTAL) obRunSetup(); } }
 function obBack() { if (obCurrentScreen > 0) obShowScreen(obCurrentScreen - 1); }
-function obSkipAll() { localStorage.setItem('estral_skipped_ob','1'); obRunSetup(); obShowScreen(OB_TOTAL); }
+function obSkipAll() { localStorage.setItem('estral_skipped_ob','1'); obRunSetup(); obShowScreen(OB_TOTAL); setTimeout(function(){ openSwipeDeck('intro'); }, 800); }
 
 function toggleObChip(btn, group) {
   btn.classList.toggle('selected');
@@ -3662,6 +3786,291 @@ function openPhaseModal(phase) {
 }
 function closePhaseModal() { document.getElementById('phaseModal').classList.remove('open'); document.body.style.overflow = ''; }
 
+// ══════════════════════════════════════════════════════
+// WEEK NAVIGATION — offset-based
+// ══════════════════════════════════════════════════════
+var _weekOffset = 0; // 0 = current week, -1 = last week, +1 = next week
+
+function shiftWeek(dir) {
+  _weekOffset += dir;
+  buildWeekColumns();
+  buildWeekTrayItems();
+}
+
+// ══════════════════════════════════════════════════════
+// PHASE BRAIN DUMP SUGGESTIONS
+// ══════════════════════════════════════════════════════
+var PHASE_DUMP_SUGGESTIONS = {
+  menstrual: [
+    { text: 'Rest & restore — no pushing today', area: 'body' },
+    { text: 'Reflect: what am I ready to release?', area: 'mind' },
+    { text: 'Gentle walk or yin yoga', area: 'body' },
+    { text: 'One non-negotiable task only', area: 'work' },
+    { text: 'Journal: what worked last cycle?', area: 'mind' },
+    { text: 'Slow cooking / nourishing meal', area: 'home' },
+    { text: 'Cancel anything non-essential', area: 'social' },
+  ],
+  follicular: [
+    { text: 'Plan the next 2 weeks', area: 'work' },
+    { text: 'Start the project you kept delaying', area: 'work' },
+    { text: 'High-intensity workout', area: 'body' },
+    { text: 'Learn something new', area: 'mind' },
+    { text: 'Brainstorm — ideas flow easily now', area: 'work' },
+    { text: 'Book social events for ovulatory week', area: 'social' },
+    { text: 'Deep clean / fresh space', area: 'home' },
+  ],
+  ovulatory: [
+    { text: 'Big presentation or pitch', area: 'work' },
+    { text: 'Important conversation you\'ve been avoiding', area: 'social' },
+    { text: 'Networking event / visibility moment', area: 'work' },
+    { text: 'Intense training — body is peak', area: 'body' },
+    { text: 'Date night / quality connection time', area: 'social' },
+    { text: 'Record content / go live', area: 'work' },
+    { text: 'Negotiate or ask for what you want', area: 'work' },
+  ],
+  luteal: [
+    { text: 'Finish projects — detail mode on', area: 'work' },
+    { text: 'Admin, emails, loose ends', area: 'work' },
+    { text: 'Solo focused work only', area: 'work' },
+    { text: 'Reduce sugar + caffeine', area: 'body' },
+    { text: 'Protect sleep hard this week', area: 'body' },
+    { text: 'Honest journaling — what feels off?', area: 'mind' },
+    { text: 'Cancel draining social obligations', area: 'social' },
+  ]
+};
+
+function buildPhaseSuggestions(phase) {
+  var container = document.getElementById('week-phase-suggestions');
+  if (!container) return;
+  var suggestions = PHASE_DUMP_SUGGESTIONS[phase] || [];
+  var placed = Object.values(monthTasks).flat().map(function(t){ return t.text; });
+  var inDump = brainDumpItems.map(function(i){ return i.text; });
+  container.innerHTML = '';
+  var heading = document.createElement('div');
+  heading.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--phase);margin-bottom:8px;';
+  heading.textContent = phase.charAt(0).toUpperCase()+phase.slice(1)+' phase suggestions — tap to add';
+  container.appendChild(heading);
+  var chips = document.createElement('div');
+  chips.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+  suggestions.forEach(function(s) {
+    if (placed.indexOf(s.text) > -1 || inDump.indexOf(s.text) > -1) return;
+    var btn = document.createElement('button');
+    btn.style.cssText = 'padding:6px 11px;border-radius:100px;border:1.5px dashed var(--phase-mid);background:transparent;font-size:11px;color:var(--phase);cursor:pointer;touch-action:manipulation;font-family:DM Sans,sans-serif;';
+    btn.textContent = '+ ' + s.text;
+    btn.addEventListener('click', function() {
+      brainDumpItems.push({ text: s.text, area: s.area });
+      try { localStorage.setItem('estral_brain_dump', JSON.stringify({ items: brainDumpItems })); } catch(e) {}
+      buildWeekTrayItems();
+      buildDragTray();
+      buildPhaseSuggestions(phase);
+    });
+    chips.appendChild(btn);
+  });
+  container.appendChild(chips);
+}
+
+// ══════════════════════════════════════════════════════
+// SWIPE DECK — dating-app style card explorer
+// ══════════════════════════════════════════════════════
+var _deckCards = [];
+var _deckIdx = 0;
+var _deckTouchStartX = 0;
+var _deckTouchStartY = 0;
+
+var CYCLE_INTRO_DECK = [
+  {
+    emoji: '🌊',
+    color: '#4A8FA8',
+    label: 'You already know this',
+    title: 'Your body runs on a 28-day operating system.',
+    body: 'Most women are taught their cycle is just the bleed. But your cycle has four completely distinct phases — each one wires your brain, body and mood differently. You have been living in the same energy every day. Your body never does.',
+  },
+  {
+    emoji: '🧠',
+    color: '#6B7FD4',
+    label: 'The science',
+    title: 'Estrogen and progesterone change everything.',
+    body: 'When estrogen rises in your follicular phase, your prefrontal cortex literally lights up — you think faster, communicate better, and feel braver. When progesterone dominates in your luteal phase, your brain shifts to detail-mode and inner work. You are not inconsistent. You are cyclical.',
+  },
+  {
+    emoji: '🔥',
+    color: '#C17C3A',
+    label: 'What this means for you',
+    title: 'The women who know this outperform everyone.',
+    body: 'When you stop fighting your body and start working with it — scheduling hard launches in your ovulatory peak, protecting deep work in luteal, resting in menstrual — you stop burning out. You start operating at a level that feels almost unfair.',
+  },
+  {
+    emoji: '📈',
+    color: '#8B5E3C',
+    label: 'The four phases',
+    title: 'Menstrual → Follicular → Ovulatory → Luteal.',
+    body: 'Menstrual: reset, slow, intuition. Follicular: energy rising, ideas, new starts. Ovulatory: peak power, visibility, connection. Luteal: focus, completion, inward. Each phase is roughly a week. Together they make you whole.',
+  },
+  {
+    emoji: '🌒',
+    color: '#5C2D4A',
+    label: 'What ESTRAL does',
+    title: 'ESTRAL is your cycle-synced life OS.',
+    body: 'Every morning check-in, every task you drag onto a day, every log entry — ESTRAL is reading your cycle and adapting. Your plan surfaces phase-matched tasks. Your patterns tab shows what actually happens to your energy across your cycle. Over months, ESTRAL learns you.',
+  },
+  {
+    emoji: '✦',
+    color: '#4A8FA8',
+    label: 'You\'re ready',
+    title: 'This is the last productivity system you\'ll ever need.',
+    body: 'Not because it\'s the most complex. Because it\'s the only one built around how you actually work. Log your first morning check-in to unlock your dashboard — and let the data start building.',
+    cta: 'Start my first check-in',
+    ctaFn: 'closeSwipeDeck(); goToMorning();',
+  }
+];
+
+var PHASE_SWIPE_DECKS = {
+  follicular: [
+    { emoji:'🌱', color:'#4A8FA8', label:'Your phase right now', title:'Follicular — The Rising.', body:'Estrogen is climbing. The fog of menstruation has lifted and something in you is waking up. Ideas come easier. Your threshold for new things is lower. This is your most neurologically flexible phase.' },
+    { emoji:'🧠', color:'#4A8FA8', label:'Your brain this week', title:'Faster processing. More openness. Less fear.', body:'Elevated estrogen boosts dopamine and serotonin simultaneously. You literally think more clearly, take social risks more easily, and feel less threatened by the unknown. This is your highest-bandwidth cognitive state.' },
+    { emoji:'⚡', color:'#4A8FA8', label:'Your body this week', title:'Build hard. Your recovery is elite right now.', body:'Estrogen improves muscle repair speed and increases pain tolerance. Your cardiovascular capacity is at its seasonal peak. If you train now, you build faster. If you push past comfort, you recover quicker.' },
+    { emoji:'🗓', color:'#4A8FA8', label:'This week\'s power move', title:'Schedule everything hard for the next 10 days.', body:'Your ovulatory peak is coming. Before it does, use this follicular clarity to plan your boldest moves — pitch the idea, book the call, set the deadline. Future-you will thank you.' },
+    { emoji:'✦', color:'#4A8FA8', label:'Your mantra', title:'"I plant seeds that ovulation will bloom."', body:'This is the window before the peak. Use its clarity and freshness. Build momentum — not just output.' },
+  ],
+  ovulatory: [
+    { emoji:'🌕', color:'#B8860B', label:'Your phase right now', title:'Ovulatory — The Peak.', body:'This is it. Estrogen peaks, LH surges, testosterone spikes briefly. This is the 3–4 day window when you are most magnetic, most articulate, and most comfortable being seen. Most women have no idea this is happening.' },
+    { emoji:'🎤', color:'#B8860B', label:'Your brain this week', title:'Charisma is a hormone, and yours is peaking.', body:'Testosterone and estrogen together give you sharper verbal fluency, higher social confidence and a lower disgust response — meaning you naturally take more interpersonal risks. Public speaking, pitching, leading rooms: this is your biology\'s peak window for all of it.' },
+    { emoji:'💪', color:'#B8860B', label:'Your body this week', title:'Maximum strength. Maximum visibility.', body:'You have your highest pain tolerance, fastest reaction time, and peak muscle activation this week. Athletes who track this phase set personal records here. Your body is asking to be pushed.' },
+    { emoji:'📣', color:'#B8860B', label:'This week\'s power move', title:'Be visible. Speak. Show up.', body:'Whatever you\'ve been waiting to say, post, pitch or begin — do it this week. The world receives you differently right now, and so do you receive yourself.' },
+    { emoji:'✦', color:'#B8860B', label:'Your mantra', title:'"I am in full bloom. I will not hide it."', body:'The peak doesn\'t last long. Use it completely.' },
+  ],
+  luteal: [
+    { emoji:'🌖', color:'#8B5E3C', label:'Your phase right now', title:'Luteal — The Deepening.', body:'Progesterone rises after ovulation and your nervous system shifts. You become more sensitive, more inward, more attuned to what isn\'t working. This isn\'t PMS. This is your body\'s quality-control phase.' },
+    { emoji:'🔍', color:'#8B5E3C', label:'Your brain this week', title:'Detail-mode is on. Use it.', body:'Lower estrogen and higher progesterone shifts your brain toward right-hemisphere dominance — pattern recognition, editing, completing. You\'re not great at starting things right now. You\'re exceptional at finishing them perfectly.' },
+    { emoji:'🛡', color:'#8B5E3C', label:'Your body this week', title:'Protect your energy like it\'s a limited resource.', body:'Progesterone increases core body temperature slightly, disrupts sleep architecture, and raises cortisol sensitivity. You are more vulnerable to stress, alcohol, and late nights. Every boundary you protect this week is an act of biological intelligence.' },
+    { emoji:'✂️', color:'#8B5E3C', label:'This week\'s power move', title:'Cancel what doesn\'t deserve your current state.', body:'Luteal clarity is ruthless and usually right. If something feels wrong or draining this week, it probably is. Clear your plate. Finish what matters. Say no to what doesn\'t.' },
+    { emoji:'✦', color:'#8B5E3C', label:'Your mantra', title:'"I complete, I clarify, I protect my peace."', body:'The frustration you feel in late luteal is your body telling you something needs to change. Listen.' },
+  ],
+  menstrual: [
+    { emoji:'🌑', color:'#5C2D4A', label:'Your phase right now', title:'Menstrual — The Reset.', body:'All hormones drop. The uterine lining sheds. Something quieter, older and wiser comes online. In many traditions this week was considered sacred — the time women\'s intuition was sharpest. Modern life tells you to push through. Your biology is asking you to stop.' },
+    { emoji:'🕯', color:'#5C2D4A', label:'Your brain this week', title:'Your two brain hemispheres are most connected now.', body:'During menstruation, activity between the left and right hemispheres is more integrated than at any other phase. You see the whole picture. You are less reactive to external input and more tuned to internal signal. Your gut feelings this week are data.' },
+    { emoji:'🌿', color:'#5C2D4A', label:'Your body this week', title:'Rest is not weakness. It\'s phase-appropriate intelligence.', body:'Prostaglandins are high, your immune system is slightly suppressed, and your body is doing significant physical work. Pain, fatigue and brain fog this week are not failures. They are information. Nutritious food, warmth and reduced output are medicine.' },
+    { emoji:'📓', color:'#5C2D4A', label:'This week\'s power move', title:'Ask the question you\'ve been avoiding.', body:'The clarity that comes in menstruation cuts through social performance and self-deception. Journal with the question: "What am I pretending is working?" The answer you get this week is usually the truest one of the cycle.' },
+    { emoji:'✦', color:'#5C2D4A', label:'Your mantra', title:'"I rest as an act of radical self-trust."', body:'This phase built every other phase. Without it, the cycle cannot begin again.' },
+  ]
+};
+
+function openSwipeDeck(mode, phase) {
+  var modal = document.getElementById('swipeDeckModal');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  _deckIdx = 0;
+
+  if (mode === 'intro') {
+    _deckCards = CYCLE_INTRO_DECK;
+  } else {
+    var p = phase || (window._userProfile && window._userProfile.cyclePhase) || 'follicular';
+    _deckCards = PHASE_SWIPE_DECKS[p] || PHASE_SWIPE_DECKS.follicular;
+  }
+  renderSwipeDeck();
+
+  // Touch swipe
+  var track = document.getElementById('swipeDeckTrack');
+  track.ontouchstart = function(e) {
+    _deckTouchStartX = e.touches[0].clientX;
+    _deckTouchStartY = e.touches[0].clientY;
+  };
+  track.ontouchend = function(e) {
+    var dx = e.changedTouches[0].clientX - _deckTouchStartX;
+    var dy = e.changedTouches[0].clientY - _deckTouchStartY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+      swipeDeckNav(dx < 0 ? 1 : -1);
+    }
+  };
+}
+
+function closeSwipeDeck() {
+  document.getElementById('swipeDeckModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function renderSwipeDeck() {
+  var cards = document.getElementById('swipeDeckCards');
+  var progress = document.getElementById('swipeDeckProgress');
+  var counter = document.getElementById('swipeDeckCounter');
+  var dots = document.getElementById('swipeDeckDots');
+  var backBtn = document.getElementById('swipeDeckBack');
+  var nextBtn = document.getElementById('swipeDeckNext');
+  var total = _deckCards.length;
+
+  // Build cards only once
+  if (cards.children.length === 0) {
+    _deckCards.forEach(function(card) {
+      var el = document.createElement('div');
+      el.style.cssText = 'min-width:100%;height:100%;padding:24px 28px 16px;display:flex;flex-direction:column;justify-content:flex-start;overflow-y:auto;box-sizing:border-box;';
+      el.innerHTML =
+        '<div style="font-size:52px;margin-bottom:16px;text-align:center;">' + card.emoji + '</div>' +
+        '<div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:' + card.color + ';margin-bottom:10px;text-align:center;">' + card.label + '</div>' +
+        '<h2 style="font-size:26px;line-height:1.25;margin-bottom:20px;text-align:center;">' + card.title + '</h2>' +
+        '<p style="font-size:16px;line-height:1.75;color:rgba(28,26,24,0.82);text-align:center;">' + card.body + '</p>' +
+        (card.cta ? '<button onclick="' + card.ctaFn + '" style="margin-top:28px;padding:16px;border-radius:100px;background:' + card.color + ';border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;width:100%;font-family:DM Sans,sans-serif;touch-action:manipulation;">' + card.cta + '</button>' : '');
+      cards.appendChild(el);
+    });
+  }
+
+  // Slide to current
+  cards.style.transform = 'translateX(-' + (_deckIdx * 100) + '%)';
+  progress.style.width = ((_deckIdx + 1) / total * 100) + '%';
+  counter.textContent = (_deckIdx + 1) + ' / ' + total;
+
+  // Dots
+  dots.innerHTML = '';
+  for (var i = 0; i < total; i++) {
+    var dot = document.createElement('div');
+    var isActive = i === _deckIdx;
+    dot.style.cssText = 'width:' + (isActive ? '18px' : '6px') + ';height:6px;border-radius:100px;background:' + (isActive ? 'var(--phase)' : 'rgba(28,26,24,0.15)') + ';transition:all 0.25s;';
+    dots.appendChild(dot);
+  }
+
+  backBtn.style.visibility = _deckIdx === 0 ? 'hidden' : 'visible';
+  var isLast = _deckIdx === total - 1;
+  nextBtn.textContent = isLast ? 'Done ✓' : 'Next →';
+  nextBtn.onclick = isLast ? closeSwipeDeck : function(){ swipeDeckNav(1); };
+}
+
+function swipeDeckNav(dir) {
+  var total = _deckCards.length;
+  _deckIdx = Math.max(0, Math.min(total - 1, _deckIdx + dir));
+  // Reset card build so transition works
+  var cards = document.getElementById('swipeDeckCards');
+  cards.style.transition = 'transform 0.35s cubic-bezier(0.4,0,0.2,1)';
+  cards.style.transform = 'translateX(-' + (_deckIdx * 100) + '%)';
+  // Update UI
+  var progress = document.getElementById('swipeDeckProgress');
+  var counter = document.getElementById('swipeDeckCounter');
+  var dots = document.getElementById('swipeDeckDots');
+  var backBtn = document.getElementById('swipeDeckBack');
+  var nextBtn = document.getElementById('swipeDeckNext');
+  var total2 = _deckCards.length;
+  progress.style.width = ((_deckIdx + 1) / total2 * 100) + '%';
+  counter.textContent = (_deckIdx + 1) + ' / ' + total2;
+  dots.querySelectorAll('div').forEach(function(d, i) {
+    var isA = i === _deckIdx;
+    d.style.width = isA ? '18px' : '6px';
+    d.style.background = isA ? 'var(--phase)' : 'rgba(28,26,24,0.15)';
+  });
+  backBtn.style.visibility = _deckIdx === 0 ? 'hidden' : 'visible';
+  var isLast = _deckIdx === total2 - 1;
+  nextBtn.textContent = isLast ? 'Done ✓' : 'Next →';
+  nextBtn.onclick = isLast ? closeSwipeDeck : function(){ swipeDeckNav(1); };
+}
+
+// Redirect openPhaseModal to use swipe deck
+function openPhaseModal(phase) {
+  // Check if user has cycle data — if not, show intro deck
+  if (!hasCycleData || !hasCycleData()) {
+    openSwipeDeck('intro');
+    return;
+  }
+  openSwipeDeck('phase', phase);
+}
+
+
 function initCycleRing(currentDay, totalDays, suffix) {
   suffix = suffix || '';
   totalDays = totalDays || 28;
@@ -3944,8 +4353,8 @@ function renderLogContent(month) {
       const ec = am.energy >= 7 ? '#4A8FA8' : am.energy >= 4 ? '#8B5E3C' : '#5C2D4A';
       html += `<div style="background:var(--card);border:1px solid var(--border);margin-bottom:10px;overflow:hidden;">
         <div style="padding:12px 16px;border-bottom:1px solid rgba(28,26,24,0.06);display:flex;justify-content:space-between;align-items:center;">
-          <div><span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);">${e.date}</span><span style="font-size:10px;color:${pw.color};letter-spacing:0.08em;text-transform:uppercase;margin-left:8px;">Day ${e.cycleDay}</span></div>
-          <div style="display:flex;align-items:center;gap:6px;"><span style="font-family:'DM Mono',monospace;font-size:20px;color:${ec};">${am.energy||'—'}</span><span style="font-size:10px;color:var(--muted);">energy</span></div>
+          <div><span style="font-family:DM Mono,monospace;font-size:12px;color:var(--muted);">${e.date}</span><span style="font-size:10px;color:${pw.color};letter-spacing:0.08em;text-transform:uppercase;margin-left:8px;">Day ${e.cycleDay}</span></div>
+          <div style="display:flex;align-items:center;gap:6px;"><span style="font-family:DM Mono,monospace;font-size:20px;color:${ec};">${am.energy||'—'}</span><span style="font-size:10px;color:var(--muted);">energy</span></div>
         </div>`;
       if (am.intention) {
         html += `<div style="padding:12px 16px;border-bottom:1px solid rgba(28,26,24,0.04);">
@@ -4084,7 +4493,7 @@ function drawMoodBars(logs) {
     return `<div style="margin-bottom:14px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <span style="font-size:13px;font-weight:500;">${mood}</span>
-        <span style="font-family:'DM Mono',monospace;font-size:13px;color:${color};">${pct}%</span>
+        <span style="font-family:DM Mono,monospace;font-size:13px;color:${color};">${pct}%</span>
       </div>
       <div style="position:relative;height:6px;background:rgba(28,26,24,0.07);border-radius:3px;overflow:hidden;">
         <div style="position:absolute;top:0;left:0;height:100%;width:0;background:linear-gradient(to right,${color}cc,${color});border-radius:3px;box-shadow:0 0 8px ${color}66;transition:width 1s cubic-bezier(0.4,0,0.2,1) ${delay}ms;" 
@@ -4121,7 +4530,7 @@ function drawCravingBars(logs) {
     const amN = amCravings[cr] || 0;
     const amPct = Math.round((amN/total)*100);
     const note = amPct >= 60 ? ` <span style="font-size:10px;color:var(--phase);letter-spacing:0.05em;">MORNING PATTERN</span>` : '';
-    return `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;"><span style="font-size:13px;">${cr}${note}</span><span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);">${n}×</span></div><div style="height:4px;background:rgba(28,26,24,0.08);border-radius:2px;"><div style="height:100%;width:${(n/max)*100}%;background:var(--phase);border-radius:2px;transition:width 1s ease;"></div></div></div>`;
+    return `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;"><span style="font-size:13px;">${cr}${note}</span><span style="font-family:DM Mono,monospace;font-size:12px;color:var(--muted);">${n}×</span></div><div style="height:4px;background:rgba(28,26,24,0.08);border-radius:2px;"><div style="height:100%;width:${(n/max)*100}%;background:var(--phase);border-radius:2px;transition:width 1s ease;"></div></div></div>`;
   }).join('');
 
   // Insight: if caffeine or sugar dominant in AM
@@ -4329,7 +4738,7 @@ function drawPhaseAvgBars(logs) {
     c.innerHTML += `<div style="margin-bottom:16px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <span style="font-size:13px;color:${pc[phase]};font-weight:600;">${pl[phase]}</span>
-        <span style="font-family:'DM Mono',monospace;font-size:14px;color:${pc[phase]};">${avg}<span style="font-size:10px;color:var(--muted);">/10</span></span>
+        <span style="font-family:DM Mono,monospace;font-size:14px;color:${pc[phase]};">${avg}<span style="font-size:10px;color:var(--muted);">/10</span></span>
       </div>
       <div style="height:6px;background:rgba(28,26,24,0.07);border-radius:3px;overflow:hidden;">
         <div class="chart-bar-fill" data-target="${pct}" style="height:100%;width:0;background:linear-gradient(to right,${pc[phase]}99,${pc[phase]});border-radius:3px;box-shadow:0 0 8px ${pc[phase]}55;transition:width 1s cubic-bezier(0.4,0,0.2,1) ${idx*100}ms;"></div>
@@ -4348,7 +4757,7 @@ function drawSymptomBars(logs) {
   if (!Object.keys(counts).length) return;
   const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const max = sorted[0][1];
-  c.innerHTML = sorted.map(([s,n]) => `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:12px;">${s}</span><span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);">${n}×</span></div><div style="height:3px;background:rgba(28,26,24,0.08);border-radius:2px;"><div style="height:100%;width:${(n/max)*100}%;background:var(--phase);border-radius:2px;transition:width 1s ease;"></div></div></div>`).join('');
+  c.innerHTML = sorted.map(([s,n]) => `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:12px;">${s}</span><span style="font-family:DM Mono,monospace;font-size:12px;color:var(--muted);">${n}×</span></div><div style="height:3px;background:rgba(28,26,24,0.08);border-radius:2px;"><div style="height:100%;width:${(n/max)*100}%;background:var(--phase);border-radius:2px;transition:width 1s ease;"></div></div></div>`).join('');
 }
 
 function showPatternRead() {
@@ -4746,7 +5155,7 @@ function showPMLock() {
   if (amData && amData.energy && amItems) {
     amSummary.style.display = 'block';
     const items = [
-      amData.energy && `<div style="font-size:12px;"><span style="color:var(--phase); font-family:'DM Mono',monospace; font-size:16px; font-weight:400;">${amData.energy}</span><span class="muted"> energy</span></div>`,
+      amData.energy && `<div style="font-size:12px;"><span style="color:var(--phase); font-family:DM Mono,monospace; font-size:16px; font-weight:400;">${amData.energy}</span><span class="muted"> energy</span></div>`,
       amData.intention && `<div style="font-size:12px;"><span style="font-style:italic; color:var(--phase);">"${amData.intention}"</span></div>`,
       amData.mood?.length && `<div style="font-size:12px; color:var(--muted);">${amData.mood.slice(0,2).join(', ')}</div>`,
     ].filter(Boolean);
@@ -5285,13 +5694,13 @@ function openMilestoneJournal(id) {
   let questionsHtml = journal.questions.map((q, idx) => {
     let inputHtml = '';
     if (q.type === 'textarea') {
-      inputHtml = `<textarea id="mj-${q.id}" placeholder="${q.placeholder||''}" rows="${q.rows||4}" style="width:100%;background:rgba(28,26,24,0.04);border:1px solid rgba(28,26,24,0.12);border-radius:10px;padding:12px 14px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);outline:none;resize:none;line-height:1.6;box-sizing:border-box;"></textarea>`;
+      inputHtml = `<textarea id="mj-${q.id}" placeholder="${q.placeholder||''}" rows="${q.rows||4}" style="width:100%;background:rgba(28,26,24,0.04);border:1px solid rgba(28,26,24,0.12);border-radius:10px;padding:12px 14px;font-family:DM Sans,sans-serif;font-size:15px;color:var(--text);outline:none;resize:none;line-height:1.6;box-sizing:border-box;"></textarea>`;
     } else if (q.type === 'text') {
-      inputHtml = `<input type="text" id="mj-${q.id}" placeholder="${q.placeholder||''}" style="width:100%;background:rgba(28,26,24,0.04);border:1px solid rgba(28,26,24,0.12);border-radius:10px;padding:12px 14px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);outline:none;box-sizing:border-box;">`;
+      inputHtml = `<input type="text" id="mj-${q.id}" placeholder="${q.placeholder||''}" style="width:100%;background:rgba(28,26,24,0.04);border:1px solid rgba(28,26,24,0.12);border-radius:10px;padding:12px 14px;font-family:DM Sans,sans-serif;font-size:15px;color:var(--text);outline:none;box-sizing:border-box;">`;
     } else if (q.type === 'slider') {
-      inputHtml = `<div style="display:flex;align-items:center;gap:12px;"><input type="range" id="mj-${q.id}" min="${q.min||1}" max="${q.max||10}" value="${q.default||5}" style="flex:1;" oninput="document.getElementById('mj-${q.id}-val').textContent=this.value"><span id="mj-${q.id}-val" style="font-family:'DM Mono',monospace;font-size:18px;color:var(--mj-color);min-width:24px;">${q.default||5}</span></div>`;
+      inputHtml = `<div style="display:flex;align-items:center;gap:12px;"><input type="range" id="mj-${q.id}" min="${q.min||1}" max="${q.max||10}" value="${q.default||5}" style="flex:1;" oninput="document.getElementById('mj-${q.id}-val').textContent=this.value"><span id="mj-${q.id}-val" style="font-family:DM Mono,monospace;font-size:18px;color:var(--mj-color);min-width:24px;">${q.default||5}</span></div>`;
     } else if (q.type === 'chips') {
-      inputHtml = `<div id="mj-${q.id}-chips" style="display:flex;flex-wrap:wrap;gap:8px;">${q.options.map(opt => `<button class="mj-chip" onclick="toggleMJChip('${q.id}','${opt}',this)" style="padding:8px 14px;border-radius:20px;border:1px solid rgba(28,26,24,0.18);background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all 0.15s;">${opt}</button>`).join('')}</div>`;
+      inputHtml = `<div id="mj-${q.id}-chips" style="display:flex;flex-wrap:wrap;gap:8px;">${q.options.map(opt => `<button class="mj-chip" onclick="toggleMJChip('${q.id}','${opt}',this)" style="padding:8px 14px;border-radius:20px;border:1px solid rgba(28,26,24,0.18);background:transparent;font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer;transition:all 0.15s;">${opt}</button>`).join('')}</div>`;
     }
     return `<div style="margin-bottom:20px;">${q.label ? `<div style="font-size:14px;font-weight:500;margin-bottom:8px;line-height:1.4;">${q.label}</div>` : ''}${inputHtml}</div>`;
   }).join('');
@@ -5593,6 +6002,14 @@ function getMoonCycleCombo(moonPhaseKey, cyclePhase) {
 // CYCLE EXPLORE OVERLAY
 // ══════════════════════════════════════════════════════
 function openCycleExploreOverlay() {
+  var _p = window._userProfile || {};
+  var _phase = _p.cyclePhase || 'follicular';
+  if (!hasCycleData()) {
+    openSwipeDeck('intro');
+  } else {
+    openSwipeDeck('phase', _phase);
+  }
+  // Keep old overlay code below in case something else calls it directly
   const overlay = document.getElementById('cycle-explore-overlay');
   if (!overlay) return;
 
@@ -5951,23 +6368,55 @@ function buildWeekColumns() {
   if (!container) return;
   container.innerHTML = '';
   const p = window._userProfile || {};
-  const today = new Date();
+  const now = new Date();
+  // Apply week offset
+  const weekBase = new Date(now);
+  weekBase.setDate(now.getDate() + (_weekOffset * 7));
+  const today = now;
   const dayNames = ['S','M','T','W','T','F','S'];
-  const dayFull = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
+  // Update week title
+  const titleEl = document.getElementById('plan-week-title');
+  const subEl = document.getElementById('plan-week-subtitle');
+  const weekStart = new Date(weekBase);
+  weekStart.setDate(weekBase.getDate() - weekBase.getDay());
+  if (titleEl) {
+    var mo = weekStart.toLocaleDateString('en-GB',{month:'short',day:'numeric'});
+    titleEl.textContent = _weekOffset === 0 ? 'This week' : _weekOffset === -1 ? 'Last week' : _weekOffset === 1 ? 'Next week' : 'Week of ' + mo;
+  }
+
+  // Dominant phase this week
+  var weekPhases = [];
   for (let i = 0; i < 7; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - today.getDay() + i); // Start from Sunday of this week
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
     const cl = parseInt(p.cycleLength) || 28;
     const pl = parseInt(p.periodLength) || 5;
-    const dayOffset = i - today.getDay();
-    const adjDay = ((((p.cycleDay || 1) + dayOffset) - 1) % cl + cl) % cl + 1;
+    const todayDiff = Math.round((d - today) / 86400000);
+    const adjDay = ((((p.cycleDay || 1) + todayDiff) - 1) % cl + cl) % cl + 1;
+    weekPhases.push(adjDay <= pl ? 'menstrual' : adjDay <= 13 ? 'follicular' : adjDay <= 17 ? 'ovulatory' : 'luteal');
+  }
+  const phaseCt = {}; weekPhases.forEach(function(ph){ phaseCt[ph]=(phaseCt[ph]||0)+1; });
+  const dominantPhase = Object.keys(phaseCt).sort(function(a,b){ return phaseCt[b]-phaseCt[a]; })[0] || 'follicular';
+  const phaseLabels = { follicular:'Follicular · Building window', ovulatory:'Ovulatory · Peak window', luteal:'Luteal · Finishing window', menstrual:'Menstrual · Reset window' };
+  if (subEl) subEl.textContent = phaseLabels[dominantPhase] || '';
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    const cl = parseInt(p.cycleLength) || 28;
+    const pl = parseInt(p.periodLength) || 5;
+    const todayDiff = Math.round((d - today) / 86400000);
+    const adjDay = ((((p.cycleDay || 1) + todayDiff) - 1) % cl + cl) % cl + 1;
     const phase = adjDay <= pl ? 'menstrual' : adjDay <= 13 ? 'follicular' : adjDay <= 17 ? 'ovulatory' : 'luteal';
     const color = PHASE_COLORS[phase];
-    const isToday = i === today.getDay();
+    const isToday = d.toDateString() === today.toDateString();
     const dateNum = d.getDate();
+    // Key tasks by unique date string for multi-week support
+    const dateKey = d.getFullYear() + '-' + (d.getMonth()+1) + '-' + dateNum;
+    if (!monthTasks[dateKey]) monthTasks[dateKey] = monthTasks[dateNum] || [];
     const dayEvents = monthEvents.filter(ev => ev.day === dateNum);
-    const dayTasks = (monthTasks[dateNum] || []).filter(t => !t.locked);
+    const dayTasks = (monthTasks[dateKey] || []).filter(t => !t.locked);
 
     const col = document.createElement('div');
     col.style.cssText = `display:flex;flex-direction:column;border-radius:12px;overflow:hidden;border:1.5px solid ${isToday ? color : 'rgba(28,26,24,0.08)'};min-height:180px;`;
@@ -5997,25 +6446,54 @@ function buildWeekColumns() {
       body.appendChild(tag);
     });
 
-    // Tasks from monthTasks
+    // Tasks from monthTasks — draggable back to remove zone
     dayTasks.forEach(task => {
       const c = getTaskAreaColor(task);
       const tag = document.createElement('div');
-      tag.style.cssText = `background:${c}18;border-left:2.5px solid ${c};border-radius:4px;padding:3px 5px;font-size:9px;line-height:1.3;color:${c};`;
-      tag.textContent = task.text;
+      tag.style.cssText = `background:${c}18;border-left:2.5px solid ${c};border-radius:4px;padding:3px 5px 3px 5px;font-size:9px;line-height:1.3;color:${c};display:flex;align-items:center;gap:4px;cursor:grab;position:relative;`;
+      tag.draggable = true;
+      tag.innerHTML = `<span style="flex:1;">${task.text}</span><span class="week-task-remove-x" style="font-size:10px;opacity:0.5;cursor:pointer;padding:0 2px;flex-shrink:0;" title="Remove from plan">✕</span>`;
+
+      // Tap × to remove
+      tag.querySelector('.week-task-remove-x').addEventListener('click', e => {
+        e.stopPropagation();
+        if (monthTasks[dateNum]) {
+          monthTasks[dateNum] = monthTasks[dateNum].filter(t => t.text !== task.text);
+        }
+        buildWeekColumns();
+        buildWeekTrayItems();
+        buildDragTray();
+      });
+
+      // Desktop drag — mark as "placed task being dragged back"
+      tag.addEventListener('dragstart', e => {
+        dragItem = task;
+        dragSource = 'week-placed';
+        e.dataTransfer.effectAllowed = 'move';
+        // Highlight remove zone
+        const rz = document.getElementById('week-remove-zone');
+        if (rz) { rz.style.borderColor = 'rgba(180,60,60,0.7)'; rz.style.color = 'rgba(180,60,60,0.9)'; rz.style.background = 'rgba(180,60,60,0.06)'; }
+      });
+      tag.addEventListener('dragend', () => {
+        const rz = document.getElementById('week-remove-zone');
+        if (rz) { rz.style.borderColor = ''; rz.style.color = ''; rz.style.background = ''; }
+      });
+
+      // Touch drag back
+      attachTouchDrag(tag, task, 'week-placed-' + dateNum);
       body.appendChild(tag);
     });
 
-    // Drop zone
+    // Drop zone — add to day
     body.addEventListener('dragover', e => { e.preventDefault(); body.style.background = `${color}22`; });
     body.addEventListener('dragleave', () => { body.style.background = ''; });
     body.addEventListener('drop', e => {
       e.preventDefault();
       body.style.background = '';
       if (!dragItem) return;
-      if (!monthTasks[dateNum]) monthTasks[dateNum] = [];
-      if (!monthTasks[dateNum].find(t => t.text === dragItem.text)) {
-        monthTasks[dateNum].push({ ...dragItem });
+      if (!monthTasks[dateKey]) monthTasks[dateKey] = [];
+      if (!monthTasks[dateKey].find(t => t.text === dragItem.text)) {
+        monthTasks[dateKey].push({ ...dragItem });
       }
       buildWeekColumns();
       buildWeekTrayItems();
@@ -6024,6 +6502,30 @@ function buildWeekColumns() {
     col.appendChild(body);
     container.appendChild(col);
   }
+
+  // Wire remove zone for desktop drag
+  const removeZone = document.getElementById('week-remove-zone');
+  if (removeZone) {
+    removeZone.ondragover = e => { e.preventDefault(); };
+    removeZone.ondragenter = () => { removeZone.style.background = 'rgba(180,60,60,0.1)'; removeZone.style.borderColor = 'rgba(180,60,60,0.8)'; };
+    removeZone.ondragleave = () => { removeZone.style.background = ''; removeZone.style.borderColor = ''; };
+    removeZone.ondrop = e => {
+      e.preventDefault();
+      removeZone.style.background = '';
+      removeZone.style.borderColor = '';
+      if (!dragItem) return;
+      Object.keys(monthTasks).forEach(d => {
+        monthTasks[d] = (monthTasks[d] || []).filter(t => t.text !== dragItem.text);
+      });
+      dragItem = null;
+      buildWeekColumns();
+      buildWeekTrayItems();
+      buildDragTray();
+    };
+  }
+
+  // Phase suggestions
+  buildPhaseSuggestions(dominantPhase);
 }
 
 function buildWeekAreaLegend() {
@@ -6107,9 +6609,10 @@ function _elementFromTouch(touch) {
 }
 
 function _getDropCell(el) {
-  // Walk up to find a month-day-cell or week-day-col
+  // Walk up to find a month-day-cell, week-day-col, or the remove zone
   while (el && el !== document.body) {
     if (el.classList && (el.classList.contains('month-day-cell') || el.classList.contains('week-day-col'))) return el;
+    if (el.id === 'week-remove-zone') return el;
     el = el.parentElement;
   }
   return null;
@@ -6119,16 +6622,32 @@ var _lastHighlight = null;
 function _highlightCell(cell, color) {
   if (_lastHighlight && _lastHighlight !== cell) {
     _lastHighlight.style.outline = '';
+    if (_lastHighlight.id === 'week-remove-zone') {
+      _lastHighlight.style.background = '';
+      _lastHighlight.style.borderColor = '';
+    }
     _lastHighlight = null;
   }
   if (cell) {
-    cell.style.outline = '2px solid ' + (color || 'var(--phase)');
+    if (cell.id === 'week-remove-zone') {
+      cell.style.background = 'rgba(180,60,60,0.1)';
+      cell.style.borderColor = 'rgba(180,60,60,0.8)';
+    } else {
+      cell.style.outline = '2px solid ' + (color || 'var(--phase)');
+    }
     _lastHighlight = cell;
   }
 }
 
 function _clearHighlight() {
-  if (_lastHighlight) { _lastHighlight.style.outline = ''; _lastHighlight = null; }
+  if (_lastHighlight) {
+    _lastHighlight.style.outline = '';
+    if (_lastHighlight.id === 'week-remove-zone') {
+      _lastHighlight.style.background = '';
+      _lastHighlight.style.borderColor = '';
+    }
+    _lastHighlight = null;
+  }
 }
 
 // Attach touch drag to a chip element
@@ -6166,13 +6685,20 @@ function attachTouchDrag(chip, item, source) {
 }
 
 function _handleTouchDrop(cell, item, source) {
+  // Drop on remove zone — remove from all days
+  if (cell && cell.id === 'week-remove-zone') {
+    Object.keys(monthTasks).forEach(function(d) {
+      monthTasks[d] = (monthTasks[d] || []).filter(function(t){ return t.text !== item.text; });
+    });
+    buildWeekColumns();
+    buildWeekTrayItems();
+    buildDragTray();
+    return;
+  }
   // Month cell drop
   if (cell.classList.contains('month-day-cell')) {
     var d = parseInt(cell.querySelector('.month-day-num') && cell.querySelector('.month-day-num').textContent);
-    if (!d || isNaN(d)) {
-      // fallback: read data-day attribute
-      d = parseInt(cell.dataset.day);
-    }
+    if (!d || isNaN(d)) d = parseInt(cell.dataset.day);
     if (!d || isNaN(d)) return;
     if (!monthTasks[d]) monthTasks[d] = [];
     if (!monthTasks[d].find(function(t){ return t.text === item.text; })) {
@@ -6181,10 +6707,17 @@ function _handleTouchDrop(cell, item, source) {
     buildMonthGrid();
     buildDragTray();
   }
-  // Week col drop — keyed by day number (same as monthTasks)
+  // Week col drop — add to that day
   if (cell.classList.contains('week-day-col')) {
     var dayNum = parseInt(cell.dataset.day);
     if (!dayNum || isNaN(dayNum)) return;
+    // If dragging a placed task to a different day, remove from original day first
+    if (source && source.indexOf('week-placed-') === 0) {
+      var origDay = parseInt(source.replace('week-placed-', ''));
+      if (!isNaN(origDay) && origDay !== dayNum) {
+        if (monthTasks[origDay]) monthTasks[origDay] = monthTasks[origDay].filter(function(t){ return t.text !== item.text; });
+      }
+    }
     if (!monthTasks[dayNum]) monthTasks[dayNum] = [];
     if (!monthTasks[dayNum].find(function(t){ return t.text === item.text; })) {
       monthTasks[dayNum].push(Object.assign({}, item));
@@ -6652,7 +7185,7 @@ function buildTagFreqBars() {
     return '<div style="margin-bottom:8px;">' +
       '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
       '<span style="font-size:12px;color:var(--text);">' + t + '</span>' +
-      '<span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);">' + counts[t] + 'x</span></div>' +
+      '<span style="font-size:11px;font-family:DM Mono,monospace;color:var(--muted);">' + counts[t] + 'x</span></div>' +
       '<div style="height:6px;background:rgba(28,26,24,0.08);border-radius:100px;overflow:hidden;">' +
       '<div style="width:' + pct + '%;height:100%;background:var(--phase);border-radius:100px;"></div></div></div>';
   }).join('');
