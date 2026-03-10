@@ -345,9 +345,15 @@ textarea { resize: none; min-height: 100px; }
 .plan-views { flex: 1; overflow: hidden; position: relative; }
 .plan-view { display: none; flex-direction: column; gap: 0; overflow-y: auto; }
 .plan-view.active { display: flex; }
-.brain-dump-area { min-height: 220px; width: 100%; background: transparent; border: 1px solid rgba(28,26,24,0.12); padding: 16px; font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--text); resize: none; outline: none; line-height: 1.7; }
-.brain-dump-area::placeholder { color: var(--muted); }
-.brain-dump-area:focus { border-color: var(--phase); }
+.brain-dump-area { min-height:140px; width:100%; background:rgba(28,26,24,0.03); border:1.5px solid rgba(28,26,24,0.1); border-radius:14px; padding:14px 16px; font-family:DM Sans,sans-serif; font-size:15px; color:var(--text); resize:none; outline:none; line-height:1.7; box-sizing:border-box; -webkit-text-fill-color:var(--text); }
+.brain-dump-area::placeholder { color:var(--muted); }
+.brain-dump-area:focus { border-color:var(--phase); }
+.bd-area-chip { padding:10px 16px; border-radius:100px; font-size:13px; font-weight:600; border:2px solid transparent; background:rgba(28,26,24,0.06); color:var(--text); cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; transition:all 0.15s; display:inline-flex; align-items:center; gap:7px; user-select:none; -webkit-user-select:none; }
+.bd-area-chip:active { transform:scale(0.95); }
+.bd-area-chip.selected { color:#fff; }
+.bd-area-chip .bd-chip-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.week-tray-tab { padding:8px 14px; border-bottom:2.5px solid transparent; font-size:12px; font-weight:600; color:var(--muted); cursor:pointer; touch-action:manipulation; white-space:nowrap; transition:all 0.15s; background:none; border-top:none; border-left:none; border-right:none; font-family:DM Sans,sans-serif; }
+.week-tray-tab.active { color:var(--text); border-bottom-color:var(--phase); }
 .brain-dump-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-bottom: 1px solid rgba(28,26,24,0.06); cursor: pointer; transition: background 0.15s; }
 .brain-dump-item:hover { background: rgba(74,143,168,0.04); }
 .brain-dump-item .item-phase-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
@@ -631,6 +637,25 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
 }
 .quicklog-tag-btn:active { transform:scale(0.94); }
 .quicklog-tag-btn.active { background:var(--phase); border-color:var(--phase); color:#fff; }
+.ql-section-tab {
+  flex:1; padding:10px 14px; border:none; border-bottom:2.5px solid transparent;
+  background:none; font-size:12px; font-weight:600; color:var(--muted);
+  cursor:pointer; touch-action:manipulation; white-space:nowrap;
+  font-family:DM Sans,sans-serif; transition:all 0.15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.ql-section-tab.active { color:var(--phase); border-bottom-color:var(--phase); }
+.ql-add-tag-btn {
+  padding:9px 13px; border-radius:100px; font-size:12px; font-weight:600;
+  border:1.5px dashed rgba(28,26,24,0.2); background:transparent; color:var(--muted);
+  cursor:pointer; touch-action:manipulation; font-family:DM Sans,sans-serif;
+  -webkit-tap-highlight-color:transparent; -webkit-appearance:none;
+  display:inline-flex; align-items:center;
+}
+.ql-add-row {
+  margin-top:10px; display:flex; align-items:center; gap:8px;
+  background:rgba(28,26,24,0.04); border-radius:12px; padding:8px 12px;
+}
 .quicklog-input { width:100%; background:transparent; border:none; border-bottom:1.5px solid rgba(28,26,24,0.15); padding:10px 0; font-size:15px; font-family:'DM Sans',sans-serif; color:var(--text); outline:none; }
 .quicklog-input::placeholder { color:var(--muted); }
 .daylog-sparkline { width:100%; height:52px; display:block; }
@@ -1568,39 +1593,42 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     <button class="plan-tab-btn" onclick="switchPlanView('today')">Today</button>
   </div>
   <!-- NEW USER BRAIN DUMP PROMPT - shown if no dump exists -->
-  <div id="brain-dump-onboard" class="estral-lava" style="display:none; position:fixed; inset:0; background:rgba(240,236,228,0.97); z-index:200; overflow-y:auto; padding:48px 24px 100px;">
-    <div style="max-width:430px; margin:0 auto;">
-      <div style="font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--phase); margin-bottom:16px;">Plan · Brain Dump</div>
-      <h2 style="font-size:28px; margin-bottom:12px; line-height:1.2;">Get it all out<br>of your head.</h2>
-      <div class="estral-voice card-voice" style="margin-bottom:24px;">
-        <span class="voice-label">Tip from ESTRAL</span>
-        <span id="brain-dump-phase-message">okay so we do this in late luteal and menstrual usually but we'll get to that — let's just get you started.</span>
-      </div>
-      <p style="font-size:14px; color:var(--muted); line-height:1.7; margin-bottom:24px;">Pick the <strong style="color:var(--text);">4 areas of your life</strong> that have the most noise right now. Then brain-dump everything in each one — jobs, worries, dreams, half-baked ideas, things you're avoiding. nothing is too small or too unhinged.</p>
+  <div id="brain-dump-onboard" class="estral-lava" style="display:none; position:fixed; inset:0; background:rgba(240,236,228,0.97); z-index:200; overflow-y:auto; padding:0;">
+    <div style="max-width:430px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column;">
 
-      <!-- Area selector -->
-      <div style="margin-bottom:20px;">
-        <p class="label" style="margin-bottom:12px; color:var(--phase);">Choose your 4 areas</p>
-        <div style="display:flex; flex-wrap:wrap; gap:8px;" id="area-chips">
-          <button class="chip" onclick="toggleAreaChip(this,'Work')">Work</button>
-          <button class="chip" onclick="toggleAreaChip(this,'Money')">Money</button>
-          <button class="chip" onclick="toggleAreaChip(this,'Body')">Body</button>
-          <button class="chip" onclick="toggleAreaChip(this,'Home')">Home</button>
-          <button class="chip" onclick="toggleAreaChip(this,'Relationships')">Relationships</button>
-          <button class="chip" onclick="toggleAreaChip(this,'Creativity')">Creativity</button>
-          <button class="chip" onclick="toggleAreaChip(this,'Self')">Self</button>
-          <button class="chip" onclick="toggleAreaChip(this,'Business')">Business</button>
-          <button class="chip" onclick="toggleAreaChip(this,'Family')">Family</button>
-          <button class="chip" onclick="toggleAreaChip(this,'Social')">Social</button>
+      <!-- STEP 1: Pick 4 areas -->
+      <div id="bd-step1" style="flex:1; padding:56px 24px 100px; display:flex; flex-direction:column; gap:0;">
+        <div style="font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--phase); margin-bottom:20px;">Brain Dump · Step 1 of 2</div>
+        <h2 style="font-size:28px; margin-bottom:10px; line-height:1.2;">Where's the<br>most noise?</h2>
+        <p style="font-size:14px; color:var(--muted); line-height:1.7; margin-bottom:28px;">Pick exactly 4 areas of your life. These become your brain dump buckets — everything gets sorted into them.</p>
+
+        <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:24px;" id="area-chips">
         </div>
-        <p id="area-count-msg" style="font-size:11px; color:var(--muted); margin-top:8px;">Select exactly 4 areas</p>
+        <p id="area-count-msg" style="font-size:12px; color:var(--muted); margin-bottom:28px;">Select 4 areas to continue</p>
+
+        <button class="btn-primary phase" id="bd-step1-next" onclick="bdGoToStep2()" style="opacity:0.4; pointer-events:none; margin-top:auto;">These are my 4 →</button>
+        <button class="btn-ghost" onclick="document.getElementById('brain-dump-onboard').style.display='none'" style="margin-top:10px;">Skip for now</button>
       </div>
 
-      <!-- Dynamic free-write areas -->
-      <div id="area-freewrite-container" style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;"></div>
+      <!-- STEP 2: Free write per area -->
+      <div id="bd-step2" style="display:none; flex:1; padding:0 0 120px; flex-direction:column;">
+        <!-- Fixed header -->
+        <div style="position:sticky; top:0; background:rgba(240,236,228,0.97); backdrop-filter:blur(12px); padding:48px 24px 16px; z-index:10; border-bottom:1px solid rgba(28,26,24,0.07);">
+          <div style="font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--phase); margin-bottom:6px;">Brain Dump · Step 2 of 2</div>
+          <h2 style="font-size:24px; line-height:1.2; margin-bottom:4px;">Get it all out.</h2>
+          <p style="font-size:13px; color:var(--muted); line-height:1.5;">One item per line. Jobs, worries, ideas, things you're avoiding. Nothing is too small.</p>
+        </div>
 
-      <button class="btn-primary phase" id="brain-dump-submit-btn" onclick="submitBrainDumpOnboard()" style="opacity:0.4; pointer-events:none;">✦ Sort into my cycle →</button>
-      <button class="btn-ghost" onclick="document.getElementById('brain-dump-onboard').style.display='none'" style="margin-top:10px;">Skip for now</button>
+        <!-- Colour-coded text areas per area -->
+        <div id="bd-areas-container" style="padding:20px 24px; display:flex; flex-direction:column; gap:20px;"></div>
+
+        <!-- Submit -->
+        <div style="position:fixed; bottom:0; left:0; right:0; padding:16px 24px 32px; background:rgba(240,236,228,0.97); backdrop-filter:blur(12px); border-top:1px solid rgba(28,26,24,0.07); z-index:10; max-width:430px; margin:0 auto; box-sizing:border-box;">
+          <button class="btn-primary phase" onclick="submitBrainDumpOnboard()" style="width:100%;">✦ Sort into my cycle →</button>
+          <button class="btn-ghost" onclick="bdGoToStep1()" style="margin-top:8px; width:100%; font-size:13px;">← Back to areas</button>
+        </div>
+      </div>
+
     </div>
   </div>
   <div class="plan-views" style="flex:1; overflow:hidden;">
@@ -1707,18 +1735,23 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
       <div style="padding:0 16px;">
         <div id="weekColumns" style="display:grid; grid-template-columns:repeat(7,1fr); gap:6px; align-items:start;"></div>
       </div>
-      <!-- Drag tray for week -->
-      <div id="week-drag-tray" style="padding:14px 16px 4px;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+      <!-- Swipeable brain dump tray — one tab per life area -->
+      <div id="week-drag-tray" style="padding:14px 0 4px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:0 16px; margin-bottom:10px;">
           <div style="font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted);">Drag onto any day ↑</div>
         </div>
-        <div id="week-tray-items" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
-        <!-- Remove zone: drag placed tasks here to unplan -->
-        <div id="week-remove-zone" style="margin-top:12px; border:1.5px dashed rgba(180,60,60,0.3); border-radius:10px; padding:10px 14px; display:flex; align-items:center; gap:8px; color:rgba(180,60,60,0.5); font-size:11px; font-weight:600; letter-spacing:0.04em; transition:all 0.2s; min-height:38px;">
+        <!-- Area tab strip -->
+        <div id="week-tray-tab-strip" style="display:flex; gap:0; overflow-x:auto; padding:0 16px; margin-bottom:10px; scrollbar-width:none; -webkit-overflow-scrolling:touch; border-bottom:1px solid rgba(28,26,24,0.07);"></div>
+        <!-- Swipeable tray panels -->
+        <div id="week-tray-panels" style="position:relative; overflow:hidden;">
+          <div id="week-tray-items" style="display:flex; flex-wrap:wrap; gap:6px; padding:8px 16px; min-height:44px;"></div>
+        </div>
+        <!-- Remove zone -->
+        <div id="week-remove-zone" style="margin:10px 16px 0; border:1.5px dashed rgba(180,60,60,0.3); border-radius:10px; padding:10px 14px; display:flex; align-items:center; gap:8px; color:rgba(180,60,60,0.5); font-size:11px; font-weight:600; letter-spacing:0.04em; transition:all 0.2s; min-height:38px;">
           <span style="font-size:14px;">✕</span> Drag here to remove from plan
         </div>
         <!-- Phase brain dump suggestions -->
-        <div id="week-phase-suggestions" style="margin-top:14px;"></div>
+        <div id="week-phase-suggestions" style="margin-top:14px; padding:0 16px;"></div>
       </div>
     </div>
     <!-- TODAY -->
@@ -2364,7 +2397,8 @@ function buildDailyESTRALMessage() {
   var moodStr = (morningData.mood && morningData.mood.length) ? morningData.mood.join(' + ').toLowerCase() : '';
   var intention = morningData.intention || '';
   var moon = (typeof getMoonPhaseLabel === 'function') ? getMoonPhaseLabel().replace(/^\S+\s/, '') : 'waxing crescent';
-  var zodiac = (typeof getMoonZodiacSign === 'function') ? getMoonZodiacSign() : '';
+  var zodiacObj = (typeof getMoonZodiacSign === 'function') ? getMoonZodiacSign() : null;
+  var zodiac = zodiacObj ? (zodiacObj.sign || String(zodiacObj)) : '';
   var lunarCtx = moon + (zodiac ? ' in ' + zodiac : '');
 
   var energyLine;
@@ -2477,6 +2511,21 @@ function buildMorningTimeBlocks() {
 
 function unlockDashboard() {
   currentMorningScreen = 0;
+
+  // Restore nav
+  const nav = document.getElementById('mainNav');
+  if (nav) nav.style.display = 'flex';
+
+  // Hide all morning screens
+  document.querySelectorAll('[id^="screen-m"]').forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
+
+  // Save morning completion
+  const todayFmt = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  localStorage.setItem('morning_done_' + todayFmt, 'true');
+  if (typeof saveLogEntry === 'function') {
+    saveLogEntry({ energy:morningData.energy, mood:morningData.mood, symptoms:morningData.symptoms, skin:morningData.skin, cravings:morningData.cravings, intention:morningData.intention, sleep:morningData.sleep, bodyReady:morningData.bodyReady, mindClear:morningData.mindClear });
+  }
+
   const intention = morningData.intention || 'present';
   const e = morningData.energy || 7;
   const tier = e>=7?'High':e>=4?'Moderate':'Low';
@@ -2594,73 +2643,92 @@ function unlockDashboard() {
           </div>
         </div>
 
-        <!-- Log input -->
-        <div class="card" style="padding:18px 20px 20px; margin-bottom:10px;">
-          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;">
+        <!-- Log input — swipeable sections -->
+        <div class="card" style="padding:0; margin-bottom:10px; overflow:hidden;">
+
+          <!-- Header -->
+          <div style="display:flex; align-items:baseline; justify-content:space-between; padding:18px 20px 0;">
             <div class="label" style="color:var(--phase); font-size:14px;">How are you feeling?</div>
             <div style="font-size:10px; color:var(--muted);">tap to select</div>
           </div>
 
-          <!-- Mind & mood -->
-          <div style="font-size:9px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Mind & mood</div>
-          <div style="display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px;">
-            <button class="quicklog-tag-btn" data-tag="brain fog">🌫 brain fog</button>
-            <button class="quicklog-tag-btn" data-tag="can't focus">😶 can't focus</button>
-            <button class="quicklog-tag-btn" data-tag="focused">🧠 focused</button>
-            <button class="quicklog-tag-btn" data-tag="anxious">😤 anxious</button>
-            <button class="quicklog-tag-btn" data-tag="calm">🌿 calm</button>
-            <button class="quicklog-tag-btn" data-tag="sad">🌧 sad</button>
-            <button class="quicklog-tag-btn" data-tag="irritable">😠 irritable</button>
-            <button class="quicklog-tag-btn" data-tag="motivated">🔥 motivated</button>
-            <button class="quicklog-tag-btn" data-tag="low">📉 low</button>
-            <button class="quicklog-tag-btn" data-tag="clear">✨ clear</button>
+          <!-- Section tab strip -->
+          <div id="ql-tab-strip" style="display:flex; border-bottom:1px solid rgba(28,26,24,0.08); margin-top:12px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch;">
+            <button class="ql-section-tab active" data-section="0" onclick="switchQLSection(0)">Mind & mood</button>
+            <button class="ql-section-tab" data-section="1" onclick="switchQLSection(1)">Body</button>
+            <button class="ql-section-tab" data-section="2" onclick="switchQLSection(2)">Food & life</button>
           </div>
 
-          <!-- Body & symptoms -->
-          <div style="font-size:9px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Body & symptoms</div>
-          <div style="display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px;">
-            <button class="quicklog-tag-btn" data-tag="tired">😮‍💨 tired</button>
-            <button class="quicklog-tag-btn" data-tag="wired">⚡ wired</button>
-            <button class="quicklog-tag-btn" data-tag="bloated">🫁 bloated</button>
-            <button class="quicklog-tag-btn" data-tag="cramps">🌀 cramps</button>
-            <button class="quicklog-tag-btn" data-tag="pain">⚠️ pain</button>
-            <button class="quicklog-tag-btn" data-tag="tender">🩷 tender</button>
-            <button class="quicklog-tag-btn" data-tag="headache">🤕 headache</button>
-            <button class="quicklog-tag-btn" data-tag="nausea">🤢 nausea</button>
-            <button class="quicklog-tag-btn" data-tag="spotting">🩸 spotting</button>
+          <!-- Swipe track -->
+          <div id="ql-swipe-track" style="overflow:hidden; position:relative;">
+            <div id="ql-swipe-inner" style="display:flex; transition:transform 0.28s cubic-bezier(0.32,0.72,0,1); will-change:transform;">
+
+              <!-- Panel 0: Mind & mood -->
+              <div class="ql-panel" style="min-width:100%; padding:16px 20px 14px; box-sizing:border-box;">
+                <div style="display:flex; flex-wrap:wrap; gap:8px;" id="ql-tags-mind">
+                  <button class="quicklog-tag-btn" data-tag="brain fog">🌫 brain fog</button>
+                  <button class="quicklog-tag-btn" data-tag="can't focus">😶 can't focus</button>
+                  <button class="quicklog-tag-btn" data-tag="focused">🧠 focused</button>
+                  <button class="quicklog-tag-btn" data-tag="anxious">😤 anxious</button>
+                  <button class="quicklog-tag-btn" data-tag="calm">🌿 calm</button>
+                  <button class="quicklog-tag-btn" data-tag="sad">🌧 sad</button>
+                  <button class="quicklog-tag-btn" data-tag="irritable">😠 irritable</button>
+                  <button class="quicklog-tag-btn" data-tag="motivated">🔥 motivated</button>
+                  <button class="quicklog-tag-btn" data-tag="low">📉 low</button>
+                  <button class="quicklog-tag-btn" data-tag="clear">✨ clear</button>
+                  <button class="ql-add-tag-btn" onclick="openQLAddTag('mind')">＋ add</button>
+                </div>
+                <div id="ql-add-mind" class="ql-add-row" style="display:none;"></div>
+              </div>
+
+              <!-- Panel 1: Body & symptoms -->
+              <div class="ql-panel" style="min-width:100%; padding:16px 20px 14px; box-sizing:border-box;">
+                <div style="display:flex; flex-wrap:wrap; gap:8px;" id="ql-tags-body">
+                  <button class="quicklog-tag-btn" data-tag="tired">😮‍💨 tired</button>
+                  <button class="quicklog-tag-btn" data-tag="wired">⚡ wired</button>
+                  <button class="quicklog-tag-btn" data-tag="bloated">🫁 bloated</button>
+                  <button class="quicklog-tag-btn" data-tag="cramps">🌀 cramps</button>
+                  <button class="quicklog-tag-btn" data-tag="pain">⚠️ pain</button>
+                  <button class="quicklog-tag-btn" data-tag="tender">🩷 tender</button>
+                  <button class="quicklog-tag-btn" data-tag="headache">🤕 headache</button>
+                  <button class="quicklog-tag-btn" data-tag="nausea">🤢 nausea</button>
+                  <button class="quicklog-tag-btn" data-tag="spotting">🩸 spotting</button>
+                  <button class="ql-add-tag-btn" onclick="openQLAddTag('body')">＋ add</button>
+                </div>
+                <div id="ql-add-body" class="ql-add-row" style="display:none;"></div>
+              </div>
+
+              <!-- Panel 2: Food, life & wins -->
+              <div class="ql-panel" style="min-width:100%; padding:16px 20px 14px; box-sizing:border-box;">
+                <div style="display:flex; flex-wrap:wrap; gap:8px;" id="ql-tags-life">
+                  <button class="quicklog-tag-btn" data-tag="craving">🍫 craving</button>
+                  <button class="quicklog-tag-btn" data-tag="ate well">🥗 ate well</button>
+                  <button class="quicklog-tag-btn" data-tag="overate">🍕 overate</button>
+                  <button class="quicklog-tag-btn" data-tag="alcohol">🍷 alcohol</button>
+                  <button class="quicklog-tag-btn" data-tag="sex">🌹 sex</button>
+                  <button class="quicklog-tag-btn" data-tag="movement">🏃 movement</button>
+                  <button class="quicklog-tag-btn" data-tag="win">✦ win</button>
+                  <button class="quicklog-tag-btn" data-tag="social">👥 social</button>
+                  <div id="quicklog-custom-tags" style="display:contents;"></div>
+                  <button class="ql-add-tag-btn" onclick="openQLAddTag('life')">＋ add</button>
+                </div>
+                <div id="ql-add-life" class="ql-add-row" style="display:none;"></div>
+              </div>
+
+            </div>
           </div>
 
-          <!-- Food, life & wins -->
-          <div style="font-size:9px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Food, life & wins</div>
-          <div style="display:flex; flex-wrap:wrap; gap:7px; margin-bottom:16px;">
-            <button class="quicklog-tag-btn" data-tag="craving">🍫 craving</button>
-            <button class="quicklog-tag-btn" data-tag="ate well">🥗 ate well</button>
-            <button class="quicklog-tag-btn" data-tag="overate">🍕 overate</button>
-            <button class="quicklog-tag-btn" data-tag="alcohol">🍷 alcohol</button>
-            <button class="quicklog-tag-btn" data-tag="sex">🌹 sex</button>
-            <button class="quicklog-tag-btn" data-tag="movement">🏃 movement</button>
-            <button class="quicklog-tag-btn" data-tag="win">✦ win</button>
-            <button class="quicklog-tag-btn" data-tag="social">👥 social</button>
-            <!-- Custom tags injected here by JS -->
-            <div id="quicklog-custom-tags" style="display:contents;"></div>
-            <!-- Add custom tag button -->
-            <button id="quicklog-add-tag-btn" onclick="toggleCustomTagInput()" style="padding:7px 13px;border-radius:100px;font-size:12px;font-weight:600;border:1.5px dashed rgba(28,26,24,0.2);background:transparent;color:var(--muted);cursor:pointer;touch-action:manipulation;font-family:DM Sans,sans-serif;">＋ add tag</button>
-          </div>
+          <!-- Selected tags preview (cross-section) -->
+          <div id="ql-selected-preview" style="display:none; padding:0 20px 10px; flex-wrap:wrap; gap:6px;"></div>
 
-          <!-- Custom tag input — hidden by default -->
-          <div id="quicklog-custom-input-row" style="display:none; align-items:center; gap:8px; margin-bottom:16px; background:rgba(28,26,24,0.03); border-radius:12px; padding:10px 12px;">
-            <input id="quicklog-custom-tag-input" type="text" maxlength="30"
-              placeholder="e.g. hot flash, spotting, migraine…"
-              style="flex:1;border:none;background:transparent;font-size:14px;font-family:DM Sans,sans-serif;color:var(--text);outline:none;-webkit-text-fill-color:var(--text);">
-            <button onclick="addCustomTag()" style="padding:7px 14px;border-radius:100px;background:var(--phase);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;touch-action:manipulation;font-family:DM Sans,sans-serif;white-space:nowrap;">Add</button>
-          </div>
-
-          <!-- Energy + submit -->
-          <div style="display:flex; align-items:center; gap:10px; padding-top:14px; border-top:1px solid rgba(28,26,24,0.07);">
-            <span style="font-size:11px;color:var(--muted);white-space:nowrap;min-width:44px;">Energy</span>
-            <input type="range" min="1" max="10" value="7" id="quicklog-energy" style="flex:1;accent-color:var(--phase);" oninput="document.getElementById('quicklog-energy-val').textContent=this.value">
-            <span class="mono" id="quicklog-energy-val" style="font-size:16px;font-weight:700;min-width:20px;color:var(--phase);">7</span>
-            <button id="quicklog-submit-btn" style="flex-shrink:0;padding:12px 22px;border-radius:100px;background:var(--phase);border:none;color:#fff;font-size:13px;font-weight:700;letter-spacing:0.04em;cursor:pointer;touch-action:manipulation;font-family:DM Sans,sans-serif;">Log it</button>
+          <!-- Sticky bottom: energy + log -->
+          <div style="padding:12px 20px 16px; border-top:1px solid rgba(28,26,24,0.07); background:var(--bg);">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:11px;color:var(--muted);white-space:nowrap;min-width:44px;">Energy</span>
+              <input type="range" min="1" max="10" value="7" id="quicklog-energy" style="flex:1;accent-color:var(--phase);" oninput="document.getElementById('quicklog-energy-val').textContent=this.value">
+              <span class="mono" id="quicklog-energy-val" style="font-size:16px;font-weight:700;min-width:20px;color:var(--phase);">7</span>
+              <button id="quicklog-submit-btn" style="flex-shrink:0;padding:12px 22px;border-radius:100px;background:var(--phase);border:none;color:#fff;font-size:13px;font-weight:700;letter-spacing:0.04em;cursor:pointer;touch-action:manipulation;font-family:DM Sans,sans-serif;">Log it</button>
+            </div>
           </div>
         </div>
 
@@ -2699,6 +2767,7 @@ function unlockDashboard() {
     // Day log + weekly overview
     initDayLog();
     buildDashWeekly();
+    setTimeout(function() { if(typeof checkBusyWeekAlert==='function') checkBusyWeekAlert(); }, 1000);
   }, 200);
 }
 
@@ -4373,22 +4442,15 @@ function checkBrainDumpFirstVisit() {
 function openBrainDumpOnboard() {
   const el = document.getElementById('brain-dump-onboard');
   if (el) el.style.display = 'block';
-  // Set phase message inside the onboard overlay too
-  const p = window._userProfile || {};
-  const phase = p.cyclePhase || 'follicular';
-  const day = parseInt(p.cycleDay) || 1;
-  const isLateLuteal = phase === 'luteal' && day >= 22;
-  const isMenstrual = phase === 'menstrual';
-  const msgEl = document.getElementById('brain-dump-phase-message');
-  if (msgEl) {
-    if (isMenstrual) {
-      msgEl.textContent = "this is your late luteal + menstrual brain dump, bestie. your nervous system is on the floor, your inner critic is giving main character energy for no reason, and your to-do list has the audacity to still exist. perfect. dump it ALL out. no filter. go unhinged.";
-    } else if (isLateLuteal) {
-      msgEl.textContent = "okay ICONIC timing — this IS the late luteal + menstrual brain dump. your brain is running background processes at 3am, your feelings are in their villain era, and the to-do list is a whole situation. get it OUT. ESTRAL will sort it and you can actually rest when your bleed comes.";
-    } else {
-      msgEl.textContent = "moving forward you will be prompted to do this in late luteal or menstrual phase — that is when your brain is naturally processing and clearing. but for now, let's see what you have going on. dump it all.";
-    }
-  }
+  // Always start on step 1
+  bdGoToStep1();
+  // Init area chips
+  initAreaChips();
+  // Reset count msg
+  var msg = document.getElementById('area-count-msg');
+  if (msg) { msg.textContent = bdSelectedAreas.length === 4 ? '✓ Perfect. Now you\'ll dump into each one.' : 'Select ' + (4 - bdSelectedAreas.length) + ' more area' + ((4 - bdSelectedAreas.length) !== 1 ? 's' : ''); msg.style.color = bdSelectedAreas.length === 4 ? 'var(--phase)' : 'var(--muted)'; }
+  var nextBtn = document.getElementById('bd-step1-next');
+  if (nextBtn) { nextBtn.style.opacity = bdSelectedAreas.length === 4 ? '1' : '0.4'; nextBtn.style.pointerEvents = bdSelectedAreas.length === 4 ? 'auto' : 'none'; }
 }
 
 function renderDumpView() {
@@ -4430,28 +4492,125 @@ function renderDumpView() {
 }
 
 
+// ── BRAIN DUMP AREA COLOURS ─────────────────────────────
+var BD_AREA_OPTIONS = [
+  { name:'Work',          color:'#5B7FBF', emoji:'💼' },
+  { name:'Money',         color:'#C4903A', emoji:'💰' },
+  { name:'Body',          color:'#4CAF7D', emoji:'🌿' },
+  { name:'Home',          color:'#8B7355', emoji:'🏡' },
+  { name:'Relationships', color:'#E07070', emoji:'🫀' },
+  { name:'Creativity',    color:'#D4608A', emoji:'🎨' },
+  { name:'Self',          color:'#9B6BB5', emoji:'✨' },
+  { name:'Business',      color:'#3A7FBF', emoji:'📈' },
+  { name:'Family',        color:'#E09070', emoji:'🌻' },
+  { name:'Social',        color:'#3BAFD4', emoji:'🫧' },
+  { name:'Mind',          color:'#7B68B5', emoji:'🧠' },
+  { name:'Health',        color:'#4CAF7D', emoji:'💚' },
+];
+
+function getBDAreaColor(areaName) {
+  var a = BD_AREA_OPTIONS.find(function(x){ return x.name === areaName; });
+  return a ? a.color : '#888';
+}
+function getBDAreaEmoji(areaName) {
+  var a = BD_AREA_OPTIONS.find(function(x){ return x.name === areaName; });
+  return a ? a.emoji : '◈';
+}
+
+function initAreaChips() {
+  var container = document.getElementById('area-chips');
+  if (!container) return;
+  container.innerHTML = '';
+  BD_AREA_OPTIONS.forEach(function(opt) {
+    var btn = document.createElement('button');
+    btn.className = 'bd-area-chip';
+    btn.dataset.area = opt.name;
+    btn.innerHTML = '<span class="bd-chip-dot" style="background:' + opt.color + ';"></span>' + opt.emoji + ' ' + opt.name;
+    if (bdSelectedAreas.indexOf(opt.name) > -1) {
+      btn.classList.add('selected');
+      btn.style.background = opt.color;
+      btn.style.borderColor = opt.color;
+    }
+    function tap(e) {
+      if (e.cancelable) e.preventDefault();
+      toggleAreaChip(btn, opt.name);
+    }
+    btn.addEventListener('touchend', tap, { passive:false });
+    btn.addEventListener('click', tap);
+    container.appendChild(btn);
+  });
+}
+
 function toggleAreaChip(btn, area) {
-  const idx = bdSelectedAreas.indexOf(area);
-  if (idx > -1) { bdSelectedAreas.splice(idx,1); btn.classList.remove('selected'); }
-  else if (bdSelectedAreas.length < 4) { bdSelectedAreas.push(area); btn.classList.add('selected'); }
-  else { return; } // already 4
-  updateAreaFreeWrites();
-  const remaining = 4 - bdSelectedAreas.length;
-  const msg = document.getElementById('area-count-msg');
-  const submitBtn = document.getElementById('brain-dump-submit-btn');
-  if (msg) { msg.textContent = bdSelectedAreas.length === 4 ? '✓ Now free-write everything below.' : `Select ${remaining} more area${remaining!==1?'s':''}`; msg.style.color = bdSelectedAreas.length===4?'var(--phase)':'var(--muted)'; }
-  if (submitBtn) { submitBtn.style.opacity = bdSelectedAreas.length===4?'1':'0.4'; submitBtn.style.pointerEvents = bdSelectedAreas.length===4?'auto':'none'; }
+  var idx = bdSelectedAreas.indexOf(area);
+  var color = getBDAreaColor(area);
+  if (idx > -1) {
+    bdSelectedAreas.splice(idx, 1);
+    btn.classList.remove('selected');
+    btn.style.background = '';
+    btn.style.borderColor = 'transparent';
+  } else if (bdSelectedAreas.length < 4) {
+    bdSelectedAreas.push(area);
+    btn.classList.add('selected');
+    btn.style.background = color;
+    btn.style.borderColor = color;
+  } else { return; }
+
+  var remaining = 4 - bdSelectedAreas.length;
+  var msg = document.getElementById('area-count-msg');
+  var nextBtn = document.getElementById('bd-step1-next');
+  if (msg) {
+    msg.textContent = bdSelectedAreas.length === 4 ? '✓ Perfect. Now you\'ll dump into each one.' : 'Select ' + remaining + ' more area' + (remaining !== 1 ? 's' : '');
+    msg.style.color = bdSelectedAreas.length === 4 ? 'var(--phase)' : 'var(--muted)';
+  }
+  if (nextBtn) {
+    nextBtn.style.opacity = bdSelectedAreas.length === 4 ? '1' : '0.4';
+    nextBtn.style.pointerEvents = bdSelectedAreas.length === 4 ? 'auto' : 'none';
+  }
+}
+
+function bdGoToStep1() {
+  document.getElementById('bd-step1').style.display = 'flex';
+  document.getElementById('bd-step2').style.display = 'none';
+  document.getElementById('brain-dump-onboard').scrollTop = 0;
+}
+
+function bdGoToStep2() {
+  if (bdSelectedAreas.length < 4) return;
+  document.getElementById('bd-step1').style.display = 'none';
+  document.getElementById('bd-step2').style.display = 'flex';
+  document.getElementById('brain-dump-onboard').scrollTop = 0;
+  buildBDAreaTextareas();
+}
+
+function buildBDAreaTextareas() {
+  var c = document.getElementById('bd-areas-container');
+  if (!c) return;
+  c.innerHTML = '';
+  bdSelectedAreas.forEach(function(area) {
+    var color = getBDAreaColor(area);
+    var emoji = getBDAreaEmoji(area);
+    var block = document.createElement('div');
+    block.style.cssText = 'border-radius:16px; border:1.5px solid ' + color + '44; overflow:hidden;';
+    block.innerHTML =
+      '<div style="background:' + color + '18; padding:12px 16px 10px; display:flex; align-items:center; gap:8px; border-bottom:1px solid ' + color + '33;">' +
+        '<span style="font-size:18px;">' + emoji + '</span>' +
+        '<span style="font-size:13px; font-weight:700; color:' + color + '; letter-spacing:0.02em;">' + area + '</span>' +
+        '<span style="font-size:11px; color:' + color + '99; margin-left:4px;">— one per line</span>' +
+      '</div>' +
+      '<textarea id="fw-' + area + '" class="brain-dump-area" ' +
+        'placeholder="Everything in ' + area.toLowerCase() + '... dump it all out. jobs, worries, ideas, things you\'re avoiding." ' +
+        'style="border:none; border-radius:0; background:' + color + '08; min-height:120px;" ' +
+        'oninput="bdFreeWrites[\'' + area + '\']=this.value">' +
+        (bdFreeWrites[area] || '') +
+      '</textarea>';
+    c.appendChild(block);
+  });
 }
 
 function updateAreaFreeWrites() {
-  const c = document.getElementById('area-freewrite-container');
-  if (!c) return;
-  c.innerHTML = '';
-  bdSelectedAreas.forEach(area => {
-    const d = document.createElement('div');
-    d.innerHTML = `<div style="margin-bottom:6px;"><span style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--phase);">${area}</span><span class="muted" style="font-size:11px;margin-left:8px;">— write everything. jobs, tasks, ideas, worries.</span></div><textarea id="fw-${area}" placeholder="Everything in ${area.toLowerCase()}... one per line or stream of consciousness" style="min-height:110px;" oninput="bdFreeWrites['${area}']=this.value">${bdFreeWrites[area]||''}</textarea>`;
-    c.appendChild(d);
-  });
+  // Legacy compat — called by old code paths
+  buildBDAreaTextareas();
 }
 
 function phaseForItem(text, area) {
@@ -4991,20 +5150,6 @@ function showPatternRead() {
   txt.textContent = reads[phase] || reads.follicular;
 }
 
-// Hook into morning completion to save log
-const _origUnlock = typeof unlockDashboard === 'function' ? unlockDashboard : null;
-if (_origUnlock) {
-  window.unlockDashboard = function() {
-    saveLogEntry({ energy:morningData.energy, mood:morningData.mood, symptoms:morningData.symptoms, skin:morningData.skin, cravings:morningData.cravings, intention:morningData.intention, sleep:morningData.sleep, bodyReady:morningData.bodyReady, mindClear:morningData.mindClear });
-    _origUnlock();
-    // Check if busy week + difficult phase — show support banner
-    setTimeout(function() { if(typeof checkBusyWeekAlert==='function') checkBusyWeekAlert(); }, 1200);
-  };
-}
-
-
-
-
 // ══════════════════════════════════════════════════════
 // PM QUIZ — Evening review flow
 // ══════════════════════════════════════════════════════
@@ -5133,13 +5278,18 @@ function skipTomorrowPlanner() {
 }
 
 function completePMQuiz() {
+  // Mark today done
+  if (typeof getTodayKey === 'function') {
+    localStorage.setItem('pm_done_' + getTodayKey(), 'true');
+  }
+
   // Save to localStorage
   savePMLog();
 
   // Build ESTRAL PM read
   buildPMRead();
 
-  // Show read screen
+  // Show read screen — hide all PM screens first
   document.querySelectorAll('[id^="screen-pm"]').forEach(s => {
     s.style.display = 'none';
     s.classList.remove('active');
@@ -5390,24 +5540,6 @@ function dismissPMLock() {
   // Hide for 30 min then recheck
   document.getElementById('pm-lock-overlay').style.display = 'none';
   setTimeout(checkPMLockNow, 30 * 60 * 1000);
-}
-
-// Override completePMQuiz to mark today as done
-const _origCompletePM = typeof completePMQuiz === 'function' ? completePMQuiz : null;
-function completePMQuiz() {
-  // Mark today done
-  localStorage.setItem('pm_done_' + getTodayKey(), 'true');
-  // Call original
-  if (_origCompletePM) _origCompletePM();
-  else {
-    savePMLog();
-    buildPMRead();
-    document.querySelectorAll('[id^="screen-pm"]').forEach(s => { s.style.display='none'; s.classList.remove('active'); });
-    const readEl = document.getElementById('screen-pm-read');
-    if (readEl) { readEl.style.display='flex'; readEl.classList.add('active'); }
-    const nav = document.getElementById('mainNav');
-    if (nav) nav.style.display = 'flex';
-  }
 }
 
 // ── CATCH-UP SYSTEM ────────────────────────────────────
@@ -6426,7 +6558,11 @@ function buildDragTray() {
 }
 
 function getTaskAreaColor(item) {
-  // Try to match area from brain dump area field or phase
+  // Try BD area colour first (richer set)
+  if (item.area && typeof getBDAreaColor === 'function') {
+    var bdColor = getBDAreaColor(item.area);
+    if (bdColor && bdColor !== '#888') return bdColor;
+  }
   if (item.area) return getAreaColor(item.area);
   const phaseMap = { follicular: '#3BAFD4', ovulatory: '#F0C040', luteal: '#C47830', menstrual: '#D4326B', event: '#5B7FBF' };
   return phaseMap[item.phase] || '#888';
@@ -6718,22 +6854,83 @@ function buildWeekAreaLegend() {
   ).join('');
 }
 
+var _weekTrayActiveArea = null; // currently selected area tab
+
 function buildWeekTrayItems() {
-  const tray = document.getElementById('week-tray-items');
+  var tabStrip = document.getElementById('week-tray-tab-strip');
+  var tray = document.getElementById('week-tray-items');
   if (!tray) return;
+
+  if (brainDumpItems.length === 0) {
+    if (tabStrip) tabStrip.innerHTML = '';
+    tray.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:4px 0;">No brain dump yet — add items from the Brain Dump tab.</div>';
+    return;
+  }
+
+  // Get unique areas from dump items, preserving bdSelectedAreas order
+  var areas = [];
+  var savedAreas = bdSelectedAreas.length ? bdSelectedAreas : [];
+  // Add areas in selected order first
+  savedAreas.forEach(function(a) {
+    if (brainDumpItems.some(function(i){ return i.area === a; })) areas.push(a);
+  });
+  // Add any remaining areas not in selectedAreas
+  brainDumpItems.forEach(function(item) {
+    if (item.area && areas.indexOf(item.area) === -1) areas.push(item.area);
+  });
+  if (areas.length === 0) areas = ['All'];
+
+  // Default to first area or keep current
+  if (!_weekTrayActiveArea || areas.indexOf(_weekTrayActiveArea) === -1) {
+    _weekTrayActiveArea = areas[0];
+  }
+
+  // Build tab strip
+  if (tabStrip) {
+    tabStrip.innerHTML = '';
+    areas.forEach(function(area) {
+      var color = getBDAreaColor(area);
+      var tab = document.createElement('button');
+      tab.className = 'week-tray-tab' + (area === _weekTrayActiveArea ? ' active' : '');
+      tab.style.borderBottomColor = area === _weekTrayActiveArea ? color : 'transparent';
+      tab.style.color = area === _weekTrayActiveArea ? color : 'var(--muted)';
+      // Count unchecked items
+      var count = brainDumpItems.filter(function(i){ return i.area === area && !i.checked; }).length;
+      tab.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:' + color + ';display:inline-block;margin-right:5px;vertical-align:middle;opacity:' + (area === _weekTrayActiveArea ? 1 : 0.5) + ';"></span>' + area + (count ? ' <span style="font-size:10px;opacity:0.6;">(' + count + ')</span>' : '');
+
+      function selectTab(e) {
+        if (e.cancelable) e.preventDefault();
+        _weekTrayActiveArea = area;
+        buildWeekTrayItems();
+      }
+      tab.addEventListener('touchend', selectTab, { passive:false });
+      tab.addEventListener('click', selectTab);
+      tabStrip.appendChild(tab);
+    });
+  }
+
+  // Build tray chips for active area
   tray.innerHTML = '';
-  if (brainDumpItems.length === 0) return;
-  brainDumpItems.forEach((item) => {
-    const chip = document.createElement('div');
+  var areaItems = brainDumpItems.filter(function(i){ return i.area === _weekTrayActiveArea && !i.checked; });
+
+  if (areaItems.length === 0) {
+    tray.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:4px 0;font-style:italic;">All ' + _weekTrayActiveArea + ' items are done or placed ✓</div>';
+    return;
+  }
+
+  areaItems.forEach(function(item) {
+    var chip = document.createElement('div');
     chip.draggable = true;
-    const c = getTaskAreaColor(item);
-    chip.style.cssText = `display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:100px;font-size:11px;cursor:grab;border:1.5px solid ${c};color:${c};background:${c}15;user-select:none;`;
-    chip.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:${c};flex-shrink:0;"></span>${item.text}`;
-    chip.addEventListener('dragstart', e => {
+    var c = getBDAreaColor(item.area) || getTaskAreaColor(item);
+    chip.style.cssText = 'display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:100px;font-size:12px;cursor:grab;border:1.5px solid ' + c + ';color:' + c + ';background:' + c + '18;user-select:none;-webkit-user-select:none;touch-action:none;flex-shrink:0;';
+    chip.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:' + c + ';flex-shrink:0;"></span>' + item.text;
+    chip.addEventListener('dragstart', function(e) {
       dragItem = item;
       dragSource = 'week-tray';
       e.dataTransfer.effectAllowed = 'move';
     });
+    // Touch drag
+    if (typeof attachTouchDrag === 'function') attachTouchDrag(chip, item, 'week-tray');
     tray.appendChild(chip);
   });
 }
@@ -6972,10 +7169,13 @@ function saveDayLogEntries(entries) {
   localStorage.setItem(getDayLogKey(), JSON.stringify(entries));
 }
 
+var _qlCurrentSection = 0;
+
 function initDayLog() {
   _dayLogSelectedTags = [];
+  _qlCurrentSection = 0;
 
-  // Wire ALL tag buttons with bulletproof iOS touch
+  // Wire all static tag buttons
   document.querySelectorAll('.quicklog-tag-btn').forEach(function(btn) {
     wireTagBtn(btn);
   });
@@ -6987,18 +7187,101 @@ function initDayLog() {
     sub.addEventListener('click', function(){ submitDayLog(); });
   }
 
+  // Set up swipe on the track
+  initQLSwipe();
+
   renderDayLogFeed();
   drawDayLogSparkline();
   renderCustomTagBtns();
+}
 
-  // Enter key on custom tag input
-  var cinp = document.getElementById('quicklog-custom-tag-input');
-  if (cinp) {
-    cinp.addEventListener('keydown', function(e){
-      if (e.key === 'Enter') { e.preventDefault(); addCustomTag(); }
-    });
+function switchQLSection(idx) {
+  _qlCurrentSection = idx;
+  var inner = document.getElementById('ql-swipe-inner');
+  if (inner) inner.style.transform = 'translateX(-' + (idx * 100) + '%)';
+  document.querySelectorAll('.ql-section-tab').forEach(function(t) {
+    var active = parseInt(t.dataset.section) === idx;
+    t.classList.toggle('active', active);
+  });
+}
+
+function initQLSwipe() {
+  var track = document.getElementById('ql-swipe-track');
+  var inner = document.getElementById('ql-swipe-inner');
+  if (!track || !inner) return;
+
+  var startX = 0, startY = 0, isDragging = false, isScrolling = false;
+
+  track.addEventListener('touchstart', function(e) {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    isDragging = false;
+    isScrolling = false;
+  }, { passive: true });
+
+  track.addEventListener('touchmove', function(e) {
+    if (isScrolling) return;
+    var dx = e.touches[0].clientX - startX;
+    var dy = e.touches[0].clientY - startY;
+    if (!isDragging && Math.abs(dy) > Math.abs(dx)) { isScrolling = true; return; }
+    if (Math.abs(dx) > 8) { isDragging = true; if (e.cancelable) e.preventDefault(); }
+  }, { passive: false });
+
+  track.addEventListener('touchend', function(e) {
+    if (!isDragging) return;
+    var dx = e.changedTouches[0].clientX - startX;
+    var sections = 3;
+    if (dx < -40 && _qlCurrentSection < sections - 1) switchQLSection(_qlCurrentSection + 1);
+    else if (dx > 40 && _qlCurrentSection > 0) switchQLSection(_qlCurrentSection - 1);
+  }, { passive: true });
+}
+
+function openQLAddTag(section) {
+  var rowId = 'ql-add-' + section;
+  var row = document.getElementById(rowId);
+  if (!row) return;
+  var showing = row.style.display === 'flex';
+  if (showing) { row.style.display = 'none'; return; }
+  row.style.display = 'flex';
+  row.innerHTML =
+    '<input type="text" maxlength="30" placeholder="Type a tag…" ' +
+      'style="flex:1;border:none;background:transparent;font-size:14px;font-family:DM Sans,sans-serif;color:var(--text);outline:none;-webkit-text-fill-color:var(--text);" ' +
+      'id="ql-add-input-' + section + '">' +
+    '<button onclick="saveQLCustomTag(\'' + section + '\')" ' +
+      'style="padding:6px 14px;border-radius:100px;background:var(--phase);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;touch-action:manipulation;font-family:DM Sans,sans-serif;">Add</button>';
+  setTimeout(function(){ var inp = document.getElementById('ql-add-input-' + section); if (inp) inp.focus(); }, 50);
+  var inp2 = row.querySelector('input');
+  if (inp2) {
+    inp2.addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); saveQLCustomTag(section); } });
   }
 }
+
+function saveQLCustomTag(section) {
+  var inp = document.getElementById('ql-add-input-' + section);
+  if (!inp) return;
+  var val = inp.value.trim();
+  if (!val) return;
+
+  // Persist
+  var customTags = [];
+  try { customTags = JSON.parse(localStorage.getItem('estral_custom_tags') || '[]'); } catch(e){}
+  if (customTags.indexOf(val) === -1) { customTags.push(val); localStorage.setItem('estral_custom_tags', JSON.stringify(customTags)); }
+
+  // Select immediately
+  if (_dayLogSelectedTags.indexOf(val) === -1) _dayLogSelectedTags.push(val);
+
+  // Hide row
+  var row = document.getElementById('ql-add-' + section);
+  if (row) row.style.display = 'none';
+
+  // Add button to life section (all custom go there)
+  renderCustomTagBtns();
+  updateQLSelectedPreview();
+}
+
+// Legacy compat
+function toggleCustomTagInput() { openQLAddTag('life'); }
+function addCustomTag() { saveQLCustomTag('life'); }
 
 function wireTagBtn(btn) {
   var _tapped = false;
@@ -7017,41 +7300,6 @@ function wireTagBtn(btn) {
     if (_tapped) return;
     toggleDayLogTag(btn);
   });
-}
-
-function toggleCustomTagInput() {
-  var row = document.getElementById('quicklog-custom-input-row');
-  if (!row) return;
-  var showing = row.style.display !== 'none';
-  row.style.display = showing ? 'none' : 'flex';
-  if (!showing) {
-    var inp = document.getElementById('quicklog-custom-tag-input');
-    if (inp) setTimeout(function(){ inp.focus(); }, 50);
-  }
-}
-
-function addCustomTag() {
-  var inp = document.getElementById('quicklog-custom-tag-input');
-  if (!inp) return;
-  var val = inp.value.trim();
-  if (!val) return;
-
-  // Save to persistent custom tags list
-  var customTags = [];
-  try { customTags = JSON.parse(localStorage.getItem('estral_custom_tags') || '[]'); } catch(e){}
-  if (customTags.indexOf(val) === -1) {
-    customTags.push(val);
-    localStorage.setItem('estral_custom_tags', JSON.stringify(customTags));
-  }
-
-  // Add to selected and render
-  if (_dayLogSelectedTags.indexOf(val) === -1) _dayLogSelectedTags.push(val);
-  inp.value = '';
-
-  var row = document.getElementById('quicklog-custom-input-row');
-  if (row) row.style.display = 'none';
-
-  renderCustomTagBtns();
 }
 
 function renderCustomTagBtns() {
@@ -7073,14 +7321,26 @@ function renderCustomTagBtns() {
 
 function toggleDayLogTag(btn) {
   var tag = btn.dataset.tag;
+  if (!tag) return;
   var idx = _dayLogSelectedTags.indexOf(tag);
-  if (idx > -1) { _dayLogSelectedTags.splice(idx,1); btn.classList.remove('active'); }
+  if (idx > -1) { _dayLogSelectedTags.splice(idx, 1); btn.classList.remove('active'); }
   else { _dayLogSelectedTags.push(tag); btn.classList.add('active'); }
+  updateQLSelectedPreview();
+}
+
+function updateQLSelectedPreview() {
+  var preview = document.getElementById('ql-selected-preview');
+  if (!preview) return;
+  if (_dayLogSelectedTags.length === 0) { preview.style.display = 'none'; return; }
+  preview.style.display = 'flex';
+  preview.innerHTML = _dayLogSelectedTags.map(function(t) {
+    return '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;background:var(--phase);color:#fff;font-size:11px;font-weight:600;">' + t + '</span>';
+  }).join('');
 }
 
 function submitDayLog() {
   var energy = parseInt((document.getElementById('quicklog-energy')||{}).value || 7);
-  if (_dayLogSelectedTags.length === 0) return; // need at least one tag
+  if (_dayLogSelectedTags.length === 0) return;
   var now = new Date();
   var entry = {
     ts: now.getTime(),
@@ -7092,6 +7352,7 @@ function submitDayLog() {
   var entries = getDayLogEntries();
   entries.push(entry);
   saveDayLogEntries(entries);
+
   // Reset
   _dayLogSelectedTags = [];
   document.querySelectorAll('.quicklog-tag-btn').forEach(function(b){ b.classList.remove('active'); });
@@ -7099,6 +7360,9 @@ function submitDayLog() {
   if (eSlider) eSlider.value = 7;
   var eVal = document.getElementById('quicklog-energy-val');
   if (eVal) eVal.textContent = '7';
+  var preview = document.getElementById('ql-selected-preview');
+  if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
+
   renderDayLogFeed();
   drawDayLogSparkline();
   if (navigator.vibrate) navigator.vibrate(30);
