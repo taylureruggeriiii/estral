@@ -2164,7 +2164,6 @@ function switchTab(tab) {
     if (nudge) nudge.style.display = (!p.goal90 && !p.visionWork) ? 'block' : 'none';
   }
   if (currentMorningScreen > 0 && currentMorningScreen < 12 && tab !== 'home') return;
-  // Hide ALL screens — remove active class AND reset display
   document.querySelectorAll('.screen').forEach(s => {
     s.classList.remove('active');
     s.style.display = 'none';
@@ -2173,13 +2172,33 @@ function switchTab(tab) {
   if (currentMorningScreen > 0 && tab === 'home') {
     showMorningScreen(currentMorningScreen);
   } else {
+    // Auto-unlock dashboard if morning data exists but home is still in locked state
+    if (tab === 'home') {
+      const homeEl = document.getElementById('screen-home');
+      const alreadyUnlocked = homeEl && homeEl.querySelector('#daylog-feed');
+      const hasMorning = morningData && (morningData.energy || (morningData.mustDo && morningData.mustDo.length));
+      // Also check localStorage for saved morning
+      let savedMorning = false;
+      try {
+        const today = new Date().toISOString().slice(0,10).replace(/-/g,'');
+        savedMorning = !!localStorage.getItem('morning_done_' + today) || !!localStorage.getItem('estral_morning_' + today);
+        if (!savedMorning) {
+          const logs = JSON.parse(localStorage.getItem('estral_logs') || '[]');
+          const todayStr = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+          savedMorning = logs.some(function(l){ return l.date === todayStr && l.am; });
+        }
+      } catch(e) {}
+      if (!alreadyUnlocked && (hasMorning || savedMorning)) {
+        unlockDashboard();
+        return;
+      }
+    }
     const el = document.getElementById('screen-' + tab);
     if (el) { el.style.display = 'flex'; el.classList.add('active'); }
   }
   const navEl = document.getElementById('nav-' + tab);
   if (navEl) navEl.classList.add('active');
   updateProgress();
-  // Init tab-specific features
   if (tab === 'chat') setTimeout(function(){ if(typeof initChatGreeting==='function') initChatGreeting(); }, 80);
   if (tab === 'log')  setTimeout(function(){ if(typeof renderLogContent==='function') renderLogContent(currentLogMonth||'mar'); if(typeof buildMilestonesSection==='function') buildMilestonesSection(); }, 80);
   if (tab === 'chart') setTimeout(function(){ if(typeof buildChartFromData==='function') buildChartFromData(); }, 80);
@@ -2536,54 +2555,83 @@ function unlockDashboard() {
       <!-- DAY LOG -->
       <div style="margin-top:12px;">
 
-        <!-- Sparkline -->
-        <div class="card" style="padding:18px 20px 14px; margin-bottom:10px;">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-            <div class="label" style="color:var(--phase);">Energy today</div>
-            <span style="font-size:10px; color:var(--muted);" id="daylog-count">—</span>
+        <!-- Energy line graph card -->
+        <div class="card" style="padding:18px 20px 16px; margin-bottom:10px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <div class="label" style="color:var(--phase);">Energy throughout the day</div>
+            <span style="font-size:10px; color:var(--muted);" id="daylog-count">0 entries</span>
           </div>
-          <canvas class="daylog-sparkline" id="daylog-sparkline" height="60"></canvas>
-          <div style="display:flex; justify-content:space-between; margin-top:4px;">
+          <canvas id="daylog-sparkline" style="width:100%;height:80px;display:block;" height="80"></canvas>
+          <div style="display:flex; justify-content:space-between; margin-top:5px; padding:0 2px;">
             <span style="font-size:9px;color:var(--muted);">6am</span>
+            <span style="font-size:9px;color:var(--muted);">9am</span>
             <span style="font-size:9px;color:var(--muted);">12pm</span>
+            <span style="font-size:9px;color:var(--muted);">3pm</span>
             <span style="font-size:9px;color:var(--muted);">6pm</span>
-            <span style="font-size:9px;color:var(--muted);">now</span>
+            <span style="font-size:9px;color:var(--muted);">9pm</span>
           </div>
         </div>
 
         <!-- Log input -->
-        <div class="card" style="padding:18px 20px; margin-bottom:10px;">
-          <div class="label" style="color:var(--phase); margin-bottom:3px;">How are you feeling?</div>
-          <p class="muted" style="font-size:12px; margin-bottom:12px; line-height:1.5;">Log anything — brain fog, what you ate, a win, how your body feels right now.</p>
+        <div class="card" style="padding:18px 20px 20px; margin-bottom:10px;">
+          <div class="label" style="color:var(--phase); margin-bottom:3px; font-size:14px;">How are you feeling right now?</div>
+          <p class="muted" style="font-size:12px; margin-bottom:14px; line-height:1.5;">Add anything — brain fog, sex, what you ate, a win, cramps, mood. It all builds your pattern picture.</p>
 
-          <textarea id="quicklog-text" rows="2"
-            style="width:100%;background:rgba(28,26,24,0.03);border:1.5px solid rgba(28,26,24,0.12);border-radius:12px;padding:12px 14px;font-size:15px;font-family:DM Sans,sans-serif;color:var(--text);outline:none;resize:none;line-height:1.5;margin-bottom:12px;-webkit-text-fill-color:var(--text);display:block;"
-            placeholder="e.g. really brain foggy today, can't focus at all…"></textarea>
+          <!-- Free text — big and prominent -->
+          <textarea id="quicklog-text" rows="3"
+            style="width:100%;box-sizing:border-box;background:rgba(28,26,24,0.03);border:1.5px solid rgba(28,26,24,0.12);border-radius:14px;padding:14px 16px;font-size:15px;font-family:DM Sans,sans-serif;color:var(--text);outline:none;resize:none;line-height:1.6;margin-bottom:14px;-webkit-text-fill-color:var(--text);display:block;-webkit-appearance:none;"
+            placeholder="e.g. really brain foggy, can't focus… or had sex last night, feel tender today…"></textarea>
 
-          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px;" id="quicklog-tags">
-            <button class="quicklog-tag-btn" data-tag="brain fog">🌫 brain fog</button>
-            <button class="quicklog-tag-btn" data-tag="can't focus">😶 can't focus</button>
-            <button class="quicklog-tag-btn" data-tag="focused">🧠 focused</button>
-            <button class="quicklog-tag-btn" data-tag="tired">😮‍💨 tired</button>
-            <button class="quicklog-tag-btn" data-tag="wired">⚡ wired</button>
-            <button class="quicklog-tag-btn" data-tag="anxious">😤 anxious</button>
-            <button class="quicklog-tag-btn" data-tag="calm">🌿 calm</button>
-            <button class="quicklog-tag-btn" data-tag="sad">🌧 sad</button>
-            <button class="quicklog-tag-btn" data-tag="motivated">🔥 motivated</button>
-            <button class="quicklog-tag-btn" data-tag="bloated">🫁 bloated</button>
-            <button class="quicklog-tag-btn" data-tag="cramps">🌀 cramps</button>
-            <button class="quicklog-tag-btn" data-tag="craving">🍫 craving</button>
-            <button class="quicklog-tag-btn" data-tag="ate">🥗 ate</button>
-            <button class="quicklog-tag-btn" data-tag="pain">⚠️ pain</button>
-            <button class="quicklog-tag-btn" data-tag="win">✦ win</button>
-            <button class="quicklog-tag-btn" data-tag="low">📉 low</button>
+          <!-- Tag groups -->
+          <div style="margin-bottom:12px;">
+            <div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Mind & mood</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;" id="quicklog-tags-mind">
+              <button class="quicklog-tag-btn" data-tag="brain fog">🌫 brain fog</button>
+              <button class="quicklog-tag-btn" data-tag="can't focus">😶 can't focus</button>
+              <button class="quicklog-tag-btn" data-tag="focused">🧠 focused</button>
+              <button class="quicklog-tag-btn" data-tag="anxious">😤 anxious</button>
+              <button class="quicklog-tag-btn" data-tag="calm">🌿 calm</button>
+              <button class="quicklog-tag-btn" data-tag="sad">🌧 sad</button>
+              <button class="quicklog-tag-btn" data-tag="irritable">😠 irritable</button>
+              <button class="quicklog-tag-btn" data-tag="motivated">🔥 motivated</button>
+              <button class="quicklog-tag-btn" data-tag="low">📉 low</button>
+              <button class="quicklog-tag-btn" data-tag="clear">✨ clear</button>
+            </div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Body & symptoms</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;" id="quicklog-tags-body">
+              <button class="quicklog-tag-btn" data-tag="tired">😮‍💨 tired</button>
+              <button class="quicklog-tag-btn" data-tag="wired">⚡ wired</button>
+              <button class="quicklog-tag-btn" data-tag="bloated">🫁 bloated</button>
+              <button class="quicklog-tag-btn" data-tag="cramps">🌀 cramps</button>
+              <button class="quicklog-tag-btn" data-tag="pain">⚠️ pain</button>
+              <button class="quicklog-tag-btn" data-tag="tender">🩷 tender</button>
+              <button class="quicklog-tag-btn" data-tag="headache">🤕 headache</button>
+              <button class="quicklog-tag-btn" data-tag="nausea">🤢 nausea</button>
+              <button class="quicklog-tag-btn" data-tag="spotting">🩸 spotting</button>
+            </div>
+          </div>
+          <div style="margin-bottom:14px;">
+            <div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Food, life & wins</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;" id="quicklog-tags-life">
+              <button class="quicklog-tag-btn" data-tag="craving">🍫 craving</button>
+              <button class="quicklog-tag-btn" data-tag="ate well">🥗 ate well</button>
+              <button class="quicklog-tag-btn" data-tag="overate">🍕 overate</button>
+              <button class="quicklog-tag-btn" data-tag="alcohol">🍷 alcohol</button>
+              <button class="quicklog-tag-btn" data-tag="sex">🌹 sex</button>
+              <button class="quicklog-tag-btn" data-tag="movement">🏃 movement</button>
+              <button class="quicklog-tag-btn" data-tag="win">✦ win</button>
+              <button class="quicklog-tag-btn" data-tag="social">👥 social</button>
+            </div>
           </div>
 
-          <div style="display:flex; align-items:center; gap:10px;">
-            <span style="font-size:11px;color:var(--muted);white-space:nowrap;">Energy</span>
-            <input type="range" min="1" max="10" value="7" id="quicklog-energy" style="flex:1;" oninput="document.getElementById('quicklog-energy-val').textContent=this.value">
-            <span class="mono" id="quicklog-energy-val" style="font-size:14px;font-weight:700;min-width:18px;color:var(--phase);">7</span>
-            <button id="quicklog-submit-btn" style="flex-shrink:0;padding:10px 20px;border-radius:100px;background:var(--phase);border:none;color:#fff;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;font-family:DM Sans,sans-serif;">Log it</button>
+          <!-- Energy + submit -->
+          <div style="display:flex; align-items:center; gap:10px; padding-top:12px; border-top:1px solid rgba(28,26,24,0.07);">
+            <span style="font-size:11px;color:var(--muted);white-space:nowrap;min-width:44px;">Energy</span>
+            <input type="range" min="1" max="10" value="7" id="quicklog-energy" style="flex:1;accent-color:var(--phase);" oninput="document.getElementById('quicklog-energy-val').textContent=this.value">
+            <span class="mono" id="quicklog-energy-val" style="font-size:16px;font-weight:700;min-width:20px;color:var(--phase);">7</span>
+            <button id="quicklog-submit-btn" style="flex-shrink:0;padding:12px 22px;border-radius:100px;background:var(--phase);border:none;color:#fff;font-size:13px;font-weight:700;letter-spacing:0.04em;cursor:pointer;touch-action:manipulation;font-family:DM Sans,sans-serif;">Log it</button>
           </div>
         </div>
 
@@ -2591,7 +2639,7 @@ function unlockDashboard() {
         <div class="card" style="padding:16px 20px;">
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
             <div class="label" style="color:var(--phase);">Today's entries</div>
-            <button onclick="clearTodayLog()" style="font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer;touch-action:manipulation;padding:2px 6px;">clear</button>
+            <button onclick="clearTodayLog()" style="font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer;touch-action:manipulation;padding:4px 8px;">clear</button>
           </div>
           <div id="daylog-feed"></div>
         </div>
@@ -6009,42 +6057,8 @@ function openCycleExploreOverlay() {
   } else {
     openSwipeDeck('phase', _phase);
   }
-  // Keep old overlay code below in case something else calls it directly
-  const overlay = document.getElementById('cycle-explore-overlay');
-  if (!overlay) return;
-
-  const noCycle = !hasCycleData();
-  const p = window._userProfile || {};
-  const phase = p.cyclePhase || 'follicular';
-  const day = parseInt(p.cycleDay) || 1;
-  const phaseCap = phase.charAt(0).toUpperCase() + phase.slice(1);
-
-  const eyebrow = document.getElementById('ceo-eyebrow');
-  const title = document.getElementById('ceo-title');
-  const introText = document.getElementById('ceo-intro-text');
-
-  if (noCycle) {
-    if (eyebrow) eyebrow.textContent = 'Your rhythm starts here';
-    if (title) title.innerHTML = 'Your cycle is<br>your superpower.';
-    if (introText) introText.textContent = 'here is everything you need to know about tracking, what a healthy cycle looks like, and why understanding your rhythm changes everything. you do not need to know anything yet — even one data point starts building your picture.';
-  } else {
-    if (eyebrow) eyebrow.textContent = 'Day ' + day + ' · ' + phaseCap;
-    if (title) title.innerHTML = 'You are in<br>' + phaseCap + ' phase.';
-    if (introText) introText.textContent = 'here is everything you need to know about tracking, what a healthy cycle looks like, and why understanding your rhythm changes everything. day ' + day + ' — ' + phase + ' energy. use it.';
-  }
-
-  overlay.style.display = 'block';
-  overlay.scrollTop = 0;
-  setTimeout(() => {
-    overlay.querySelectorAll('.estral-voice').forEach(el => { if (typeof attachCanvas === 'function') attachCanvas(el); });
-  }, 60);
 }
 
-function closeCycleExploreOverlay() {
-  const overlay = document.getElementById('cycle-explore-overlay');
-  if (overlay) overlay.style.display = 'none';
-  document.body.style.overflow = '';
-}
 
 function openMoonOverlay() {
   const moonPhase = getDetailedMoonPhase();
@@ -6791,14 +6805,23 @@ function saveDayLogEntries(entries) {
 }
 
 function initDayLog() {
-  // Wire up tag buttons
+  // Wire tag buttons — all groups
   document.querySelectorAll('.quicklog-tag-btn').forEach(function(btn) {
     btn.addEventListener('touchend', function(e) {
       e.preventDefault();
       toggleDayLogTag(btn);
     }, { passive: false });
-    btn.addEventListener('click', function() { toggleDayLogTag(btn); });
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      toggleDayLogTag(btn);
+    });
   });
+  // Wire submit button
+  var sub = document.getElementById('quicklog-submit-btn');
+  if (sub) {
+    sub.addEventListener('touchend', function(e){ e.preventDefault(); submitDayLog(); }, { passive: false });
+    sub.addEventListener('click', function(){ submitDayLog(); });
+  }
   renderDayLogFeed();
   drawDayLogSparkline();
 }
@@ -6806,59 +6829,158 @@ function initDayLog() {
 function toggleDayLogTag(btn) {
   var tag = btn.dataset.tag;
   var idx = _dayLogSelectedTags.indexOf(tag);
-  if (idx > -1) {
-    _dayLogSelectedTags.splice(idx, 1);
-    btn.classList.remove('active');
-  } else {
-    _dayLogSelectedTags.push(tag);
-    btn.classList.add('active');
-  }
+  if (idx > -1) { _dayLogSelectedTags.splice(idx,1); btn.classList.remove('active'); }
+  else { _dayLogSelectedTags.push(tag); btn.classList.add('active'); }
 }
 
 function submitDayLog() {
-  var text = (document.getElementById('quicklog-text') || {}).value || '';
-  var energy = parseInt((document.getElementById('quicklog-energy') || {}).value || 7);
+  var text = (document.getElementById('quicklog-text')||{}).value || '';
+  var energy = parseInt((document.getElementById('quicklog-energy')||{}).value || 7);
   if (!text.trim() && _dayLogSelectedTags.length === 0) return;
-
   var now = new Date();
-  var hh = now.getHours().toString().padStart(2,'0');
-  var mm = now.getMinutes().toString().padStart(2,'0');
-
   var entry = {
     ts: now.getTime(),
-    time: hh + ':' + mm,
+    time: now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0'),
     tags: _dayLogSelectedTags.slice(),
     text: text.trim(),
     energy: energy
   };
-
   var entries = getDayLogEntries();
   entries.push(entry);
   saveDayLogEntries(entries);
-
-  // Reset UI
   var inp = document.getElementById('quicklog-text');
   if (inp) inp.value = '';
   _dayLogSelectedTags = [];
   document.querySelectorAll('.quicklog-tag-btn').forEach(function(b){ b.classList.remove('active'); });
-  if (document.getElementById('quicklog-energy')) document.getElementById('quicklog-energy').value = 7;
-  if (document.getElementById('quicklog-energy-val')) document.getElementById('quicklog-energy-val').textContent = '7';
-
+  var eSlider = document.getElementById('quicklog-energy');
+  if (eSlider) eSlider.value = 7;
+  var eVal = document.getElementById('quicklog-energy-val');
+  if (eVal) eVal.textContent = '7';
   renderDayLogFeed();
   drawDayLogSparkline();
-
-  // Haptic if available
   if (navigator.vibrate) navigator.vibrate(30);
 }
 
-// Wire enter key on input
-document.addEventListener('DOMContentLoaded', function() {
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && document.activeElement && document.activeElement.id === 'quicklog-text') {
-      submitDayLog();
+
+function drawDayLogSparkline() {
+  var canvas = document.getElementById('daylog-sparkline');
+  if (!canvas) return;
+  var entries = getDayLogEntries().filter(function(e){ return e.energy; });
+  var dpr = window.devicePixelRatio || 1;
+  var W = canvas.offsetWidth || 320;
+  var H = 80;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  var padL = 22, padR = 8, padT = 8, padB = 18;
+  var innerW = W - padL - padR;
+  var innerH = H - padT - padB;
+  var phaseColor = getComputedStyle(document.documentElement).getPropertyValue('--phase').trim() || '#4A8FA8';
+
+  // Grid lines + Y labels (1,4,7,10)
+  ctx.strokeStyle = 'rgba(28,26,24,0.07)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2,3]);
+  [1,4,7,10].forEach(function(v) {
+    var y = padT + innerH - ((v-1)/9)*innerH;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W-padR, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(28,26,24,0.28)';
+    ctx.font = '8px DM Mono,monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(v, padL-4, y+3);
+  });
+  ctx.setLineDash([]);
+
+  // X axis hour markers
+  var hours = [6,9,12,15,18,21];
+  ctx.strokeStyle = 'rgba(28,26,24,0.06)';
+  ctx.lineWidth = 1;
+  hours.forEach(function(h) {
+    var x = padL + (h/24)*innerW;
+    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H-padB); ctx.stroke();
+  });
+
+  function xFor(entry) {
+    var parts = (entry.time||'12:00').split(':');
+    var mins = parseInt(parts[0])*60 + parseInt(parts[1]||0);
+    return padL + (mins/(24*60))*innerW;
+  }
+  function yFor(entry) {
+    return padT + innerH - ((entry.energy-1)/9)*innerH;
+  }
+
+  if (entries.length === 0) {
+    ctx.fillStyle = 'rgba(28,26,24,0.18)';
+    ctx.font = '11px DM Sans,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Log your energy to start building your day picture', W/2, H/2 - padB/2);
+    return;
+  }
+
+  if (entries.length === 1) {
+    // Just draw a dot
+    var x0 = xFor(entries[0]), y0 = yFor(entries[0]);
+    ctx.beginPath(); ctx.arc(x0, y0, 4, 0, Math.PI*2);
+    ctx.fillStyle = phaseColor; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+    return;
+  }
+
+  // Sort by time
+  var sorted = entries.slice().sort(function(a,b){ return a.ts - b.ts; });
+
+  // Gradient fill under curve
+  var grad = ctx.createLinearGradient(0, padT, 0, H-padB);
+  var r=74,g=143,b=168;
+  try {
+    var m = phaseColor.match(/\d+/g);
+    if (m && m.length >= 3) { r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]); }
+  } catch(e){}
+  grad.addColorStop(0, 'rgba('+r+','+g+','+b+',0.22)');
+  grad.addColorStop(1, 'rgba('+r+','+g+','+b+',0)');
+
+  ctx.beginPath();
+  ctx.moveTo(xFor(sorted[0]), H-padB);
+  sorted.forEach(function(e){ ctx.lineTo(xFor(e), yFor(e)); });
+  ctx.lineTo(xFor(sorted[sorted.length-1]), H-padB);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Smooth line using quadratic curves
+  ctx.beginPath();
+  ctx.moveTo(xFor(sorted[0]), yFor(sorted[0]));
+  for (var i = 1; i < sorted.length; i++) {
+    var xm = (xFor(sorted[i-1]) + xFor(sorted[i])) / 2;
+    var ym = (yFor(sorted[i-1]) + yFor(sorted[i])) / 2;
+    ctx.quadraticCurveTo(xFor(sorted[i-1]), yFor(sorted[i-1]), xm, ym);
+  }
+  ctx.lineTo(xFor(sorted[sorted.length-1]), yFor(sorted[sorted.length-1]));
+  ctx.strokeStyle = phaseColor;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // Dots with labels
+  sorted.forEach(function(e, i) {
+    var x = xFor(e), y = yFor(e);
+    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2);
+    ctx.fillStyle = phaseColor; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+    // Label on last dot
+    if (i === sorted.length-1) {
+      ctx.fillStyle = phaseColor;
+      ctx.font = 'bold 9px DM Sans,sans-serif';
+      ctx.textAlign = x > W-40 ? 'right' : 'left';
+      ctx.fillText(e.energy, x + (x > W-40 ? -8 : 8), y - 4);
     }
   });
-});
+}
 
 var TAG_EMOJI = {
   focus:'🧠', energy:'⚡', mood:'💭', body:'🫀',
