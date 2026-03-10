@@ -618,7 +618,18 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
 .daylog-time { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); padding-top:2px; flex-shrink:0; min-width:38px; }
 .daylog-bubble { font-size:13px; color:var(--text); line-height:1.5; flex:1; }
 .daylog-tag { display:inline-block; font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--phase); background:var(--phase-dim); border-radius:100px; padding:2px 8px; margin-right:4px; margin-bottom:3px; }
-.quicklog-tag-btn { padding:7px 13px; border-radius:100px; font-size:12px; font-weight:600; border:1.5px solid rgba(28,26,24,0.12); background:transparent; color:var(--text); cursor:pointer; touch-action:manipulation; transition:all 0.15s; font-family:'DM Sans',sans-serif; }
+.quicklog-tag-btn { 
+  padding:9px 15px; border-radius:100px; font-size:13px; font-weight:600; 
+  border:1.5px solid rgba(28,26,24,0.14); background:rgba(28,26,24,0.03); 
+  color:var(--text); cursor:pointer; 
+  touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+  transition:background 0.12s, border-color 0.12s, color 0.12s, transform 0.08s; 
+  font-family:DM Sans,sans-serif; 
+  user-select:none; -webkit-user-select:none;
+  display:inline-flex; align-items:center; gap:4px;
+  -webkit-appearance:none; appearance:none;
+}
+.quicklog-tag-btn:active { transform:scale(0.94); }
 .quicklog-tag-btn.active { background:var(--phase); border-color:var(--phase); color:#fff; }
 .quicklog-input { width:100%; background:transparent; border:none; border-bottom:1.5px solid rgba(28,26,24,0.15); padding:10px 0; font-size:15px; font-family:'DM Sans',sans-serif; color:var(--text); outline:none; }
 .quicklog-input::placeholder { color:var(--muted); }
@@ -2537,13 +2548,24 @@ function unlockDashboard() {
         ${morningData.hardNo ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(28,26,24,0.06);display:flex;gap:6px;align-items:baseline;"><span class="muted" style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;flex-shrink:0;">Hard no</span><span style="font-size:13px;color:var(--menstrual);">${morningData.hardNo}</span></div>` : ''}
       </div>
 
-      <!-- WEEKLY OVERVIEW -->
-      <div class="card" style="margin-top:12px; padding:18px 20px;">
-        <div class="label" style="color:var(--phase); margin-bottom:14px;">This week</div>
-        <div style="display:flex; align-items:flex-end; gap:4px; height:56px; margin-bottom:5px;" id="dash-week-bars"></div>
-        <div style="display:flex; gap:4px; margin-bottom:12px;" id="dash-week-labels"></div>
-        <div style="display:flex; gap:2px; border-radius:6px; overflow:hidden; height:5px; margin-bottom:6px;" id="dash-week-phase-strip"></div>
-        <div style="font-size:12px; color:var(--muted); line-height:1.5;" id="dash-week-phase-note"></div>
+      <!-- WEEKLY OVERVIEW — mini week grid -->
+      <div class="card" style="margin-top:12px; padding:18px 20px 16px; overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+          <div class="label" style="color:var(--phase);">This week</div>
+          <button onclick="switchTab('plan')" style="font-size:11px;color:var(--phase);background:none;border:none;cursor:pointer;touch-action:manipulation;font-family:DM Sans,sans-serif;font-weight:600;padding:0;">View plan →</button>
+        </div>
+        <!-- Phase strip -->
+        <div id="dash-week-phase-strip" style="display:flex;gap:2px;border-radius:6px;overflow:hidden;height:4px;margin-bottom:10px;"></div>
+        <!-- 7-day mini columns -->
+        <div id="dash-mini-week" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
+        <!-- Phase note -->
+        <div id="dash-week-phase-note" style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;"></div>
+      </div>
+
+      <!-- LIFE AREA TODO LIST -->
+      <div class="card" style="margin-top:10px; padding:18px 20px 20px;">
+        <div class="label" style="color:var(--phase); margin-bottom:14px;">This week's list</div>
+        <div id="dash-todo-sections"></div>
       </div>
 
       <!-- INTENTION -->
@@ -2574,60 +2596,67 @@ function unlockDashboard() {
 
         <!-- Log input -->
         <div class="card" style="padding:18px 20px 20px; margin-bottom:10px;">
-          <div class="label" style="color:var(--phase); margin-bottom:3px; font-size:14px;">How are you feeling right now?</div>
-          <p class="muted" style="font-size:12px; margin-bottom:14px; line-height:1.5;">Add anything — brain fog, sex, what you ate, a win, cramps, mood. It all builds your pattern picture.</p>
-
-          <!-- Free text — big and prominent -->
-          <textarea id="quicklog-text" rows="3"
-            style="width:100%;box-sizing:border-box;background:rgba(28,26,24,0.03);border:1.5px solid rgba(28,26,24,0.12);border-radius:14px;padding:14px 16px;font-size:15px;font-family:DM Sans,sans-serif;color:var(--text);outline:none;resize:none;line-height:1.6;margin-bottom:14px;-webkit-text-fill-color:var(--text);display:block;-webkit-appearance:none;"
-            placeholder="e.g. really brain foggy, can't focus… or had sex last night, feel tender today…"></textarea>
-
-          <!-- Tag groups -->
-          <div style="margin-bottom:12px;">
-            <div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Mind & mood</div>
-            <div style="display:flex; flex-wrap:wrap; gap:6px;" id="quicklog-tags-mind">
-              <button class="quicklog-tag-btn" data-tag="brain fog">🌫 brain fog</button>
-              <button class="quicklog-tag-btn" data-tag="can't focus">😶 can't focus</button>
-              <button class="quicklog-tag-btn" data-tag="focused">🧠 focused</button>
-              <button class="quicklog-tag-btn" data-tag="anxious">😤 anxious</button>
-              <button class="quicklog-tag-btn" data-tag="calm">🌿 calm</button>
-              <button class="quicklog-tag-btn" data-tag="sad">🌧 sad</button>
-              <button class="quicklog-tag-btn" data-tag="irritable">😠 irritable</button>
-              <button class="quicklog-tag-btn" data-tag="motivated">🔥 motivated</button>
-              <button class="quicklog-tag-btn" data-tag="low">📉 low</button>
-              <button class="quicklog-tag-btn" data-tag="clear">✨ clear</button>
-            </div>
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;">
+            <div class="label" style="color:var(--phase); font-size:14px;">How are you feeling?</div>
+            <div style="font-size:10px; color:var(--muted);">tap to select</div>
           </div>
-          <div style="margin-bottom:12px;">
-            <div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Body & symptoms</div>
-            <div style="display:flex; flex-wrap:wrap; gap:6px;" id="quicklog-tags-body">
-              <button class="quicklog-tag-btn" data-tag="tired">😮‍💨 tired</button>
-              <button class="quicklog-tag-btn" data-tag="wired">⚡ wired</button>
-              <button class="quicklog-tag-btn" data-tag="bloated">🫁 bloated</button>
-              <button class="quicklog-tag-btn" data-tag="cramps">🌀 cramps</button>
-              <button class="quicklog-tag-btn" data-tag="pain">⚠️ pain</button>
-              <button class="quicklog-tag-btn" data-tag="tender">🩷 tender</button>
-              <button class="quicklog-tag-btn" data-tag="headache">🤕 headache</button>
-              <button class="quicklog-tag-btn" data-tag="nausea">🤢 nausea</button>
-              <button class="quicklog-tag-btn" data-tag="spotting">🩸 spotting</button>
-            </div>
+
+          <!-- Mind & mood -->
+          <div style="font-size:9px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Mind & mood</div>
+          <div style="display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px;">
+            <button class="quicklog-tag-btn" data-tag="brain fog">🌫 brain fog</button>
+            <button class="quicklog-tag-btn" data-tag="can't focus">😶 can't focus</button>
+            <button class="quicklog-tag-btn" data-tag="focused">🧠 focused</button>
+            <button class="quicklog-tag-btn" data-tag="anxious">😤 anxious</button>
+            <button class="quicklog-tag-btn" data-tag="calm">🌿 calm</button>
+            <button class="quicklog-tag-btn" data-tag="sad">🌧 sad</button>
+            <button class="quicklog-tag-btn" data-tag="irritable">😠 irritable</button>
+            <button class="quicklog-tag-btn" data-tag="motivated">🔥 motivated</button>
+            <button class="quicklog-tag-btn" data-tag="low">📉 low</button>
+            <button class="quicklog-tag-btn" data-tag="clear">✨ clear</button>
           </div>
-          <div style="margin-bottom:14px;">
-            <div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Food, life & wins</div>
-            <div style="display:flex; flex-wrap:wrap; gap:6px;" id="quicklog-tags-life">
-              <button class="quicklog-tag-btn" data-tag="craving">🍫 craving</button>
-              <button class="quicklog-tag-btn" data-tag="ate well">🥗 ate well</button>
-              <button class="quicklog-tag-btn" data-tag="overate">🍕 overate</button>
-              <button class="quicklog-tag-btn" data-tag="alcohol">🍷 alcohol</button>
-              <button class="quicklog-tag-btn" data-tag="sex">🌹 sex</button>
-              <button class="quicklog-tag-btn" data-tag="movement">🏃 movement</button>
-              <button class="quicklog-tag-btn" data-tag="win">✦ win</button>
-              <button class="quicklog-tag-btn" data-tag="social">👥 social</button>
-            </div>
+
+          <!-- Body & symptoms -->
+          <div style="font-size:9px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Body & symptoms</div>
+          <div style="display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px;">
+            <button class="quicklog-tag-btn" data-tag="tired">😮‍💨 tired</button>
+            <button class="quicklog-tag-btn" data-tag="wired">⚡ wired</button>
+            <button class="quicklog-tag-btn" data-tag="bloated">🫁 bloated</button>
+            <button class="quicklog-tag-btn" data-tag="cramps">🌀 cramps</button>
+            <button class="quicklog-tag-btn" data-tag="pain">⚠️ pain</button>
+            <button class="quicklog-tag-btn" data-tag="tender">🩷 tender</button>
+            <button class="quicklog-tag-btn" data-tag="headache">🤕 headache</button>
+            <button class="quicklog-tag-btn" data-tag="nausea">🤢 nausea</button>
+            <button class="quicklog-tag-btn" data-tag="spotting">🩸 spotting</button>
+          </div>
+
+          <!-- Food, life & wins -->
+          <div style="font-size:9px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Food, life & wins</div>
+          <div style="display:flex; flex-wrap:wrap; gap:7px; margin-bottom:16px;">
+            <button class="quicklog-tag-btn" data-tag="craving">🍫 craving</button>
+            <button class="quicklog-tag-btn" data-tag="ate well">🥗 ate well</button>
+            <button class="quicklog-tag-btn" data-tag="overate">🍕 overate</button>
+            <button class="quicklog-tag-btn" data-tag="alcohol">🍷 alcohol</button>
+            <button class="quicklog-tag-btn" data-tag="sex">🌹 sex</button>
+            <button class="quicklog-tag-btn" data-tag="movement">🏃 movement</button>
+            <button class="quicklog-tag-btn" data-tag="win">✦ win</button>
+            <button class="quicklog-tag-btn" data-tag="social">👥 social</button>
+            <!-- Custom tags injected here by JS -->
+            <div id="quicklog-custom-tags" style="display:contents;"></div>
+            <!-- Add custom tag button -->
+            <button id="quicklog-add-tag-btn" onclick="toggleCustomTagInput()" style="padding:7px 13px;border-radius:100px;font-size:12px;font-weight:600;border:1.5px dashed rgba(28,26,24,0.2);background:transparent;color:var(--muted);cursor:pointer;touch-action:manipulation;font-family:DM Sans,sans-serif;">＋ add tag</button>
+          </div>
+
+          <!-- Custom tag input — hidden by default -->
+          <div id="quicklog-custom-input-row" style="display:none; align-items:center; gap:8px; margin-bottom:16px; background:rgba(28,26,24,0.03); border-radius:12px; padding:10px 12px;">
+            <input id="quicklog-custom-tag-input" type="text" maxlength="30"
+              placeholder="e.g. hot flash, spotting, migraine…"
+              style="flex:1;border:none;background:transparent;font-size:14px;font-family:DM Sans,sans-serif;color:var(--text);outline:none;-webkit-text-fill-color:var(--text);">
+            <button onclick="addCustomTag()" style="padding:7px 14px;border-radius:100px;background:var(--phase);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;touch-action:manipulation;font-family:DM Sans,sans-serif;white-space:nowrap;">Add</button>
           </div>
 
           <!-- Energy + submit -->
-          <div style="display:flex; align-items:center; gap:10px; padding-top:12px; border-top:1px solid rgba(28,26,24,0.07);">
+          <div style="display:flex; align-items:center; gap:10px; padding-top:14px; border-top:1px solid rgba(28,26,24,0.07);">
             <span style="font-size:11px;color:var(--muted);white-space:nowrap;min-width:44px;">Energy</span>
             <input type="range" min="1" max="10" value="7" id="quicklog-energy" style="flex:1;accent-color:var(--phase);" oninput="document.getElementById('quicklog-energy-val').textContent=this.value">
             <span class="mono" id="quicklog-energy-val" style="font-size:16px;font-weight:700;min-width:20px;color:var(--phase);">7</span>
@@ -2674,72 +2703,99 @@ function unlockDashboard() {
 }
 
 function buildDashWeekly() {
-  var bars = document.getElementById('dash-week-bars');
-  var labels = document.getElementById('dash-week-labels');
+  buildDashMiniWeek();
+  buildDashTodoList();
+}
+
+function buildDashMiniWeek() {
+  var grid = document.getElementById('dash-mini-week');
   var strip = document.getElementById('dash-week-phase-strip');
   var note = document.getElementById('dash-week-phase-note');
-  if (!bars) return;
+  if (!grid) return;
+
+  var today = new Date();
+  // Start from Sunday of current week
+  var weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - today.getDay());
 
   var realLogs = [];
   try { realLogs = JSON.parse(localStorage.getItem('estral_logs') || '[]'); } catch(e) {}
+  var monthTasks = {};
+  try { monthTasks = JSON.parse(localStorage.getItem('estral_month_tasks') || '{}'); } catch(e) {}
 
-  var today = new Date();
   var dayNames = ['Su','Mo','Tu','We','Th','Fr','Sa'];
   var phaseCounts = {};
-  bars.innerHTML = ''; labels.innerHTML = '';
+  grid.innerHTML = '';
   if (strip) strip.innerHTML = '';
 
-  for (var i = 6; i >= 0; i--) {
-    var d = new Date(today);
-    d.setDate(today.getDate() - i);
+  for (var i = 0; i < 7; i++) {
+    var d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    var isToday = d.toDateString() === today.toDateString();
+    var isPast = d < today && !isToday;
+
     var dStr = d.toLocaleDateString('en-GB', {day:'numeric', month:'short'});
     var log = realLogs.find(function(l){ return l.date === dStr; });
-
-    // Get energy from morning log + intraday logs
-    var energy = (log && log.am && log.am.energy) ? log.am.energy : null;
-    var dKey = 'daylog_' + d.getFullYear() + '_' + (d.getMonth()+1) + '_' + d.getDate();
-    try {
-      var dEntries = JSON.parse(localStorage.getItem(dKey) || '[]');
-      var readings = dEntries.filter(function(e){ return e.energy; }).map(function(e){ return e.energy; });
-      if (readings.length) {
-        var avg = readings.reduce(function(a,b){ return a+b; }, 0) / readings.length;
-        energy = energy ? (energy * 0.6 + avg * 0.4) : avg;
-      }
-    } catch(ex) {}
-
-    var isToday = i === 0;
     var phase = (log && log.phase) || (window._userProfile && window._userProfile.cyclePhase) || 'follicular';
     var color = (window.PHASE_COLORS && PHASE_COLORS[phase]) || 'var(--phase)';
     phaseCounts[phase] = (phaseCounts[phase] || 0) + 1;
 
-    // Bar
-    var bar = document.createElement('div');
-    bar.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;height:100%;';
-    var pct = energy ? Math.round((energy / 10) * 100) : 0;
-    var barInner = document.createElement('div');
-    barInner.style.cssText = 'width:100%;border-radius:4px 4px 0 0;transition:height 0.5s ease;min-height:' + (energy ? '4' : '2') + 'px;';
-    barInner.style.height = (energy ? pct : 8) + '%';
-    barInner.style.background = energy ? color : 'rgba(28,26,24,0.07)';
-    if (isToday && energy) barInner.style.boxShadow = '0 0 8px ' + color + '66';
-    bar.appendChild(barInner);
-    if (energy) {
-      var val = document.createElement('div');
-      val.style.cssText = 'font-size:8px;color:' + (isToday ? color : 'var(--muted)') + ';';
-      val.textContent = Math.round(energy);
-      bar.appendChild(val);
-    }
-    bars.appendChild(bar);
+    // Get tasks for this day
+    var dateKey = d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+    var dayNum = d.getDate();
+    var tasks = monthTasks[dateKey] || monthTasks[dayNum] || [];
 
-    // Label
+    // Build column
+    var col = document.createElement('div');
+    col.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;';
+
+    // Day label
     var lbl = document.createElement('div');
-    lbl.style.cssText = 'flex:1;text-align:center;font-size:9px;font-weight:' + (isToday ? '700' : '400') + ';color:' + (isToday ? color : 'var(--muted)') + ';';
+    lbl.style.cssText = 'font-size:9px;font-weight:' + (isToday?'800':'500') + ';color:' + (isToday?color:(isPast?'rgba(28,26,24,0.3)':'var(--muted)')) + ';margin-bottom:1px;';
     lbl.textContent = dayNames[d.getDay()];
-    labels.appendChild(lbl);
+    col.appendChild(lbl);
 
-    // Phase strip segment
+    // Date circle
+    var circle = document.createElement('div');
+    var circleBase = 'width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-bottom:3px;';
+    if (isToday) {
+      circle.style.cssText = circleBase + 'background:' + color + ';color:#fff;box-shadow:0 2px 8px ' + color + '55;';
+    } else {
+      circle.style.cssText = circleBase + 'background:rgba(28,26,24,0.05);color:' + (isPast?'rgba(28,26,24,0.3)':'var(--text)') + ';';
+    }
+    circle.textContent = d.getDate();
+    col.appendChild(circle);
+
+    // Task pills (up to 3)
+    var maxShow = 3;
+    tasks.slice(0, maxShow).forEach(function(task) {
+      var taskName = (typeof task === 'object') ? (task.title || task.text || '') : String(task);
+      var areaColor = (typeof task === 'object' && task.areaId) ? getAreaColor(task.areaId) : color;
+      var pill = document.createElement('div');
+      pill.style.cssText = 'width:100%;background:' + areaColor + '22;border-left:2px solid ' + areaColor + ';border-radius:0 4px 4px 0;padding:2px 3px;font-size:8px;line-height:1.3;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;box-sizing:border-box;opacity:' + (isPast?'0.5':'1') + ';';
+      pill.textContent = taskName;
+      pill.title = taskName;
+      col.appendChild(pill);
+    });
+    if (tasks.length > maxShow) {
+      var more = document.createElement('div');
+      more.style.cssText = 'font-size:8px;color:var(--muted);';
+      more.textContent = '+' + (tasks.length - maxShow);
+      col.appendChild(more);
+    }
+    // Empty day indicator
+    if (tasks.length === 0) {
+      var dot = document.createElement('div');
+      dot.style.cssText = 'width:4px;height:4px;border-radius:50%;background:rgba(28,26,24,' + (isToday?'0.15':'0.07') + ');margin-top:2px;';
+      col.appendChild(dot);
+    }
+
+    grid.appendChild(col);
+
+    // Phase strip
     if (strip) {
       var seg = document.createElement('div');
-      seg.style.cssText = 'flex:1;background:' + color + ';opacity:' + (isToday ? 1 : 0.5) + ';';
+      seg.style.cssText = 'flex:1;background:' + color + ';border-radius:3px;opacity:' + (isToday?1:isPast?0.3:0.6) + ';';
       strip.appendChild(seg);
     }
   }
@@ -2756,6 +2812,118 @@ function buildDashWeekly() {
     note.textContent = phaseNotes[dominant] || '';
   }
 }
+
+// ── DASHBOARD TODO LIST ──────────────────────────────────────────────────────
+function buildDashTodoList() {
+  var container = document.getElementById('dash-todo-sections');
+  if (!container) return;
+
+  var todos = getDashTodos();
+  container.innerHTML = '';
+
+  // Show first 4 life areas (or all if fewer)
+  var areas = (typeof lifeAreas !== 'undefined' ? lifeAreas : DEFAULT_LIFE_AREAS).slice(0, 4);
+
+  areas.forEach(function(area) {
+    var areaItems = todos[area.id] || [];
+
+    var section = document.createElement('div');
+    section.style.cssText = 'margin-bottom:16px;';
+
+    // Section header
+    var header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;';
+    header.innerHTML = '<div style="width:8px;height:8px;border-radius:50%;background:' + area.color + ';flex-shrink:0;"></div>' +
+      '<span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:' + area.color + ';">' + area.name + '</span>';
+    section.appendChild(header);
+
+    // Existing items
+    var itemsList = document.createElement('div');
+    itemsList.id = 'dash-todo-items-' + area.id;
+    areaItems.forEach(function(item, idx) {
+      itemsList.appendChild(buildTodoItem(area, item, idx));
+    });
+    section.appendChild(itemsList);
+
+    // Add input row
+    var addRow = document.createElement('div');
+    addRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:6px;';
+    addRow.innerHTML =
+      '<div style="width:16px;height:16px;border-radius:50%;border:1.5px solid rgba(28,26,24,0.18);flex-shrink:0;"></div>' +
+      '<input placeholder="Add to ' + area.name.toLowerCase() + '…" ' +
+        'data-area="' + area.id + '" ' +
+        'style="flex:1;border:none;background:none;font-size:13px;font-family:DM Sans,sans-serif;color:var(--text);outline:none;-webkit-text-fill-color:var(--text);padding:4px 0;" ' +
+        'onkeydown="handleTodoInputKey(event,\'' + area.id + '\')">';
+    section.appendChild(addRow);
+
+    // Divider
+    if (area !== areas[areas.length-1]) {
+      var divider = document.createElement('div');
+      divider.style.cssText = 'height:1px;background:rgba(28,26,24,0.06);margin-top:12px;';
+      section.appendChild(divider);
+    }
+
+    container.appendChild(section);
+  });
+}
+
+function buildTodoItem(area, item, idx) {
+  var row = document.createElement('div');
+  row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:5px 0;';
+  row.id = 'dash-todo-row-' + area.id + '-' + idx;
+
+  var cb = document.createElement('div');
+  cb.style.cssText = 'width:18px;height:18px;border-radius:50%;border:1.5px solid ' + (item.done ? area.color : 'rgba(28,26,24,0.2)') + ';flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;transition:all 0.15s;background:' + (item.done ? area.color : 'transparent') + ';';
+  if (item.done) cb.innerHTML = '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  var txt = document.createElement('span');
+  txt.style.cssText = 'font-size:14px;flex:1;line-height:1.4;' + (item.done ? 'text-decoration:line-through;color:rgba(28,26,24,0.35);' : 'color:var(--text);');
+  txt.textContent = item.text;
+
+  // Toggle done on tap
+  var _toggling = false;
+  function toggleDone(e) {
+    if (_toggling) return; _toggling = true;
+    setTimeout(function(){ _toggling = false; }, 300);
+    var todos = getDashTodos();
+    if (!todos[area.id]) todos[area.id] = [];
+    todos[area.id][idx].done = !todos[area.id][idx].done;
+    saveDashTodos(todos);
+    buildDashTodoList();
+    if (navigator.vibrate) navigator.vibrate(15);
+  }
+  cb.addEventListener('touchend', function(e){ e.preventDefault(); toggleDone(); }, { passive:false });
+  cb.addEventListener('click', toggleDone);
+
+  row.appendChild(cb);
+  row.appendChild(txt);
+  return row;
+}
+
+function handleTodoInputKey(e, areaId) {
+  if (e.key !== 'Enter') return;
+  var val = e.target.value.trim();
+  if (!val) return;
+  var todos = getDashTodos();
+  if (!todos[areaId]) todos[areaId] = [];
+  todos[areaId].push({ text: val, done: false });
+  saveDashTodos(todos);
+  e.target.value = '';
+  buildDashTodoList();
+  // Refocus input for that area after rebuild
+  setTimeout(function(){
+    var inp = document.querySelector('input[data-area="' + areaId + '"]');
+    if (inp) inp.focus();
+  }, 50);
+}
+
+function getDashTodos() {
+  try { return JSON.parse(localStorage.getItem('estral_dash_todos') || '{}'); } catch(e) { return {}; }
+}
+function saveDashTodos(todos) {
+  localStorage.setItem('estral_dash_todos', JSON.stringify(todos));
+}
+
 
 function switchPlanView(view) {
   if (view === 'dump') { setTimeout(renderDumpView, 0); }
@@ -6805,25 +6973,102 @@ function saveDayLogEntries(entries) {
 }
 
 function initDayLog() {
-  // Wire tag buttons — all groups
+  _dayLogSelectedTags = [];
+
+  // Wire ALL tag buttons with bulletproof iOS touch
   document.querySelectorAll('.quicklog-tag-btn').forEach(function(btn) {
-    btn.addEventListener('touchend', function(e) {
-      e.preventDefault();
-      toggleDayLogTag(btn);
-    }, { passive: false });
-    btn.addEventListener('click', function(e) {
-      e.preventDefault();
-      toggleDayLogTag(btn);
-    });
+    wireTagBtn(btn);
   });
-  // Wire submit button
+
+  // Wire submit
   var sub = document.getElementById('quicklog-submit-btn');
   if (sub) {
-    sub.addEventListener('touchend', function(e){ e.preventDefault(); submitDayLog(); }, { passive: false });
+    sub.addEventListener('touchend', function(e){ e.preventDefault(); submitDayLog(); }, { passive:false });
     sub.addEventListener('click', function(){ submitDayLog(); });
   }
+
   renderDayLogFeed();
   drawDayLogSparkline();
+  renderCustomTagBtns();
+
+  // Enter key on custom tag input
+  var cinp = document.getElementById('quicklog-custom-tag-input');
+  if (cinp) {
+    cinp.addEventListener('keydown', function(e){
+      if (e.key === 'Enter') { e.preventDefault(); addCustomTag(); }
+    });
+  }
+}
+
+function wireTagBtn(btn) {
+  var _tapped = false;
+  btn.addEventListener('touchstart', function(e) {
+    btn.style.transform = 'scale(0.94)';
+  }, { passive: true });
+  btn.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    btn.style.transform = '';
+    if (_tapped) return;
+    _tapped = true;
+    setTimeout(function(){ _tapped = false; }, 350);
+    toggleDayLogTag(btn);
+  }, { passive: false });
+  btn.addEventListener('click', function(e) {
+    if (_tapped) return;
+    toggleDayLogTag(btn);
+  });
+}
+
+function toggleCustomTagInput() {
+  var row = document.getElementById('quicklog-custom-input-row');
+  if (!row) return;
+  var showing = row.style.display !== 'none';
+  row.style.display = showing ? 'none' : 'flex';
+  if (!showing) {
+    var inp = document.getElementById('quicklog-custom-tag-input');
+    if (inp) setTimeout(function(){ inp.focus(); }, 50);
+  }
+}
+
+function addCustomTag() {
+  var inp = document.getElementById('quicklog-custom-tag-input');
+  if (!inp) return;
+  var val = inp.value.trim();
+  if (!val) return;
+
+  // Save to persistent custom tags list
+  var customTags = [];
+  try { customTags = JSON.parse(localStorage.getItem('estral_custom_tags') || '[]'); } catch(e){}
+  if (customTags.indexOf(val) === -1) {
+    customTags.push(val);
+    localStorage.setItem('estral_custom_tags', JSON.stringify(customTags));
+  }
+
+  // Add to selected and render
+  if (_dayLogSelectedTags.indexOf(val) === -1) _dayLogSelectedTags.push(val);
+  inp.value = '';
+
+  var row = document.getElementById('quicklog-custom-input-row');
+  if (row) row.style.display = 'none';
+
+  renderCustomTagBtns();
+}
+
+function renderCustomTagBtns() {
+  var container = document.getElementById('quicklog-custom-tags');
+  if (!container) return;
+  var customTags = [];
+  try { customTags = JSON.parse(localStorage.getItem('estral_custom_tags') || '[]'); } catch(e){}
+  container.innerHTML = '';
+  customTags.forEach(function(tag) {
+    var btn = document.createElement('button');
+    btn.className = 'quicklog-tag-btn';
+    btn.dataset.tag = tag;
+    btn.textContent = '◈ ' + tag;
+    if (_dayLogSelectedTags.indexOf(tag) > -1) btn.classList.add('active');
+    wireTagBtn(btn);
+    container.appendChild(btn);
+  });
 }
 
 function toggleDayLogTag(btn) {
@@ -6834,22 +7079,20 @@ function toggleDayLogTag(btn) {
 }
 
 function submitDayLog() {
-  var text = (document.getElementById('quicklog-text')||{}).value || '';
   var energy = parseInt((document.getElementById('quicklog-energy')||{}).value || 7);
-  if (!text.trim() && _dayLogSelectedTags.length === 0) return;
+  if (_dayLogSelectedTags.length === 0) return; // need at least one tag
   var now = new Date();
   var entry = {
     ts: now.getTime(),
     time: now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0'),
     tags: _dayLogSelectedTags.slice(),
-    text: text.trim(),
+    text: '',
     energy: energy
   };
   var entries = getDayLogEntries();
   entries.push(entry);
   saveDayLogEntries(entries);
-  var inp = document.getElementById('quicklog-text');
-  if (inp) inp.value = '';
+  // Reset
   _dayLogSelectedTags = [];
   document.querySelectorAll('.quicklog-tag-btn').forEach(function(b){ b.classList.remove('active'); });
   var eSlider = document.getElementById('quicklog-energy');
@@ -8635,5 +8878,313 @@ function addReelToList(reelId, phase) {
   </div>
 </div>
 
+<!-- ENERGY CHECK-IN NUDGE -->
+<div id="energy-nudge" style="
+  position:fixed; bottom:72px; left:50%; transform:translateX(-50%) translateY(120px);
+  width:calc(100% - 32px); max-width:400px;
+  background:var(--bg); border-radius:20px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.18), 0 0 0 1px rgba(28,26,24,0.08);
+  padding:18px 20px 16px; z-index:490;
+  transition:transform 0.38s cubic-bezier(0.32,0.72,0,1), opacity 0.3s;
+  opacity:0; pointer-events:none;
+  display:flex; flex-direction:column; gap:12px;
+">
+  <!-- Header row -->
+  <div style="display:flex; align-items:center; justify-content:space-between;">
+    <div>
+      <div id="nudge-headline" style="font-size:15px; font-weight:700; color:var(--text); line-height:1.3;">Quick check-in ✦</div>
+      <div id="nudge-sub" style="font-size:11px; color:var(--muted); margin-top:2px;">How's your energy right now?</div>
+    </div>
+    <button onclick="dismissNudge()" style="width:28px;height:28px;border-radius:50%;border:none;background:rgba(28,26,24,0.07);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);flex-shrink:0;touch-action:manipulation;">×</button>
+  </div>
+
+  <!-- Energy tap row — 1 to 10 -->
+  <div id="nudge-energy-row" style="display:flex; gap:5px; justify-content:space-between;">
+  </div>
+
+  <!-- Quick tags row -->
+  <div id="nudge-tag-row" style="display:flex; flex-wrap:wrap; gap:5px;">
+    <button class="nudge-tag-btn" data-tag="brain fog">🌫 fog</button>
+    <button class="nudge-tag-btn" data-tag="focused">🧠 focused</button>
+    <button class="nudge-tag-btn" data-tag="tired">😮‍💨 tired</button>
+    <button class="nudge-tag-btn" data-tag="anxious">😤 anxious</button>
+    <button class="nudge-tag-btn" data-tag="calm">🌿 calm</button>
+    <button class="nudge-tag-btn" data-tag="cramps">🌀 cramps</button>
+    <button class="nudge-tag-btn" data-tag="motivated">🔥 on fire</button>
+    <button class="nudge-tag-btn" data-tag="wired">⚡ wired</button>
+  </div>
+
+  <!-- Submit row -->
+  <div style="display:flex; gap:8px; align-items:center;">
+    <input id="nudge-text" placeholder="Add a note… (optional)"
+      style="flex:1;background:rgba(28,26,24,0.04);border:1px solid rgba(28,26,24,0.1);border-radius:10px;padding:9px 12px;font-size:13px;font-family:DM Sans,sans-serif;color:var(--text);outline:none;-webkit-text-fill-color:var(--text);">
+    <button onclick="submitNudgeLog()" style="padding:9px 18px;border-radius:100px;background:var(--phase);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;touch-action:manipulation;font-family:DM Sans,sans-serif;white-space:nowrap;">Log it</button>
+  </div>
+</div>
+
+<style>
+.nudge-tag-btn {
+  padding:5px 10px; border-radius:100px;
+  border:1px solid rgba(28,26,24,0.12); background:transparent;
+  font-size:11px; color:var(--text); cursor:pointer;
+  touch-action:manipulation; font-family:DM Sans,sans-serif;
+  transition:all 0.15s;
+}
+.nudge-tag-btn.active {
+  background:var(--phase); border-color:var(--phase); color:#fff;
+}
+.nudge-energy-btn {
+  flex:1; aspect-ratio:1; border-radius:10px;
+  border:1.5px solid rgba(28,26,24,0.1); background:rgba(28,26,24,0.04);
+  font-size:13px; font-weight:700; color:var(--muted);
+  cursor:pointer; touch-action:manipulation; font-family:DM Mono,monospace;
+  transition:all 0.15s; display:flex; align-items:center; justify-content:center;
+  min-height:36px;
+}
+.nudge-energy-btn.selected {
+  background:var(--phase); border-color:var(--phase); color:#fff;
+}
+</style>
+
+<script>
+// ══════════════════════════════════════════════════════
+// ENERGY CHECK-IN NUDGE SYSTEM
+// ══════════════════════════════════════════════════════
+var _nudgeSelectedEnergy = null;
+var _nudgeSelectedTags = [];
+var _nudgeCheckInterval = null;
+var _nudgeDismissedAt = 0;
+var NUDGE_INTERVAL_MS = 3 * 60 * 60 * 1000; // 3 hours
+var NUDGE_DISMISS_COOLDOWN = 30 * 60 * 1000; // 30 min cooldown after dismiss
+var NUDGE_SNOOZE_MS = 90 * 60 * 1000; // 90 min if they log
+
+var NUDGE_HEADLINES = [
+  'Quick check-in ✦',
+  'How are you feeling?',
+  'Body check ✦',
+  'Three hours in…',
+  'Quick pulse check',
+  'Afternoon check-in ✦',
+  'Evening check-in ✦',
+  'End of day check ✦',
+];
+
+var NUDGE_SUBS = [
+  'How\'s your energy right now?',
+  'Log it and keep moving.',
+  'A 10-second check-in builds your pattern picture.',
+  'Your cycle wants to know.',
+  'Tap your energy — that\'s all.',
+];
+
+function buildNudgeEnergyRow() {
+  var row = document.getElementById('nudge-energy-row');
+  if (!row) return;
+  row.innerHTML = '';
+  for (var i = 1; i <= 10; i++) {
+    (function(val) {
+      var btn = document.createElement('button');
+      btn.className = 'nudge-energy-btn';
+      btn.textContent = val;
+      btn.setAttribute('data-val', val);
+      btn.addEventListener('click', function() { selectNudgeEnergy(val); });
+      btn.addEventListener('touchend', function(e){ e.preventDefault(); selectNudgeEnergy(val); }, { passive: false });
+      row.appendChild(btn);
+    })(i);
+  }
+}
+
+function selectNudgeEnergy(val) {
+  _nudgeSelectedEnergy = val;
+  document.querySelectorAll('.nudge-energy-btn').forEach(function(b) {
+    var isSelected = parseInt(b.getAttribute('data-val')) === val;
+    b.classList.toggle('selected', isSelected);
+    // Colour gradient: low = menstrual, high = phase colour
+    if (isSelected) {
+      var pct = (val - 1) / 9;
+      b.style.background = 'var(--phase)';
+      b.style.borderColor = 'var(--phase)';
+    }
+  });
+}
+
+function initNudgeTags() {
+  document.querySelectorAll('.nudge-tag-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var tag = btn.dataset.tag;
+      var idx = _nudgeSelectedTags.indexOf(tag);
+      if (idx > -1) { _nudgeSelectedTags.splice(idx,1); btn.classList.remove('active'); }
+      else { _nudgeSelectedTags.push(tag); btn.classList.add('active'); }
+    });
+    btn.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      var tag = btn.dataset.tag;
+      var idx = _nudgeSelectedTags.indexOf(tag);
+      if (idx > -1) { _nudgeSelectedTags.splice(idx,1); btn.classList.remove('active'); }
+      else { _nudgeSelectedTags.push(tag); btn.classList.add('active'); }
+    }, { passive: false });
+  });
+}
+
+function showNudge() {
+  // Don't show if: dashboard not unlocked, another modal open, dismissed recently
+  var feed = document.getElementById('daylog-feed');
+  if (!feed) return; // dashboard not unlocked yet
+  if (document.getElementById('swipeDeckModal') && document.getElementById('swipeDeckModal').style.display === 'flex') return;
+  if (Date.now() - _nudgeDismissedAt < NUDGE_DISMISS_COOLDOWN) return;
+
+  // Don't show if they logged in the last 90 min
+  var entries = getDayLogEntries();
+  if (entries.length > 0) {
+    var lastEntry = entries[entries.length - 1];
+    if (Date.now() - lastEntry.ts < NUDGE_SNOOZE_MS) return;
+  }
+
+  // Pick headline based on time of day
+  var h = new Date().getHours();
+  var headline = h < 10 ? 'Morning check-in ✦' : h < 14 ? 'Midday check-in ✦' : h < 18 ? 'Afternoon check-in ✦' : 'Evening check-in ✦';
+  var sub = NUDGE_SUBS[Math.floor(Math.random() * NUDGE_SUBS.length)];
+
+  var headEl = document.getElementById('nudge-headline');
+  var subEl = document.getElementById('nudge-sub');
+  if (headEl) headEl.textContent = headline;
+  if (subEl) subEl.textContent = sub;
+
+  // Reset state
+  _nudgeSelectedEnergy = null;
+  _nudgeSelectedTags = [];
+  buildNudgeEnergyRow();
+  document.querySelectorAll('.nudge-tag-btn').forEach(function(b){ b.classList.remove('active'); });
+  var inp = document.getElementById('nudge-text');
+  if (inp) inp.value = '';
+
+  var nudge = document.getElementById('energy-nudge');
+  nudge.style.pointerEvents = 'all';
+  nudge.style.opacity = '1';
+  nudge.style.transform = 'translateX(-50%) translateY(0)';
+}
+
+function hideNudge() {
+  var nudge = document.getElementById('energy-nudge');
+  nudge.style.transform = 'translateX(-50%) translateY(120px)';
+  nudge.style.opacity = '0';
+  nudge.style.pointerEvents = 'none';
+}
+
+function dismissNudge() {
+  _nudgeDismissedAt = Date.now();
+  hideNudge();
+}
+
+function submitNudgeLog() {
+  var text = (document.getElementById('nudge-text')||{}).value || '';
+  var energy = _nudgeSelectedEnergy || 5;
+
+  var now = new Date();
+  var entry = {
+    ts: now.getTime(),
+    time: now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0'),
+    tags: _nudgeSelectedTags.slice(),
+    text: text.trim(),
+    energy: energy
+  };
+
+  var entries = getDayLogEntries();
+  entries.push(entry);
+  saveDayLogEntries(entries);
+
+  hideNudge();
+  if (navigator.vibrate) navigator.vibrate([20,10,20]);
+
+  // Update dashboard if it's visible
+  renderDayLogFeed();
+  drawDayLogSparkline();
+  var countEl = document.getElementById('daylog-count');
+  if (countEl) countEl.textContent = (entries.length) + ' entr' + (entries.length === 1 ? 'y' : 'ies');
+}
+
+function startNudgeSystem() {
+  buildNudgeEnergyRow();
+  initNudgeTags();
+
+  // Check every 15 minutes whether a nudge is needed
+  _nudgeCheckInterval = setInterval(function() {
+    checkNudgeNeeded();
+  }, 15 * 60 * 1000);
+
+  // Also check once shortly after load (in case it's already been 3h since last log)
+  setTimeout(checkNudgeNeeded, 8000);
+}
+
+function checkNudgeNeeded() {
+  var h = new Date().getHours();
+  // Only nudge between 7am and 10pm
+  if (h < 7 || h >= 22) return;
+
+  var entries = getDayLogEntries();
+  var now = Date.now();
+
+  if (entries.length === 0) {
+    // No logs today at all — show if past 9am
+    if (h >= 9) showNudge();
+    return;
+  }
+
+  var lastEntry = entries[entries.length - 1];
+  var timeSinceLast = now - lastEntry.ts;
+  if (timeSinceLast >= NUDGE_INTERVAL_MS) {
+    showNudge();
+  }
+}
+
+// Request notification permission for native push (iOS 16.4+ PWA, Android Chrome)
+function requestNudgePermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission().then(function(perm) {
+      if (perm === 'granted') scheduleNativeNudges();
+    });
+  } else if ('Notification' in window && Notification.permission === 'granted') {
+    scheduleNativeNudges();
+  }
+}
+
+function scheduleNativeNudges() {
+  // Fire a native notification if app is backgrounded and entries are stale
+  // This works when installed as PWA + service worker
+  if (!('serviceWorker' in navigator)) return;
+  var h = new Date().getHours();
+  if (h < 7 || h >= 22) return;
+  var entries = getDayLogEntries();
+  if (entries.length > 0) {
+    var last = entries[entries.length-1];
+    if (Date.now() - last.ts < NUDGE_INTERVAL_MS) return;
+  }
+  // Show native notification
+  try {
+    new Notification('ESTRAL check-in ✦', {
+      body: 'How\'s your energy right now? Quick 10-second log.',
+      icon: '/favicon.ico',
+      badge: '/favicon.ico',
+      tag: 'estral-nudge',
+      renotify: true,
+    });
+  } catch(e) {}
+}
+
+// Start on load
+document.addEventListener('DOMContentLoaded', function() {
+  startNudgeSystem();
+  // Request permission after a short delay (less intrusive)
+  setTimeout(requestNudgePermission, 5000);
+});
+
+// Also restart checks when app becomes visible again (user returns to tab/app)
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden) {
+    setTimeout(checkNudgeNeeded, 2000);
+    scheduleNativeNudges();
+  }
+});
+</script>
 </body>
 </html>
