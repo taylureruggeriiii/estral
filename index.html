@@ -1143,7 +1143,7 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     <div class="card" style="padding:20px;">
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
         <span class="badge badge-phase" id="home-badge-phase" onclick="openPhaseOverlay()" style="cursor:pointer;">🌒 — · Day —</span>
-        <span class="badge badge-moon" id="home-badge-moon" onclick="openMoonOverlay()" style="cursor:pointer;">🌙 — · —</span>
+        <span class="badge badge-moon" id="home-badge-moon" onclick="openMoonOverlay()" style="cursor:pointer;">🌙 Loading…</span>
       </div>
       <div class="lock-icon">🌱</div>
       <p class="muted" style="text-align:center; font-size:14px; margin-bottom:20px;">Complete your morning check-in<br>to unlock today's dashboard.</p>
@@ -2569,7 +2569,7 @@ function unlockDashboard() {
         </div>
         <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
           <span class="badge badge-phase">🌒 ${phaseCap}</span>
-          <span class="badge badge-moon" id="unlocked-moon-badge" onclick="openMoonOverlay()" style="cursor:pointer;">🌙 —</span>
+          <span class="badge badge-moon" id="unlocked-moon-badge" onclick="openMoonOverlay()" style="cursor:pointer;">🌙 Loading…</span>
           <span class="badge" style="background:rgba(74,143,168,0.1);color:var(--phase);border:1px solid var(--phase-mid);">⚡ ${tier}</span>
         </div>
       </div>
@@ -3891,8 +3891,8 @@ function applyProfileToApp() {
     // Badges
     const badgePhase = document.getElementById('home-badge-phase');
     if (badgePhase) badgePhase.textContent = `🌒 ${phaseLabel} · Day ${day}`;
-    const badgeMoon = document.getElementById('home-badge-moon');
-    if (badgeMoon) badgeMoon.textContent = `🌙 —`;
+    // Moon badge — populate immediately with real phase + sign
+    if (typeof updateMoonBadgeFull === 'function') updateMoonBadgeFull();
 
     // Chat context line
     const chatCtx = document.getElementById('chat-context-line');
@@ -3975,8 +3975,8 @@ function applyProfileToApp() {
   if (readyText) readyText.textContent = `Day ${day} is ready. Go. 🖤`;
 
   setPhaseTheme(phase);
-  // Update moon badge
-  setTimeout(function(){ if(typeof updateMoonBadge==='function') updateMoonBadge(); }, 100);
+  // Update moon badge with phase + zodiac sign
+  setTimeout(function(){ if(typeof updateMoonBadgeFull==='function') updateMoonBadgeFull(); }, 100);
 }
 
 function getPhaseColor(phase) {
@@ -6012,16 +6012,11 @@ function getMoonPhaseLabel() {
   return '🌘 Waning Crescent';
 }
 
-// Update moon badge everywhere
+// Update moon badge everywhere — always include sign
 function updateMoonBadge() {
+  if (typeof updateMoonBadgeFull === 'function') { updateMoonBadgeFull(); return; }
   const label = getMoonPhaseLabel();
-  const els = document.querySelectorAll('#home-badge-moon, #unlocked-moon-badge, .moon-badge-dynamic');
-  els.forEach(el => { if (el) el.textContent = label; });
-  const chatCtx = document.getElementById('chat-context-line');
-  if (chatCtx) {
-    const p = window._userProfile || {};
-    chatCtx.textContent = `Day ${p.cycleDay || '—'} · ${(p.cyclePhase||'').charAt(0).toUpperCase()+(p.cyclePhase||'follicular').slice(1)} · ${label}`;
-  }
+  document.querySelectorAll('#home-badge-moon, #unlocked-moon-badge, .moon-badge-dynamic').forEach(el => { if (el) el.textContent = label; });
 }
 
 // Open a milestone journal
@@ -6417,18 +6412,21 @@ function closeMoonOverlay() {
 
 // Update moon badge with sign
 function updateMoonBadgeFull() {
-  const moonPhase = getDetailedMoonPhase();
-  const moonSign = getMoonZodiacSign();
-  const label = moonPhase.emoji + ' ' + moonPhase.name + ' · ' + moonSign.sign;
-  const shortLabel = moonPhase.emoji + ' ' + moonPhase.name;
-  document.querySelectorAll('#home-badge-moon, #unlocked-moon-badge, .moon-badge-dynamic').forEach(el => {
-    if (el) el.textContent = el.id === 'home-badge-moon' ? label : shortLabel;
-  });
-  const chatCtx = document.getElementById('chat-context-line');
-  if (chatCtx) {
-    const p = window._userProfile || {};
-    chatCtx.textContent = 'Day ' + (p.cycleDay || '—') + ' · ' + ((p.cyclePhase||'follicular').charAt(0).toUpperCase()+(p.cyclePhase||'follicular').slice(1)) + ' · ' + moonPhase.emoji + ' ' + moonPhase.name + ' in ' + moonSign.sign;
-  }
+  try {
+    const moonPhase = getDetailedMoonPhase();
+    const moonSignObj = getMoonZodiacSign();
+    const signName = (moonSignObj && moonSignObj.sign) ? moonSignObj.sign : '';
+    const label = moonPhase.emoji + ' ' + moonPhase.name + (signName ? ' · ' + signName : '');
+    document.querySelectorAll('#home-badge-moon, #unlocked-moon-badge, .moon-badge-dynamic').forEach(el => {
+      if (el) el.textContent = label;
+    });
+    const chatCtx = document.getElementById('chat-context-line');
+    if (chatCtx) {
+      const p = window._userProfile || {};
+      const phaseName = ((p.cyclePhase||'follicular').charAt(0).toUpperCase() + (p.cyclePhase||'follicular').slice(1));
+      chatCtx.textContent = 'Day ' + (p.cycleDay || '—') + ' · ' + phaseName + ' · ' + moonPhase.emoji + ' ' + moonPhase.name + (signName ? ' in ' + signName : '');
+    }
+  } catch(e) { console.warn('updateMoonBadgeFull error:', e); }
 }
 
 
@@ -6945,50 +6943,59 @@ function buildWeekTrayItems() {
 // floating clone that follows the finger.
 // ══════════════════════════════════════════════════════
 
-var _touchDragItem = null;      // the task object being dragged
-var _touchDragClone = null;     // the floating DOM clone
-var _touchDragSource = null;    // 'tray' | 'week-tray'
+var _touchDragItem = null;
+var _touchDragClone = null;
+var _touchDragSource = null;
+var _touchDragOffsetX = 0;
+var _touchDragOffsetY = 0;
+var _touchDragActive = false;
+var _touchDragOriginChip = null;
 
 function _createDragClone(chip, touch) {
-  var clone = chip.cloneNode(true);
   var rect = chip.getBoundingClientRect();
-  clone.style.cssText = [
-    'position:fixed',
-    'z-index:9999',
-    'pointer-events:none',
-    'opacity:0.9',
-    'transform:scale(1.08)',
-    'transition:transform 0.1s',
-    'left:' + (touch.clientX - rect.width / 2) + 'px',
-    'top:' + (touch.clientY - rect.height / 2) + 'px',
-    'width:' + rect.width + 'px',
-    'box-shadow:0 8px 24px rgba(28,26,24,0.18)',
-  ].join(';');
+  _touchDragOffsetX = touch.clientX - rect.left;
+  _touchDragOffsetY = touch.clientY - rect.top;
+
+  var clone = chip.cloneNode(true);
+  clone.style.cssText =
+    'position:fixed;z-index:9999;pointer-events:none;' +
+    'left:' + rect.left + 'px;top:' + rect.top + 'px;' +
+    'width:' + rect.width + 'px;height:' + rect.height + 'px;' +
+    'opacity:0.95;border-radius:100px;' +
+    'box-shadow:0 12px 32px rgba(28,26,24,0.25);' +
+    'transform:scale(1.06);' +
+    'transition:transform 0.1s ease,box-shadow 0.1s ease;' +
+    'will-change:left,top;';
   document.body.appendChild(clone);
   return clone;
 }
 
 function _moveDragClone(touch) {
   if (!_touchDragClone) return;
-  var rect = _touchDragClone.getBoundingClientRect();
-  _touchDragClone.style.left = (touch.clientX - rect.width / 2) + 'px';
-  _touchDragClone.style.top  = (touch.clientY - rect.height / 2) + 'px';
+  var x = touch.clientX - _touchDragOffsetX;
+  var y = touch.clientY - _touchDragOffsetY;
+  _touchDragClone.style.left = x + 'px';
+  _touchDragClone.style.top  = y + 'px';
 }
 
 function _removeDragClone() {
-  if (_touchDragClone) { _touchDragClone.remove(); _touchDragClone = null; }
+  if (_touchDragClone) {
+    _touchDragClone.remove();
+    _touchDragClone = null;
+  }
+  if (_touchDragOriginChip) {
+    _touchDragOriginChip.style.opacity = '';
+    _touchDragOriginChip = null;
+  }
+  _touchDragActive = false;
 }
 
-// Find the element under the touch point (ignoring the clone)
 function _elementFromTouch(touch) {
-  if (_touchDragClone) _touchDragClone.style.display = 'none';
-  var el = document.elementFromPoint(touch.clientX, touch.clientY);
-  if (_touchDragClone) _touchDragClone.style.display = '';
-  return el;
+  // Clone has pointer-events:none so elementFromPoint works directly
+  return document.elementFromPoint(touch.clientX, touch.clientY);
 }
 
 function _getDropCell(el) {
-  // Walk up to find a month-day-cell, week-day-col, or the remove zone
   while (el && el !== document.body) {
     if (el.classList && (el.classList.contains('month-day-cell') || el.classList.contains('week-day-col'))) return el;
     if (el.id === 'week-remove-zone') return el;
@@ -7012,7 +7019,7 @@ function _highlightCell(cell, color) {
       cell.style.background = 'rgba(180,60,60,0.1)';
       cell.style.borderColor = 'rgba(180,60,60,0.8)';
     } else {
-      cell.style.outline = '2px solid ' + (color || 'var(--phase)');
+      cell.style.outline = '2.5px solid ' + (color || 'var(--phase)');
     }
     _lastHighlight = cell;
   }
@@ -7029,30 +7036,56 @@ function _clearHighlight() {
   }
 }
 
-// Attach touch drag to a chip element
 function attachTouchDrag(chip, item, source) {
+  var startX, startY, longPressTimer;
+  var DRAG_THRESHOLD = 6; // px of movement to confirm drag intent
+
   chip.addEventListener('touchstart', function(e) {
-    _touchDragItem = item;
-    _touchDragSource = source;
-    _touchDragClone = _createDragClone(chip, e.touches[0]);
-    chip.style.opacity = '0.4';
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+
+    // Long-press to initiate (120ms) — prevents scroll conflicts
+    longPressTimer = setTimeout(function() {
+      _touchDragItem = item;
+      _touchDragSource = source;
+      _touchDragOriginChip = chip;
+      _touchDragClone = _createDragClone(chip, e.touches[0]);
+      _touchDragActive = true;
+      chip.style.opacity = '0.35';
+      if (navigator.vibrate) navigator.vibrate(18);
+    }, 120);
   }, { passive: true });
 
   chip.addEventListener('touchmove', function(e) {
-    e.preventDefault(); // stops page scroll while dragging
     var t = e.touches[0];
+    var dx = Math.abs(t.clientX - startX);
+    var dy = Math.abs(t.clientY - startY);
+
+    // If mostly vertical before drag activates, cancel the long press
+    if (!_touchDragActive && dy > dx && dy > 8) {
+      clearTimeout(longPressTimer);
+      return;
+    }
+
+    if (!_touchDragActive) return;
+    e.preventDefault();
+    e.stopPropagation();
+
     _moveDragClone(t);
     var el = _elementFromTouch(t);
     var cell = _getDropCell(el);
-    var color = item.phase ? (PHASE_COLORS[item.phase] || 'var(--phase)') : 'var(--phase)';
+    var color = (item.area && typeof getBDAreaColor === 'function') ? getBDAreaColor(item.area) : (item.phase ? (PHASE_COLORS[item.phase] || 'var(--phase)') : 'var(--phase)');
     _highlightCell(cell, color);
   }, { passive: false });
 
   chip.addEventListener('touchend', function(e) {
-    chip.style.opacity = '1';
+    clearTimeout(longPressTimer);
+    if (!_touchDragActive) return;
+
+    var t = e.changedTouches[0];
     _removeDragClone();
     _clearHighlight();
-    var t = e.changedTouches[0];
+
     var el = _elementFromTouch(t);
     var cell = _getDropCell(el);
     if (cell && _touchDragItem) {
@@ -7061,53 +7094,63 @@ function attachTouchDrag(chip, item, source) {
     _touchDragItem = null;
     _touchDragSource = null;
   }, { passive: true });
+
+  // Safety — always clean up if touch cancelled
+  chip.addEventListener('touchcancel', function() {
+    clearTimeout(longPressTimer);
+    _removeDragClone();
+    _clearHighlight();
+    _touchDragItem = null;
+    _touchDragSource = null;
+  }, { passive: true });
 }
 
 function _handleTouchDrop(cell, item, source) {
-  // Drop on remove zone — remove from all days
-  if (cell && cell.id === 'week-remove-zone') {
+  if (cell.id === 'week-remove-zone') {
     Object.keys(monthTasks).forEach(function(d) {
       monthTasks[d] = (monthTasks[d] || []).filter(function(t){ return t.text !== item.text; });
     });
+    localStorage.setItem('estral_month_tasks', JSON.stringify(monthTasks));
     buildWeekColumns();
     buildWeekTrayItems();
     buildDragTray();
     return;
   }
-  // Month cell drop
   if (cell.classList.contains('month-day-cell')) {
-    var d = parseInt(cell.querySelector('.month-day-num') && cell.querySelector('.month-day-num').textContent);
-    if (!d || isNaN(d)) d = parseInt(cell.dataset.day);
+    var d = parseInt(cell.dataset.day || (cell.querySelector('.month-day-num') && cell.querySelector('.month-day-num').textContent));
     if (!d || isNaN(d)) return;
     if (!monthTasks[d]) monthTasks[d] = [];
-    if (!monthTasks[d].find(function(t){ return t.text === item.text; })) {
-      monthTasks[d].push(Object.assign({}, item));
-    }
+    if (!monthTasks[d].find(function(t){ return t.text === item.text; })) monthTasks[d].push(Object.assign({}, item));
+    localStorage.setItem('estral_month_tasks', JSON.stringify(monthTasks));
     buildMonthGrid();
     buildDragTray();
+    return;
   }
-  // Week col drop — add to that day
   if (cell.classList.contains('week-day-col')) {
     var dayNum = parseInt(cell.dataset.day);
     if (!dayNum || isNaN(dayNum)) return;
-    // If dragging a placed task to a different day, remove from original day first
+    var now = new Date();
+    var weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay());
+    var d2 = new Date(weekStart); d2.setDate(weekStart.getDate() + (dayNum - weekStart.getDate()));
+    var dateKey = now.getFullYear() + '-' + (now.getMonth()+1) + '-' + dayNum;
+
     if (source && source.indexOf('week-placed-') === 0) {
       var origDay = parseInt(source.replace('week-placed-', ''));
       if (!isNaN(origDay) && origDay !== dayNum) {
+        var origKey = now.getFullYear() + '-' + (now.getMonth()+1) + '-' + origDay;
+        if (monthTasks[origKey]) monthTasks[origKey] = monthTasks[origKey].filter(function(t){ return t.text !== item.text; });
         if (monthTasks[origDay]) monthTasks[origDay] = monthTasks[origDay].filter(function(t){ return t.text !== item.text; });
       }
     }
-    if (!monthTasks[dayNum]) monthTasks[dayNum] = [];
-    if (!monthTasks[dayNum].find(function(t){ return t.text === item.text; })) {
-      monthTasks[dayNum].push(Object.assign({}, item));
-    }
+    if (!monthTasks[dateKey]) monthTasks[dateKey] = [];
+    if (!monthTasks[dateKey].find(function(t){ return t.text === item.text; })) monthTasks[dateKey].push(Object.assign({}, item));
+    localStorage.setItem('estral_month_tasks', JSON.stringify(monthTasks));
     buildWeekColumns();
     buildWeekTrayItems();
-    buildDragTray();
   }
 }
 
-// Patch buildDragTray to also attach touch handlers
+// Patch buildDragTray to attach touch handlers
 var _origBuildDragTray = buildDragTray;
 buildDragTray = function() {
   _origBuildDragTray();
@@ -7115,31 +7158,17 @@ buildDragTray = function() {
   if (!tray) return;
   tray.querySelectorAll('[draggable]').forEach(function(chip, idx) {
     var item = brainDumpItems.filter(function(it){
-      var placed = Object.values(monthTasks).flat().some(function(t){ return t.text === it.text && !t.locked; });
-      return !placed;
+      return !Object.values(monthTasks).flat().some(function(t){ return t.text === it.text && !t.locked; });
     })[idx];
     if (item) attachTouchDrag(chip, item, 'tray');
   });
 };
 
-// Patch buildWeekTrayItems to also attach touch handlers
-var _origBuildWeekTrayItems = buildWeekTrayItems;
-buildWeekTrayItems = function() {
-  _origBuildWeekTrayItems();
-  var tray = document.getElementById('week-tray-items');
-  if (!tray) return;
-  tray.querySelectorAll('[draggable]').forEach(function(chip, idx) {
-    var item = brainDumpItems[idx];
-    if (item) attachTouchDrag(chip, item, 'week-tray');
-  });
-};
-
-// Patch buildMonthGrid to stamp data-day on each cell
+// Patch buildMonthGrid to stamp data-day
 var _origBuildMonthGrid = buildMonthGrid;
 buildMonthGrid = function() {
   _origBuildMonthGrid();
-  var cells = document.querySelectorAll('.month-day-cell');
-  cells.forEach(function(cell) {
+  document.querySelectorAll('.month-day-cell').forEach(function(cell) {
     var numEl = cell.querySelector('.month-day-num');
     if (numEl) cell.dataset.day = numEl.textContent.trim();
   });
