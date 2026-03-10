@@ -611,6 +611,20 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
 }
 
 
+
+/* ── DAY LOG WIDGET ─────────────────────────────────── */
+.daylog-entry { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid rgba(28,26,24,0.06); }
+.daylog-entry:last-child { border-bottom:none; }
+.daylog-time { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); padding-top:2px; flex-shrink:0; min-width:38px; }
+.daylog-bubble { font-size:13px; color:var(--text); line-height:1.5; flex:1; }
+.daylog-tag { display:inline-block; font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--phase); background:var(--phase-dim); border-radius:100px; padding:2px 8px; margin-right:4px; margin-bottom:3px; }
+.quicklog-tag-btn { padding:7px 13px; border-radius:100px; font-size:12px; font-weight:600; border:1.5px solid rgba(28,26,24,0.12); background:transparent; color:var(--text); cursor:pointer; touch-action:manipulation; transition:all 0.15s; font-family:'DM Sans',sans-serif; }
+.quicklog-tag-btn.active { background:var(--phase); border-color:var(--phase); color:#fff; }
+.quicklog-input { width:100%; background:transparent; border:none; border-bottom:1.5px solid rgba(28,26,24,0.15); padding:10px 0; font-size:15px; font-family:'DM Sans',sans-serif; color:var(--text); outline:none; }
+.quicklog-input::placeholder { color:var(--muted); }
+.daylog-sparkline { width:100%; height:52px; display:block; }
+.daylog-no-entries { font-size:13px; color:var(--muted); font-style:italic; text-align:center; padding:16px 0; }
+
 /* ── BRAIN DUMP LOCKED STATE ─────────────────────── */
 .dump-lock-bar {
   display: flex;
@@ -1789,89 +1803,130 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
 <div class="screen" id="screen-chart">
   <div style="padding:56px 20px 20px; overflow-y:auto; padding-bottom:86px;">
 
-    <!-- Days logged stat hero -->
-    <div style="margin-bottom:28px;">
-      <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--phase); margin-bottom:6px;">Your patterns.</div>
-      <div style="display:flex; align-items:flex-end; gap:10px; margin-bottom:6px;">
-        <span id="chart-days-logged" style="font-family:'DM Sans',sans-serif; font-size:72px; font-weight:700; line-height:1; color:var(--text);">0</span>
-        <span style="font-size:18px; font-weight:500; color:var(--muted); padding-bottom:10px;">days logged</span>
+    <!-- HEADER STAT -->
+    <div style="margin-bottom:24px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--phase);margin-bottom:6px;">Your patterns.</div>
+      <div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:6px;">
+        <span id="chart-days-logged" style="font-family:'DM Sans',sans-serif;font-size:72px;font-weight:700;line-height:1;color:var(--text);">0</span>
+        <span style="font-size:18px;font-weight:500;color:var(--muted);padding-bottom:10px;">days logged</span>
       </div>
-      <div id="chart-days-milestone" style="font-size:13px; color:var(--muted); line-height:1.5;">Start logging to reveal your patterns.</div>
-      <!-- Progress bar toward next milestone -->
-      <div style="margin-top:12px; height:3px; background:rgba(28,26,24,0.08); border-radius:100px; overflow:hidden;">
-        <div id="chart-milestone-bar" style="height:100%; width:0%; background:var(--phase); border-radius:100px; transition:width 0.6s ease;"></div>
+      <div id="chart-days-milestone" style="font-size:13px;color:var(--muted);line-height:1.5;">Start logging to reveal your patterns.</div>
+      <div style="margin-top:12px;height:3px;background:rgba(28,26,24,0.08);border-radius:100px;overflow:hidden;">
+        <div id="chart-milestone-bar" style="height:100%;width:0%;background:var(--phase);border-radius:100px;transition:width 0.6s ease;"></div>
       </div>
-      <div id="chart-milestone-label" style="font-size:10px; color:var(--muted); margin-top:5px; letter-spacing:0.04em;"></div>
+      <div id="chart-milestone-label" style="font-size:10px;color:var(--muted);margin-top:5px;letter-spacing:0.04em;"></div>
     </div>
 
-    <!-- No data state -->
-    <div id="chart-no-data" style="text-align:center; padding:40px 0; display:none;">
-      <div style="font-size:36px; margin-bottom:12px;">📊</div>
-      <p class="muted" style="font-size:14px; line-height:1.6;">Complete your morning check-in<br>to start seeing your patterns.</p>
-      <button class="btn-primary phase" onclick="switchTab('home')" style="margin-top:16px; max-width:200px;">Log today →</button>
+    <!-- NO DATA STATE -->
+    <div id="chart-no-data" style="text-align:center;padding:40px 0;display:none;">
+      <div style="font-size:36px;margin-bottom:12px;">◌</div>
+      <p class="muted" style="font-size:14px;line-height:1.6;">Complete your morning check-in<br>and log throughout the day<br>to start seeing your patterns.</p>
+      <button class="btn-primary phase" onclick="switchTab('home')" style="margin-top:16px;max-width:200px;">Start logging →</button>
     </div>
 
-    <!-- ESTRAL Weekly Narrative — top of chart, most prominent -->
-    <div id="estral-weekly-narrative" style="display:none; margin-bottom:16px;">
-      <div class="estral-voice card-voice" style="border-left:3px solid var(--phase);">
-        <span class="voice-label">Tip from ESTRAL</span>
-        <p id="weekly-narrative-text" style="font-size:15px; line-height:1.75;"></p>
+    <!-- ══ WEEKLY OVERVIEW ══════════════════════════ -->
+    <div id="weekly-overview-section" style="display:none;margin-bottom:20px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">This week</div>
+
+      <!-- Week energy bar chart — 7 days -->
+      <div class="card" style="margin-bottom:10px;padding:18px 20px 14px;">
+        <div class="label" style="color:var(--phase);margin-bottom:4px;">Energy · this week</div>
+        <div class="muted" style="font-size:11px;margin-bottom:14px;">Morning avg per day</div>
+        <div id="week-energy-bars" style="display:flex;align-items:flex-end;gap:6px;height:72px;"></div>
+        <div id="week-energy-days" style="display:flex;gap:6px;margin-top:6px;"></div>
+      </div>
+
+      <!-- Top tags this week -->
+      <div class="card" style="margin-bottom:10px;padding:18px 20px;">
+        <div class="label" style="color:var(--phase);margin-bottom:12px;">How you felt · this week</div>
+        <div id="week-tag-cloud" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        <div id="week-tag-insight" style="margin-top:12px;font-size:13px;color:var(--muted);line-height:1.6;display:none;"></div>
+      </div>
+
+      <!-- Phase breakdown this week -->
+      <div class="card" style="margin-bottom:10px;padding:18px 20px;">
+        <div class="label" style="color:var(--phase);margin-bottom:12px;">Phase · this week</div>
+        <div id="week-phase-strip" style="display:flex;gap:3px;border-radius:8px;overflow:hidden;height:20px;margin-bottom:8px;"></div>
+        <div id="week-phase-summary" style="font-size:13px;color:var(--muted);line-height:1.5;"></div>
+      </div>
+
+      <!-- ESTRAL weekly read -->
+      <div id="estral-weekly-narrative" style="display:none;margin-bottom:10px;">
+        <div class="estral-voice card-voice" style="border-left:3px solid var(--phase);">
+          <span class="voice-label">Tip from ESTRAL</span>
+          <span class="ev-text"><p id="weekly-narrative-text" style="font-size:15px;line-height:1.75;"></p></span>
+        </div>
       </div>
     </div>
 
-    <!-- Energy line chart -->
-    <div id="chart-energy-card" class="card" style="margin-bottom:12px; display:none;">
-      <div class="label" style="margin-bottom:4px; color:var(--phase);">Energy ⚡</div>
-      <div class="muted" style="font-size:11px; margin-bottom:12px;">Last 14 days · phase-colored dots</div>
-      <canvas id="energyChart" height="100"></canvas>
-    </div>
+    <!-- ══ LONGER PATTERNS ══════════════════════════ -->
+    <div id="patterns-long-section" style="display:none;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Over time</div>
 
-    <!-- Mood % breakdown -->
-    <div id="chart-mood-card" class="card" style="margin-bottom:12px; display:none;">
-      <div class="label" style="margin-bottom:4px; color:var(--phase);">Mood this phase</div>
-      <div class="muted" style="font-size:11px; margin-bottom:14px;" id="mood-phase-label">Follicular</div>
-      <div id="mood-bars"></div>
-    </div>
-
-    <!-- Craving patterns -->
-    <div id="chart-craving-card" class="card" style="margin-bottom:12px; display:none;">
-      <div class="label" style="margin-bottom:4px; color:var(--phase);">Craving patterns</div>
-      <div class="muted" style="font-size:11px; margin-bottom:14px;">What your body keeps asking for</div>
-      <div id="craving-bars"></div>
-      <div id="craving-insight" style="margin-top:12px; padding:10px 12px; background:rgba(28,26,24,0.04); border-radius:8px; display:none;">
-        <p style="font-size:13px; line-height:1.6;" id="craving-insight-text"></p>
+      <!-- Energy line — 30 days -->
+      <div id="chart-energy-card" class="card" style="margin-bottom:10px;display:none;">
+        <div class="label" style="margin-bottom:4px;color:var(--phase);">Energy ⚡ · 30 days</div>
+        <div class="muted" style="font-size:11px;margin-bottom:12px;">Phase-coloured dots</div>
+        <canvas id="energyChart" height="90"></canvas>
       </div>
-    </div>
 
-    <!-- Sleep / sugar correlation -->
-    <div id="chart-correlation-card" class="card" style="margin-bottom:12px; display:none;">
-      <div class="label" style="margin-bottom:4px; color:var(--phase);">Connections we found</div>
-      <div class="muted" style="font-size:11px; margin-bottom:14px;">Patterns across your logs</div>
-      <div id="correlation-list"></div>
-    </div>
-
-    <!-- Phase averages -->
-    <div id="phase-averages-card" class="card" style="margin-bottom:12px; display:none;">
-      <div class="label" style="margin-bottom:16px;">Energy by phase</div>
-      <div id="phase-avg-bars"></div>
-    </div>
-
-    <!-- Symptom frequency -->
-    <div id="chart-symptom-card" class="card" style="margin-bottom:12px; display:none;">
-      <div class="label" style="margin-bottom:12px;">Most common symptoms</div>
-      <div id="symptom-bars"></div>
-    </div>
-
-    <!-- Oura placeholder -->
-    <div class="card" style="margin-bottom:12px; opacity:0.6;">
-      <div class="label" style="margin-bottom:8px;">Oura · This week</div>
-      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; text-align:center;">
-        <div><div class="mono" style="font-size:22px; color:var(--phase);">—</div><div class="label">Ready</div></div>
-        <div><div class="mono" style="font-size:22px; color:var(--phase);">—</div><div class="label">Sleep</div></div>
-        <div><div class="mono" style="font-size:22px; color:var(--phase);">—</div><div class="label">HRV</div></div>
-        <div><div class="mono" style="font-size:22px; color:var(--phase);">—</div><div class="label">RHR</div></div>
+      <!-- Intraday tag frequency heatmap -->
+      <div id="chart-tagfreq-card" class="card" style="margin-bottom:10px;display:none;">
+        <div class="label" style="margin-bottom:4px;color:var(--phase);">What comes up most</div>
+        <div class="muted" style="font-size:11px;margin-bottom:14px;">From your daily logs · all time</div>
+        <div id="tagfreq-bars"></div>
       </div>
-      <p class="muted" style="font-size:11px; margin-top:12px; text-align:center;">Oura integration coming in v1.1</p>
+
+      <!-- Energy by time of day (from intraday logs) -->
+      <div id="chart-tod-card" class="card" style="margin-bottom:10px;display:none;">
+        <div class="label" style="margin-bottom:4px;color:var(--phase);">Energy by time of day</div>
+        <div class="muted" style="font-size:11px;margin-bottom:12px;">Averaged across all logs</div>
+        <canvas id="todChart" height="80"></canvas>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;">
+          <span style="font-size:9px;color:var(--muted);">6am</span>
+          <span style="font-size:9px;color:var(--muted);">9am</span>
+          <span style="font-size:9px;color:var(--muted);">12pm</span>
+          <span style="font-size:9px;color:var(--muted);">3pm</span>
+          <span style="font-size:9px;color:var(--muted);">6pm</span>
+          <span style="font-size:9px;color:var(--muted);">9pm</span>
+        </div>
+      </div>
+
+      <!-- Mood -->
+      <div id="chart-mood-card" class="card" style="margin-bottom:10px;display:none;">
+        <div class="label" style="margin-bottom:4px;color:var(--phase);">Mood this phase</div>
+        <div class="muted" style="font-size:11px;margin-bottom:14px;" id="mood-phase-label">Follicular</div>
+        <div id="mood-bars"></div>
+      </div>
+
+      <!-- Phase energy averages -->
+      <div id="phase-averages-card" class="card" style="margin-bottom:10px;display:none;">
+        <div class="label" style="margin-bottom:16px;">Energy by phase</div>
+        <div id="phase-avg-bars"></div>
+      </div>
+
+      <!-- Cravings -->
+      <div id="chart-craving-card" class="card" style="margin-bottom:10px;display:none;">
+        <div class="label" style="margin-bottom:4px;color:var(--phase);">Craving patterns</div>
+        <div class="muted" style="font-size:11px;margin-bottom:14px;">What your body keeps asking for</div>
+        <div id="craving-bars"></div>
+        <div id="craving-insight" style="margin-top:12px;padding:10px 12px;background:rgba(28,26,24,0.04);border-radius:8px;display:none;">
+          <p style="font-size:13px;line-height:1.6;" id="craving-insight-text"></p>
+        </div>
+      </div>
+
+      <!-- Correlations -->
+      <div id="chart-correlation-card" class="card" style="margin-bottom:10px;display:none;">
+        <div class="label" style="margin-bottom:4px;color:var(--phase);">Connections we found</div>
+        <div class="muted" style="font-size:11px;margin-bottom:14px;">Patterns across your logs</div>
+        <div id="correlation-list"></div>
+      </div>
+
+      <!-- Symptoms -->
+      <div id="chart-symptom-card" class="card" style="margin-bottom:10px;display:none;">
+        <div class="label" style="margin-bottom:12px;">Most common symptoms</div>
+        <div id="symptom-bars"></div>
+      </div>
     </div>
 
     <!-- ESTRAL pattern read (3+ days) -->
@@ -2435,10 +2490,69 @@ function unlockDashboard() {
       <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;">
         <div id="dashboard-reels" style="display:contents;"></div>
       </div>
-      <div class="card" style="display:flex;align-items:center;gap:14px;">
-        <div style="font-size:26px;animation:pulse 2.2s ease infinite;">🔥</div>
-        <div><div style="font-family:'DM Mono';font-size:26px;color:var(--phase);" id="dash-streak-num">0</div><div class="label">Day streak · Best: <span id="dash-streak-best">0</span></div></div>
+
+      <!-- ── DAY LOG ──────────────────────────────── -->
+      <div style="padding:0;">
+
+        <!-- Energy sparkline card -->
+        <div class="card" style="padding:18px 20px 14px;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div class="label" style="color:var(--phase);">Energy today</div>
+            <div style="font-size:10px;color:var(--muted);" id="daylog-count">—</div>
+          </div>
+          <canvas class="daylog-sparkline" id="daylog-sparkline" height="64"></canvas>
+          <div style="display:flex;justify-content:space-between;margin-top:4px;">
+            <span style="font-size:9px;color:var(--muted);">6am</span>
+            <span style="font-size:9px;color:var(--muted);">12pm</span>
+            <span style="font-size:9px;color:var(--muted);">6pm</span>
+            <span style="font-size:9px;color:var(--muted);">now</span>
+          </div>
+        </div>
+
+        <!-- Quick log input card -->
+        <div class="card" style="padding:16px 20px;margin-bottom:10px;">
+          <div class="label" style="color:var(--phase);margin-bottom:12px;">Log right now</div>
+          <!-- Tag row -->
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;" id="quicklog-tags">
+            <button class="quicklog-tag-btn" data-tag="focused">🧠 focused</button>
+            <button class="quicklog-tag-btn" data-tag="distracted">😶 distracted</button>
+            <button class="quicklog-tag-btn" data-tag="tired">😮‍💨 tired</button>
+            <button class="quicklog-tag-btn" data-tag="wired">⚡ wired</button>
+            <button class="quicklog-tag-btn" data-tag="anxious">😤 anxious</button>
+            <button class="quicklog-tag-btn" data-tag="calm">🌿 calm</button>
+            <button class="quicklog-tag-btn" data-tag="sad">🌧 sad</button>
+            <button class="quicklog-tag-btn" data-tag="motivated">🔥 motivated</button>
+            <button class="quicklog-tag-btn" data-tag="bloated">🫁 bloated</button>
+            <button class="quicklog-tag-btn" data-tag="craving">🍫 craving</button>
+            <button class="quicklog-tag-btn" data-tag="ate">🥗 ate</button>
+            <button class="quicklog-tag-btn" data-tag="pain">⚠️ pain</button>
+            <button class="quicklog-tag-btn" data-tag="win">✦ win</button>
+            <button class="quicklog-tag-btn" data-tag="low">📉 low</button>
+          </div>
+          <!-- Text input -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <input class="quicklog-input" id="quicklog-text" placeholder="What's happening right now…" />
+            <button id="quicklog-submit-btn" style="flex-shrink:0;width:40px;height:40px;border-radius:50%;background:var(--phase);border:none;color:#fff;font-size:22px;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;justify-content:center;line-height:1;">+</button>
+          </div>
+          <!-- Energy slider -->
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:11px;color:var(--muted);white-space:nowrap;min-width:72px;">Energy now</span>
+            <input type="range" min="1" max="10" value="7" id="quicklog-energy" style="flex:1;" oninput="document.getElementById('quicklog-energy-val').textContent=this.value">
+            <span class="mono" id="quicklog-energy-val" style="font-size:14px;font-weight:700;min-width:16px;color:var(--phase);">7</span>
+          </div>
+        </div>
+
+        <!-- Log feed card -->
+        <div class="card" style="padding:16px 20px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div class="label" style="color:var(--phase);">Today's entries</div>
+            <button onclick="clearTodayLog()" style="font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer;touch-action:manipulation;padding:2px 6px;">clear</button>
+          </div>
+          <div id="daylog-feed"></div>
+        </div>
+
       </div>
+      <!-- ── / DAY LOG ─────────────────────────────── -->
       <button class="btn-ghost" onclick="openPMQuiz()">Open evening review ✦</button>
       <div style="padding:16px 0 8px;">
         <p class="label" style="margin-bottom:10px;text-align:center;">✦ Preview phase backgrounds</p>
@@ -6118,6 +6232,537 @@ buildMonthGrid = function() {
     if (numEl) cell.dataset.day = numEl.textContent.trim();
   });
 };
+
+
+
+
+// ══════════════════════════════════════════════════════════
+// DAY LOG SYSTEM
+// Stores timestamped entries in localStorage keyed by date.
+// Each entry: { time, tags[], text, energy, ts }
+// ══════════════════════════════════════════════════════════
+
+var _dayLogSelectedTags = [];
+
+function getDayLogKey() {
+  var d = new Date();
+  return 'daylog_' + d.getFullYear() + '_' + (d.getMonth()+1) + '_' + d.getDate();
+}
+
+function getDayLogEntries() {
+  try { return JSON.parse(localStorage.getItem(getDayLogKey()) || '[]'); } catch(e) { return []; }
+}
+
+function saveDayLogEntries(entries) {
+  localStorage.setItem(getDayLogKey(), JSON.stringify(entries));
+}
+
+function initDayLog() {
+  // Wire up tag buttons
+  document.querySelectorAll('.quicklog-tag-btn').forEach(function(btn) {
+    btn.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      toggleDayLogTag(btn);
+    }, { passive: false });
+    btn.addEventListener('click', function() { toggleDayLogTag(btn); });
+  });
+  renderDayLogFeed();
+  drawDayLogSparkline();
+}
+
+function toggleDayLogTag(btn) {
+  var tag = btn.dataset.tag;
+  var idx = _dayLogSelectedTags.indexOf(tag);
+  if (idx > -1) {
+    _dayLogSelectedTags.splice(idx, 1);
+    btn.classList.remove('active');
+  } else {
+    _dayLogSelectedTags.push(tag);
+    btn.classList.add('active');
+  }
+}
+
+function submitDayLog() {
+  var text = (document.getElementById('quicklog-text') || {}).value || '';
+  var energy = parseInt((document.getElementById('quicklog-energy') || {}).value || 7);
+  if (!text.trim() && _dayLogSelectedTags.length === 0) return;
+
+  var now = new Date();
+  var hh = now.getHours().toString().padStart(2,'0');
+  var mm = now.getMinutes().toString().padStart(2,'0');
+
+  var entry = {
+    ts: now.getTime(),
+    time: hh + ':' + mm,
+    tags: _dayLogSelectedTags.slice(),
+    text: text.trim(),
+    energy: energy
+  };
+
+  var entries = getDayLogEntries();
+  entries.push(entry);
+  saveDayLogEntries(entries);
+
+  // Reset UI
+  var inp = document.getElementById('quicklog-text');
+  if (inp) inp.value = '';
+  _dayLogSelectedTags = [];
+  document.querySelectorAll('.quicklog-tag-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (document.getElementById('quicklog-energy')) document.getElementById('quicklog-energy').value = 7;
+  if (document.getElementById('quicklog-energy-val')) document.getElementById('quicklog-energy-val').textContent = '7';
+
+  renderDayLogFeed();
+  drawDayLogSparkline();
+
+  // Haptic if available
+  if (navigator.vibrate) navigator.vibrate(30);
+}
+
+// Wire enter key on input
+document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && document.activeElement && document.activeElement.id === 'quicklog-text') {
+      submitDayLog();
+    }
+  });
+});
+
+var TAG_EMOJI = {
+  focus:'🧠', energy:'⚡', mood:'💭', body:'🫀',
+  food:'🥗', craving:'🍫', symptom:'⚠️', win:'✦'
+};
+
+function renderDayLogFeed() {
+  var feed = document.getElementById('daylog-feed');
+  var countEl = document.getElementById('daylog-count');
+  if (!feed) return;
+
+  var entries = getDayLogEntries();
+  if (countEl) countEl.textContent = entries.length + ' entr' + (entries.length === 1 ? 'y' : 'ies');
+
+  if (entries.length === 0) {
+    feed.innerHTML = '<div class="daylog-no-entries">Nothing logged yet. Add your first entry below.</div>';
+    return;
+  }
+
+  // Show newest first
+  var sorted = entries.slice().reverse();
+  feed.innerHTML = sorted.map(function(e) {
+    var tagHtml = (e.tags || []).map(function(t) {
+      return '<span class="daylog-tag">' + (TAG_EMOJI[t] || '') + ' ' + t + '</span>';
+    }).join('');
+    var energyDot = e.energy ? '<span style="font-size:10px;color:var(--muted);margin-left:6px;">⚡' + e.energy + '</span>' : '';
+    var textHtml = e.text ? '<div class="daylog-bubble">' + tagHtml + (tagHtml && e.text ? '<br>' : '') + e.text + energyDot + '</div>'
+                          : '<div class="daylog-bubble">' + tagHtml + energyDot + '</div>';
+    return '<div class="daylog-entry"><div class="daylog-time">' + e.time + '</div>' + textHtml + '</div>';
+  }).join('');
+}
+
+function drawDayLogSparkline() {
+  var canvas = document.getElementById('daylog-sparkline');
+  if (!canvas) return;
+  var entries = getDayLogEntries().filter(function(e){ return e.energy; });
+  var ctx = canvas.getContext('2d');
+  var W = canvas.offsetWidth || 320;
+  var H = 52;
+  canvas.width = W;
+  canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
+
+  if (entries.length < 2) {
+    // Draw empty placeholder line
+    ctx.strokeStyle = 'rgba(28,26,24,0.08)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(0, H/2);
+    ctx.lineTo(W, H/2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    if (entries.length === 0) {
+      ctx.fillStyle = 'rgba(28,26,24,0.2)';
+      ctx.font = '11px DM Sans, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Energy sparkline builds as you log', W/2, H/2 + 4);
+    }
+    return;
+  }
+
+  // X: spread across the day (0–24h); Y: energy 1–10
+  var pad = 8;
+  function xForEntry(e) {
+    var parts = e.time.split(':');
+    var mins = parseInt(parts[0])*60 + parseInt(parts[1]);
+    return pad + (mins / (24*60)) * (W - pad*2);
+  }
+  function yForEnergy(e) {
+    return H - pad - ((e.energy - 1) / 9) * (H - pad*2);
+  }
+
+  // Gradient fill
+  var grad = ctx.createLinearGradient(0, 0, 0, H);
+  // Use a CSS variable approximation — we'll read it from computed style
+  var phaseColor = getComputedStyle(document.documentElement).getPropertyValue('--phase').trim() || '#4A8FA8';
+  grad.addColorStop(0, phaseColor.replace(')', ',0.25)').replace('rgb','rgba') || 'rgba(74,143,168,0.25)');
+  grad.addColorStop(1, 'rgba(74,143,168,0)');
+
+  // Draw fill
+  ctx.beginPath();
+  ctx.moveTo(xForEntry(entries[0]), H - pad);
+  entries.forEach(function(e){ ctx.lineTo(xForEntry(e), yForEnergy(e)); });
+  ctx.lineTo(xForEntry(entries[entries.length-1]), H - pad);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Draw line
+  ctx.beginPath();
+  entries.forEach(function(e, i){
+    if (i === 0) ctx.moveTo(xForEntry(e), yForEnergy(e));
+    else ctx.lineTo(xForEntry(e), yForEnergy(e));
+  });
+  ctx.strokeStyle = phaseColor || '#4A8FA8';
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // Draw dots
+  entries.forEach(function(e) {
+    ctx.beginPath();
+    ctx.arc(xForEntry(e), yForEnergy(e), 3.5, 0, Math.PI*2);
+    ctx.fillStyle = phaseColor || '#4A8FA8';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  });
+
+  // Hour labels: 6am, 12pm, 6pm
+  ctx.fillStyle = 'rgba(28,26,24,0.25)';
+  ctx.font = '9px DM Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.setLineDash([]);
+  [{label:'6am',mins:360},{label:'12pm',mins:720},{label:'6pm',mins:1080}].forEach(function(h){
+    var x = pad + (h.mins / (24*60)) * (W - pad*2);
+    ctx.fillText(h.label, x, H - 1);
+  });
+}
+
+// Call initDayLog after unlockDashboard builds the DOM
+var _origUnlockDashboard = unlockDashboard;
+unlockDashboard = function() {
+  _origUnlockDashboard();
+  setTimeout(function() {
+    initDayLog();
+  }, 120);
+};
+
+
+
+// ══════════════════════════════════════════════════════════
+// WEEKLY OVERVIEW + INTRADAY PATTERN BUILDERS
+// ══════════════════════════════════════════════════════════
+
+function getAllDayLogEntries() {
+  // Collect all day log entries across all days from localStorage
+  var all = [];
+  for (var i = 0; i < localStorage.length; i++) {
+    var key = localStorage.key(i);
+    if (key && key.startsWith('daylog_')) {
+      try {
+        var entries = JSON.parse(localStorage.getItem(key) || '[]');
+        // stamp the date key onto each entry
+        entries.forEach(function(e) { e._dateKey = key; });
+        all = all.concat(entries);
+      } catch(ex) {}
+    }
+  }
+  return all.sort(function(a,b){ return (a.ts||0) - (b.ts||0); });
+}
+
+function getWeekDayLogEntries() {
+  // Last 7 days
+  var cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  return getAllDayLogEntries().filter(function(e){ return (e.ts||0) >= cutoff; });
+}
+
+// Build weekly overview cards
+function buildWeeklyOverview(realLogs) {
+  var section = document.getElementById('weekly-overview-section');
+  if (!section) return;
+
+  // Always show if we have anything
+  var weekEntries = getWeekDayLogEntries();
+  var weekLogs = realLogs.filter(function(l) {
+    var d = new Date(l.timestamp || 0);
+    return Date.now() - d.getTime() < 7 * 24 * 60 * 60 * 1000;
+  });
+
+  if (weekLogs.length === 0 && weekEntries.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+
+  // ── Week energy bar chart ──
+  var barContainer = document.getElementById('week-energy-bars');
+  var dayContainer = document.getElementById('week-energy-days');
+  if (barContainer && dayContainer) {
+    barContainer.innerHTML = '';
+    dayContainer.innerHTML = '';
+    var days = ['S','M','T','W','T','F','S'];
+    var today = new Date();
+    var maxE = 10;
+    for (var i = 6; i >= 0; i--) {
+      var d = new Date(today);
+      d.setDate(today.getDate() - i);
+      var dStr = d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+      var log = realLogs.find(function(l){ return l.date === dStr; });
+      var energy = (log && log.am && log.am.energy) ? log.am.energy : null;
+
+      // Also check day log entries for that date
+      var dKey = 'daylog_' + d.getFullYear() + '_' + (d.getMonth()+1) + '_' + d.getDate();
+      var dEntries = [];
+      try { dEntries = JSON.parse(localStorage.getItem(dKey) || '[]'); } catch(ex) {}
+      var energyReadings = dEntries.filter(function(e){ return e.energy; }).map(function(e){ return e.energy; });
+      if (energyReadings.length) {
+        var avg = energyReadings.reduce(function(a,b){ return a+b; }, 0) / energyReadings.length;
+        energy = energy ? (energy + avg) / 2 : avg;
+      }
+
+      var isToday = i === 0;
+      var pct = energy ? Math.round((energy / maxE) * 100) : 0;
+      var pc = window._userProfile || {};
+      var phase = (log && log.phase) || pc.cyclePhase || 'follicular';
+      var color = (window.PHASE_COLORS && PHASE_COLORS[phase]) || 'var(--phase)';
+
+      var bar = document.createElement('div');
+      bar.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;';
+      var _eColor = isToday ? color : 'var(--muted)';
+      var _shadow = isToday ? (';box-shadow:0 0 8px ' + color + '88') : '';
+      if (energy) {
+        bar.innerHTML = '<div style="flex:1;width:100%;display:flex;align-items:flex-end;">' +
+          '<div style="width:100%;height:' + pct + '%;min-height:4px;background:' + color + _shadow + ';border-radius:4px 4px 0 0;transition:height 0.5s ease;"></div></div>' +
+          '<div style="font-size:9px;color:' + _eColor + ';">' + Math.round(energy) + '</div>';
+      } else {
+        bar.innerHTML = '<div style="flex:1;width:100%;display:flex;align-items:flex-end;"><div style="width:100%;height:3px;background:rgba(28,26,24,0.08);border-radius:4px 4px 0 0;"></div></div>' +
+          '<div style="font-size:9px;color:rgba(28,26,24,0.2);">\u2014</div>';
+      }
+      barContainer.appendChild(bar);
+
+      var label = document.createElement('div');
+      label.style.cssText = 'flex:1;text-align:center;font-size:9px;font-weight:' + (isToday ? '700' : '400') + ';color:' + (isToday ? 'var(--phase)' : 'var(--muted)') + ';';
+      label.textContent = days[(d.getDay())];
+      dayContainer.appendChild(label);
+    }
+  }
+
+  // ── Tag cloud ──
+  var cloud = document.getElementById('week-tag-cloud');
+  var tagInsight = document.getElementById('week-tag-insight');
+  if (cloud) {
+    var tagCounts = {};
+    weekEntries.forEach(function(e) {
+      (e.tags || []).forEach(function(t) {
+        tagCounts[t] = (tagCounts[t] || 0) + 1;
+      });
+    });
+    var sorted = Object.keys(tagCounts).sort(function(a,b){ return tagCounts[b] - tagCounts[a]; });
+    if (sorted.length === 0) {
+      cloud.innerHTML = '<span style="font-size:13px;color:var(--muted);font-style:italic;">No tags logged yet this week.</span>';
+    } else {
+      var max = tagCounts[sorted[0]];
+      cloud.innerHTML = sorted.slice(0, 12).map(function(t) {
+        var size = 10 + Math.round((tagCounts[t] / max) * 8);
+        var alpha = 0.3 + (tagCounts[t] / max) * 0.7;
+        return '<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:100px;font-size:' + size + 'px;font-weight:600;background:var(--phase-dim);color:var(--phase);opacity:' + alpha + ';margin-bottom:2px;">' + t + ' <span style="font-size:10px;">' + tagCounts[t] + '</span></span>';
+      }).join('');
+
+      // Insight sentence
+      if (tagInsight && sorted.length >= 2) {
+        var top = sorted[0], second = sorted[1];
+        var negTags = ['anxious','sad','tired','low','pain','bloated','distracted'];
+        var posTags = ['focused','calm','motivated','win','wired'];
+        var topIsNeg = negTags.includes(top);
+        var topIsPos = posTags.includes(top);
+        var msg = topIsNeg
+          ? 'You have been tagging ' + top + ' most this week. Note what day and phase it clusters around.'
+          : topIsPos
+          ? '"' + top + '" is your most logged state this week. Hold that.'
+          : 'Your most frequent states: ' + top + ' and ' + second + '. Watch for the pattern.';
+        tagInsight.textContent = msg;
+        tagInsight.style.display = 'block';
+      }
+    }
+  }
+
+  // ── Phase strip ──
+  var strip = document.getElementById('week-phase-strip');
+  var phaseSummary = document.getElementById('week-phase-summary');
+  if (strip) {
+    strip.innerHTML = '';
+    var phaseDays = {};
+    for (var j = 6; j >= 0; j--) {
+      var dd = new Date(today);
+      dd.setDate(today.getDate() - j);
+      var ddStr = dd.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+      var ddLog = realLogs.find(function(l){ return l.date === ddStr; });
+      var ddPhase = (ddLog && ddLog.phase) || 'follicular';
+      phaseDays[ddPhase] = (phaseDays[ddPhase] || 0) + 1;
+      var ddColor = (window.PHASE_COLORS && PHASE_COLORS[ddPhase]) || '#888';
+      var seg = document.createElement('div');
+      seg.style.cssText = 'flex:1;background:' + ddColor + ';opacity:' + (j === 0 ? '1' : '0.6') + ';';
+      seg.title = ddPhase;
+      strip.appendChild(seg);
+    }
+    if (phaseSummary) {
+      var dominant = Object.keys(phaseDays).sort(function(a,b){ return phaseDays[b]-phaseDays[a]; })[0];
+      var phaseNotes = {
+        follicular: 'A building week — estrogen rising, mental clarity up.',
+        ovulatory: 'A peak week — high output, connection, visibility.',
+        luteal: 'A finishing week — progesterone rising, go deep not wide.',
+        menstrual: 'A reset week — rest, reflect, restore.'
+      };
+      phaseSummary.textContent = phaseNotes[dominant] || '';
+    }
+  }
+
+  // ESTRAL weekly narrative
+  var narrativeEl = document.getElementById('estral-weekly-narrative');
+  if (narrativeEl && weekLogs.length >= 3) narrativeEl.style.display = 'block';
+}
+
+// ── Intraday tag frequency chart ──
+function buildTagFreqBars() {
+  var container = document.getElementById('tagfreq-bars');
+  if (!container) return;
+  var all = getAllDayLogEntries();
+  if (all.length === 0) { container.innerHTML = '<p class="muted" style="font-size:13px;">Log throughout the day to see patterns.</p>'; return; }
+
+  var counts = {};
+  all.forEach(function(e) {
+    (e.tags || []).forEach(function(t) { counts[t] = (counts[t] || 0) + 1; });
+  });
+  var sorted = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; }).slice(0,10);
+  if (sorted.length === 0) { container.innerHTML = '<p class="muted" style="font-size:13px;">Log throughout the day to see patterns.</p>'; return; }
+
+  var max = counts[sorted[0]];
+  container.innerHTML = sorted.map(function(t) {
+    var pct = Math.round((counts[t] / max) * 100);
+    return '<div style="margin-bottom:8px;">' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
+      '<span style="font-size:12px;color:var(--text);">' + t + '</span>' +
+      '<span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);">' + counts[t] + 'x</span></div>' +
+      '<div style="height:6px;background:rgba(28,26,24,0.08);border-radius:100px;overflow:hidden;">' +
+      '<div style="width:' + pct + '%;height:100%;background:var(--phase);border-radius:100px;"></div></div></div>';
+  }).join('');
+}
+
+// ── Energy by time of day ──
+function buildTODChart() {
+  var canvas = document.getElementById('todChart');
+  if (!canvas) return;
+  var all = getAllDayLogEntries().filter(function(e){ return e.energy && e.time; });
+  if (all.length < 3) return;
+  document.getElementById('chart-tod-card').style.display = 'block';
+
+  // Bucket into 3-hour slots: 6,9,12,15,18,21
+  var slots = [6,9,12,15,18,21];
+  var buckets = {}; slots.forEach(function(s){ buckets[s] = []; });
+  all.forEach(function(e) {
+    var h = parseInt(e.time.split(':')[0]);
+    var slot = slots.reduce(function(prev, curr) {
+      return Math.abs(curr - h) < Math.abs(prev - h) ? curr : prev;
+    });
+    buckets[slot].push(e.energy);
+  });
+
+  var avgs = slots.map(function(s) {
+    var arr = buckets[s];
+    return arr.length ? arr.reduce(function(a,b){return a+b;},0)/arr.length : null;
+  });
+
+  var W = canvas.offsetWidth || 320, H = 80;
+  canvas.width = W; canvas.height = H;
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  var pad = 10;
+  var points = avgs.map(function(v,i) {
+    return v !== null ? { x: pad + (i/(slots.length-1))*(W-pad*2), y: H - pad - ((v-1)/9)*(H-pad*2) } : null;
+  });
+
+  var phaseColor = getComputedStyle(document.documentElement).getPropertyValue('--phase').trim() || '#4A8FA8';
+
+  // Fill
+  var valid = points.filter(function(p){ return p !== null; });
+  if (valid.length >= 2) {
+    ctx.beginPath();
+    ctx.moveTo(valid[0].x, H - pad);
+    valid.forEach(function(p){ ctx.lineTo(p.x, p.y); });
+    ctx.lineTo(valid[valid.length-1].x, H - pad);
+    ctx.closePath();
+    ctx.fillStyle = phaseColor + '33';
+    ctx.fill();
+
+    ctx.beginPath();
+    valid.forEach(function(p, i){ i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y); });
+    ctx.strokeStyle = phaseColor;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    valid.forEach(function(p) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4, 0, Math.PI*2);
+      ctx.fillStyle = phaseColor;
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+  }
+}
+
+// Patch buildChartFromData to also build weekly + intraday sections
+var _origBuildChart = buildChartFromData;
+buildChartFromData = function() {
+  _origBuildChart();
+  var realLogs = [];
+  try { realLogs = JSON.parse(localStorage.getItem('estral_logs')||'[]'); } catch(e) {}
+
+  // Show longer patterns section if enough data
+  var longSection = document.getElementById('patterns-long-section');
+  if (longSection && realLogs.length >= 3) {
+    longSection.style.display = 'block';
+    document.getElementById('chart-tagfreq-card').style.display = 'block';
+  }
+
+  buildWeeklyOverview(realLogs);
+  buildTagFreqBars();
+  setTimeout(buildTODChart, 80);
+};
+
+// ── Clear today's log ──
+function clearTodayLog() {
+  if (!confirm('Clear all entries for today?')) return;
+  localStorage.removeItem(getDayLogKey());
+  renderDayLogFeed();
+  drawDayLogSparkline();
+}
+
+// ── Wire quicklog submit btn with touch ──
+document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('click', function(e) {
+    if (e.target && e.target.id === 'quicklog-submit-btn') submitDayLog();
+  });
+  document.addEventListener('touchend', function(e) {
+    if (e.target && e.target.id === 'quicklog-submit-btn') {
+      e.preventDefault();
+      submitDayLog();
+    }
+  }, { passive: false });
+});
 
 
 // ═══════════════════════════════════════════════
