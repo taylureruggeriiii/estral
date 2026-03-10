@@ -636,7 +636,13 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
   -webkit-appearance:none; appearance:none;
 }
 .quicklog-tag-btn:active { transform:scale(0.94); }
-.quicklog-tag-btn.active { background:var(--phase); border-color:var(--phase); color:#fff; }
+.quicklog-tag-btn.active { 
+  background:var(--phase); 
+  border-color:var(--phase); 
+  color:#fff; 
+  box-shadow: 0 2px 10px var(--phase-glow, rgba(74,143,168,0.35));
+  transform: scale(1.03);
+}
 .ql-section-tab {
   flex:1; padding:10px 14px; border:none; border-bottom:2.5px solid transparent;
   background:none; font-size:12px; font-weight:600; color:var(--muted);
@@ -2613,7 +2619,7 @@ function unlockDashboard() {
 
       <!-- LIFE AREA TODO LIST -->
       <div class="card" style="margin-top:10px; padding:18px 20px 20px;">
-        <div class="label" style="color:var(--phase); margin-bottom:14px;">This week's list</div>
+        <div class="label" style="color:var(--phase); margin-bottom:14px;">Today's list</div>
         <div id="dash-todo-sections"></div>
       </div>
 
@@ -2628,11 +2634,12 @@ function unlockDashboard() {
 
         <!-- Energy line graph card -->
         <div class="card" style="padding:18px 20px 16px; margin-bottom:10px;">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
             <div class="label" style="color:var(--phase);">Energy throughout the day</div>
             <span style="font-size:10px; color:var(--muted);" id="daylog-count">0 entries</span>
           </div>
-          <canvas id="daylog-sparkline" style="width:100%;height:80px;display:block;" height="80"></canvas>
+          <div id="daylog-latest-tag" style="font-size:11px;color:var(--muted);margin-bottom:10px;min-height:16px;"></div>
+          <canvas id="daylog-sparkline" style="width:100%;height:110px;display:block;" height="110"></canvas>
           <div style="display:flex; justify-content:space-between; margin-top:5px; padding:0 2px;">
             <span style="font-size:9px;color:var(--muted);">6am</span>
             <span style="font-size:9px;color:var(--muted);">9am</span>
@@ -2732,15 +2739,6 @@ function unlockDashboard() {
           </div>
         </div>
 
-        <!-- Feed -->
-        <div class="card" style="padding:16px 20px;">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-            <div class="label" style="color:var(--phase);">Today's entries</div>
-            <button onclick="clearTodayLog()" style="font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer;touch-action:manipulation;padding:4px 8px;">clear</button>
-          </div>
-          <div id="daylog-feed"></div>
-        </div>
-      </div>
 
       <!-- REELS -->
       <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;margin-top:12px;">
@@ -2783,14 +2781,17 @@ function buildDashMiniWeek() {
   if (!grid) return;
 
   var today = new Date();
-  // Start from Sunday of current week
   var weekStart = new Date(today);
   weekStart.setDate(today.getDate() - today.getDay());
 
   var realLogs = [];
   try { realLogs = JSON.parse(localStorage.getItem('estral_logs') || '[]'); } catch(e) {}
-  var monthTasks = {};
-  try { monthTasks = JSON.parse(localStorage.getItem('estral_month_tasks') || '{}'); } catch(e) {}
+
+  // Use live monthTasks object if available, else load from storage
+  var wkTasks = (typeof monthTasks !== 'undefined' && Object.keys(monthTasks).length) ? monthTasks : {};
+  if (!Object.keys(wkTasks).length) {
+    try { wkTasks = JSON.parse(localStorage.getItem('estral_month_tasks') || '{}'); } catch(e) {}
+  }
 
   var dayNames = ['Su','Mo','Tu','We','Th','Fr','Sa'];
   var phaseCounts = {};
@@ -2809,50 +2810,40 @@ function buildDashMiniWeek() {
     var color = (window.PHASE_COLORS && PHASE_COLORS[phase]) || 'var(--phase)';
     phaseCounts[phase] = (phaseCounts[phase] || 0) + 1;
 
-    // Get tasks for this day
     var dateKey = d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
-    var dayNum = d.getDate();
-    var tasks = monthTasks[dateKey] || monthTasks[dayNum] || [];
+    var tasks = wkTasks[dateKey] || wkTasks[d.getDate()] || [];
 
-    // Build column
     var col = document.createElement('div');
     col.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;';
 
-    // Day label
     var lbl = document.createElement('div');
     lbl.style.cssText = 'font-size:9px;font-weight:' + (isToday?'800':'500') + ';color:' + (isToday?color:(isPast?'rgba(28,26,24,0.3)':'var(--muted)')) + ';margin-bottom:1px;';
     lbl.textContent = dayNames[d.getDay()];
     col.appendChild(lbl);
 
-    // Date circle
     var circle = document.createElement('div');
     var circleBase = 'width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-bottom:3px;';
-    if (isToday) {
-      circle.style.cssText = circleBase + 'background:' + color + ';color:#fff;box-shadow:0 2px 8px ' + color + '55;';
-    } else {
-      circle.style.cssText = circleBase + 'background:rgba(28,26,24,0.05);color:' + (isPast?'rgba(28,26,24,0.3)':'var(--text)') + ';';
-    }
+    circle.style.cssText = isToday
+      ? circleBase + 'background:' + color + ';color:#fff;box-shadow:0 2px 8px ' + color + '55;'
+      : circleBase + 'background:rgba(28,26,24,0.05);color:' + (isPast?'rgba(28,26,24,0.3)':'var(--text)') + ';';
     circle.textContent = d.getDate();
     col.appendChild(circle);
 
-    // Task pills (up to 3)
-    var maxShow = 3;
-    tasks.slice(0, maxShow).forEach(function(task) {
-      var taskName = (typeof task === 'object') ? (task.title || task.text || '') : String(task);
-      var areaColor = (typeof task === 'object' && task.areaId) ? getAreaColor(task.areaId) : color;
+    tasks.slice(0, 3).forEach(function(task) {
+      var taskName = (typeof task === 'object') ? (task.text || task.title || '') : String(task);
+      var areaColor = (typeof task === 'object' && task.area && typeof getBDAreaColor === 'function') ? getBDAreaColor(task.area) : color;
       var pill = document.createElement('div');
       pill.style.cssText = 'width:100%;background:' + areaColor + '22;border-left:2px solid ' + areaColor + ';border-radius:0 4px 4px 0;padding:2px 3px;font-size:8px;line-height:1.3;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;box-sizing:border-box;opacity:' + (isPast?'0.5':'1') + ';';
       pill.textContent = taskName;
       pill.title = taskName;
       col.appendChild(pill);
     });
-    if (tasks.length > maxShow) {
+    if (tasks.length > 3) {
       var more = document.createElement('div');
       more.style.cssText = 'font-size:8px;color:var(--muted);';
-      more.textContent = '+' + (tasks.length - maxShow);
+      more.textContent = '+' + (tasks.length - 3);
       col.appendChild(more);
     }
-    // Empty day indicator
     if (tasks.length === 0) {
       var dot = document.createElement('div');
       dot.style.cssText = 'width:4px;height:4px;border-radius:50%;background:rgba(28,26,24,' + (isToday?'0.15':'0.07') + ');margin-top:2px;';
@@ -2861,7 +2852,6 @@ function buildDashMiniWeek() {
 
     grid.appendChild(col);
 
-    // Phase strip
     if (strip) {
       var seg = document.createElement('div');
       seg.style.cssText = 'flex:1;background:' + color + ';border-radius:3px;opacity:' + (isToday?1:isPast?0.3:0.6) + ';';
@@ -2869,71 +2859,124 @@ function buildDashMiniWeek() {
     }
   }
 
-  // Phase note
   if (note && Object.keys(phaseCounts).length) {
     var dominant = Object.keys(phaseCounts).sort(function(a,b){ return phaseCounts[b]-phaseCounts[a]; })[0];
-    var phaseNotes = {
-      follicular: 'Building week — estrogen rising, clarity up.',
-      ovulatory: 'Peak week — high output, visibility, connection.',
-      luteal: 'Finishing week — go deep, protect your energy.',
-      menstrual: 'Reset week — rest, reflect, restore.'
-    };
+    var phaseNotes = { follicular:'Building week — estrogen rising, clarity up.', ovulatory:'Peak week — high output, visibility, connection.', luteal:'Finishing week — go deep, protect your energy.', menstrual:'Reset week — rest, reflect, restore.' };
     note.textContent = phaseNotes[dominant] || '';
   }
 }
 
-// ── DASHBOARD TODO LIST ──────────────────────────────────────────────────────
+// ── DASHBOARD TODAY LIST — pulls today's planned tasks from monthTasks ──────
 function buildDashTodoList() {
   var container = document.getElementById('dash-todo-sections');
   if (!container) return;
 
-  var todos = getDashTodos();
+  var today = new Date();
+  var dateKey = today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate();
+
+  // Read live object first, fall back to storage
+  var wkTasks = (typeof monthTasks !== 'undefined') ? monthTasks : {};
+  if (!Object.keys(wkTasks).length) {
+    try { wkTasks = JSON.parse(localStorage.getItem('estral_month_tasks') || '{}'); } catch(e) {}
+  }
+
+  var todayTasks = wkTasks[dateKey] || wkTasks[today.getDate()] || [];
+
+  // Also load manual dash todos (user-typed items)
+  var manualTodos = {};
+  try { manualTodos = JSON.parse(localStorage.getItem('estral_dash_todos') || '{}'); } catch(e) {}
+
   container.innerHTML = '';
 
-  // Show first 4 life areas (or all if fewer)
-  var areas = (typeof lifeAreas !== 'undefined' ? lifeAreas : DEFAULT_LIFE_AREAS).slice(0, 4);
+  // ── Section 1: Today's planned tasks from week view ──
+  var planSection = document.createElement('div');
+  planSection.style.cssText = 'margin-bottom:18px;';
 
-  areas.forEach(function(area) {
-    var areaItems = todos[area.id] || [];
+  var planHeader = document.createElement('div');
+  planHeader.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:10px;';
+  var phaseColor = (window.PHASE_COLORS && window._userProfile) ? (PHASE_COLORS[window._userProfile.cyclePhase] || 'var(--phase)') : 'var(--phase)';
+  planHeader.innerHTML =
+    '<div style="width:8px;height:8px;border-radius:50%;background:' + phaseColor + ';flex-shrink:0;"></div>' +
+    '<span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:' + phaseColor + ';">Planned for today</span>' +
+    '<span style="font-size:10px;color:var(--muted);margin-left:auto;">' + today.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) + '</span>';
+  planSection.appendChild(planHeader);
 
-    var section = document.createElement('div');
-    section.style.cssText = 'margin-bottom:16px;';
+  if (todayTasks.length === 0) {
+    var empty = document.createElement('div');
+    empty.style.cssText = 'font-size:13px;color:var(--muted);font-style:italic;padding:4px 0 2px;';
+    empty.textContent = 'Nothing planned yet — drag tasks from the Plan tab.';
+    planSection.appendChild(empty);
+  } else {
+    todayTasks.forEach(function(task, idx) {
+      var taskText = (typeof task === 'object') ? (task.text || task.title || '') : String(task);
+      var areaColor = (typeof task === 'object' && task.area && typeof getBDAreaColor === 'function') ? getBDAreaColor(task.area) : phaseColor;
 
-    // Section header
-    var header = document.createElement('div');
-    header.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;';
-    header.innerHTML = '<div style="width:8px;height:8px;border-radius:50%;background:' + area.color + ';flex-shrink:0;"></div>' +
-      '<span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:' + area.color + ';">' + area.name + '</span>';
-    section.appendChild(header);
+      // Load done state from storage
+      var doneKey = 'dash_today_done_' + dateKey;
+      var doneMap = {};
+      try { doneMap = JSON.parse(localStorage.getItem(doneKey) || '{}'); } catch(e) {}
+      var isDone = !!doneMap[idx];
 
-    // Existing items
-    var itemsList = document.createElement('div');
-    itemsList.id = 'dash-todo-items-' + area.id;
-    areaItems.forEach(function(item, idx) {
-      itemsList.appendChild(buildTodoItem(area, item, idx));
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid rgba(28,26,24,0.05);';
+
+      var cb = document.createElement('div');
+      cb.style.cssText = 'width:18px;height:18px;border-radius:50%;border:1.5px solid ' + (isDone ? areaColor : 'rgba(28,26,24,0.2)') + ';flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;transition:all 0.15s;background:' + (isDone ? areaColor : 'transparent') + ';margin-top:1px;';
+      if (isDone) cb.innerHTML = '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+      var areaTag = (typeof task === 'object' && task.area) ? '<span style="font-size:9px;color:' + areaColor + ';background:' + areaColor + '18;padding:1px 6px;border-radius:100px;margin-left:6px;">' + task.area + '</span>' : '';
+      var txt = document.createElement('div');
+      txt.style.cssText = 'font-size:14px;flex:1;line-height:1.4;' + (isDone ? 'text-decoration:line-through;color:rgba(28,26,24,0.35);' : 'color:var(--text);');
+      txt.innerHTML = taskText + areaTag;
+
+      var _tog = false;
+      function makeToggle(i, c, t, ak) {
+        return function(e) {
+          if (_tog) return; _tog = true; setTimeout(function(){ _tog = false; }, 300);
+          var dm = {};
+          try { dm = JSON.parse(localStorage.getItem(ak) || '{}'); } catch(err) {}
+          dm[i] = !dm[i];
+          localStorage.setItem(ak, JSON.stringify(dm));
+          buildDashTodoList();
+          if (navigator.vibrate) navigator.vibrate(15);
+        };
+      }
+      var toggleFn = makeToggle(idx, areaColor, taskText, doneKey);
+      cb.addEventListener('touchend', function(e){ e.preventDefault(); toggleFn(); }, { passive:false });
+      cb.addEventListener('click', toggleFn);
+
+      row.appendChild(cb);
+      row.appendChild(txt);
+      planSection.appendChild(row);
     });
-    section.appendChild(itemsList);
+  }
+  container.appendChild(planSection);
 
-    // Add input row
-    var addRow = document.createElement('div');
-    addRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:6px;';
-    addRow.innerHTML =
-      '<div style="width:16px;height:16px;border-radius:50%;border:1.5px solid rgba(28,26,24,0.18);flex-shrink:0;"></div>' +
-      '<input placeholder="Add to ' + area.name.toLowerCase() + '…" ' +
-        'data-area="' + area.id + '" ' +
-        'style="flex:1;border:none;background:none;font-size:13px;font-family:DM Sans,sans-serif;color:var(--text);outline:none;-webkit-text-fill-color:var(--text);padding:4px 0;" ' +
-        'onkeydown="handleTodoInputKey(event,\'' + area.id + '\')">';
-    section.appendChild(addRow);
+  // ── Section 2: Manual add-anything notes ──
+  var divider = document.createElement('div');
+  divider.style.cssText = 'height:1px;background:rgba(28,26,24,0.07);margin-bottom:14px;';
+  container.appendChild(divider);
 
-    // Divider
-    if (area !== areas[areas.length-1]) {
-      var divider = document.createElement('div');
-      divider.style.cssText = 'height:1px;background:rgba(28,26,24,0.06);margin-top:12px;';
-      section.appendChild(divider);
-    }
+  var noteHeader = document.createElement('div');
+  noteHeader.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:10px;';
+  noteHeader.innerHTML = '<div style="width:8px;height:8px;border-radius:50%;background:rgba(28,26,24,0.25);flex-shrink:0;"></div><span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);">Quick adds</span>';
+  container.appendChild(noteHeader);
 
-    container.appendChild(section);
+  var quickItems = manualTodos['_quick'] || [];
+  var quickList = document.createElement('div');
+  quickItems.forEach(function(item, idx) {
+    quickList.appendChild(buildTodoItem({ id:'_quick', color:'rgba(28,26,24,0.4)', name:'Quick' }, item, idx));
   });
+  container.appendChild(quickList);
+
+  var addRow = document.createElement('div');
+  addRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:6px;';
+  addRow.innerHTML =
+    '<div style="width:16px;height:16px;border-radius:50%;border:1.5px dashed rgba(28,26,24,0.18);flex-shrink:0;"></div>' +
+    '<input placeholder="Add anything for today…" data-area="_quick" ' +
+      'style="flex:1;border:none;background:none;font-size:13px;font-family:DM Sans,sans-serif;color:var(--text);outline:none;-webkit-text-fill-color:var(--text);padding:4px 0;" ' +
+      'onkeydown="handleTodoInputKey(event,\'_quick\')">';
+  container.appendChild(addRow);
 }
 
 function buildTodoItem(area, item, idx) {
@@ -6752,6 +6795,7 @@ function buildWeekColumns() {
     const body = document.createElement('div');
     body.style.cssText = `flex:1;padding:6px 5px;display:flex;flex-direction:column;gap:4px;min-height:130px;`;
     body.dataset.day = dateNum;
+    body.dataset.datekey = dateKey;
     body.classList.add('week-day-col');
 
     // Locked events
@@ -6811,11 +6855,12 @@ function buildWeekColumns() {
       if (!monthTasks[dateKey].find(t => t.text === dragItem.text)) {
         monthTasks[dateKey].push({ ...dragItem });
       }
+      localStorage.setItem('estral_month_tasks', JSON.stringify(monthTasks));
       buildWeekColumns();
       buildWeekTrayItems();
       buildDragTray();
+      if (typeof buildDashWeekly === 'function') buildDashWeekly();
     });
-    col.appendChild(body);
     container.appendChild(col);
   }
 
@@ -6865,25 +6910,26 @@ function buildWeekTrayItems() {
     return;
   }
 
-  // Get unique areas from dump items, preserving bdSelectedAreas order
+  // Collect all placed task texts across the whole week
+  var placedTexts = {};
+  Object.values(monthTasks).forEach(function(arr) {
+    (arr || []).forEach(function(t) { if (t && t.text) placedTexts[t.text] = true; });
+  });
+
   var areas = [];
   var savedAreas = bdSelectedAreas.length ? bdSelectedAreas : [];
-  // Add areas in selected order first
   savedAreas.forEach(function(a) {
     if (brainDumpItems.some(function(i){ return i.area === a; })) areas.push(a);
   });
-  // Add any remaining areas not in selectedAreas
   brainDumpItems.forEach(function(item) {
     if (item.area && areas.indexOf(item.area) === -1) areas.push(item.area);
   });
   if (areas.length === 0) areas = ['All'];
 
-  // Default to first area or keep current
   if (!_weekTrayActiveArea || areas.indexOf(_weekTrayActiveArea) === -1) {
     _weekTrayActiveArea = areas[0];
   }
 
-  // Build tab strip
   if (tabStrip) {
     tabStrip.innerHTML = '';
     areas.forEach(function(area) {
@@ -6892,10 +6938,8 @@ function buildWeekTrayItems() {
       tab.className = 'week-tray-tab' + (area === _weekTrayActiveArea ? ' active' : '');
       tab.style.borderBottomColor = area === _weekTrayActiveArea ? color : 'transparent';
       tab.style.color = area === _weekTrayActiveArea ? color : 'var(--muted)';
-      // Count unchecked items
-      var count = brainDumpItems.filter(function(i){ return i.area === area && !i.checked; }).length;
+      var count = brainDumpItems.filter(function(i){ return i.area === area && !i.checked && !placedTexts[i.text]; }).length;
       tab.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:' + color + ';display:inline-block;margin-right:5px;vertical-align:middle;opacity:' + (area === _weekTrayActiveArea ? 1 : 0.5) + ';"></span>' + area + (count ? ' <span style="font-size:10px;opacity:0.6;">(' + count + ')</span>' : '');
-
       function selectTab(e) {
         if (e.cancelable) e.preventDefault();
         _weekTrayActiveArea = area;
@@ -6907,7 +6951,6 @@ function buildWeekTrayItems() {
     });
   }
 
-  // Build tray chips for active area
   tray.innerHTML = '';
   var areaItems = brainDumpItems.filter(function(i){ return i.area === _weekTrayActiveArea && !i.checked; });
 
@@ -6918,17 +6961,25 @@ function buildWeekTrayItems() {
 
   areaItems.forEach(function(item) {
     var chip = document.createElement('div');
-    chip.draggable = true;
     var c = getBDAreaColor(item.area) || getTaskAreaColor(item);
-    chip.style.cssText = 'display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:100px;font-size:12px;cursor:grab;border:1.5px solid ' + c + ';color:' + c + ';background:' + c + '18;user-select:none;-webkit-user-select:none;touch-action:none;flex-shrink:0;';
-    chip.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:' + c + ';flex-shrink:0;"></span>' + item.text;
-    chip.addEventListener('dragstart', function(e) {
-      dragItem = item;
-      dragSource = 'week-tray';
-      e.dataTransfer.effectAllowed = 'move';
-    });
-    // Touch drag
-    if (typeof attachTouchDrag === 'function') attachTouchDrag(chip, item, 'week-tray');
+    var isPlaced = !!placedTexts[item.text];
+
+    if (isPlaced) {
+      // Placed state — muted, filled, checkmark, not draggable
+      chip.style.cssText = 'display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:100px;font-size:12px;border:1.5px solid ' + c + '55;color:' + c + '88;background:' + c + '22;user-select:none;-webkit-user-select:none;opacity:0.65;text-decoration:line-through;flex-shrink:0;';
+      chip.innerHTML = '<span style="font-size:11px;">✓</span>' + item.text;
+    } else {
+      // Unplaced — draggable
+      chip.draggable = true;
+      chip.style.cssText = 'display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:100px;font-size:12px;cursor:grab;border:1.5px solid ' + c + ';color:' + c + ';background:' + c + '18;user-select:none;-webkit-user-select:none;flex-shrink:0;';
+      chip.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:' + c + ';flex-shrink:0;"></span>' + item.text;
+      chip.addEventListener('dragstart', function(e) {
+        dragItem = item;
+        dragSource = 'week-tray';
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      if (typeof attachTouchDrag === 'function') attachTouchDrag(chip, item, 'week-tray');
+    }
     tray.appendChild(chip);
   });
 }
@@ -7114,39 +7165,54 @@ function _handleTouchDrop(cell, item, source) {
     buildWeekColumns();
     buildWeekTrayItems();
     buildDragTray();
+    if (typeof buildDashWeekly === 'function') buildDashWeekly();
     return;
   }
   if (cell.classList.contains('month-day-cell')) {
     var d = parseInt(cell.dataset.day || (cell.querySelector('.month-day-num') && cell.querySelector('.month-day-num').textContent));
     if (!d || isNaN(d)) return;
-    if (!monthTasks[d]) monthTasks[d] = [];
-    if (!monthTasks[d].find(function(t){ return t.text === item.text; })) monthTasks[d].push(Object.assign({}, item));
+    var now2 = new Date();
+    var dk = now2.getFullYear() + '-' + (now2.getMonth()+1) + '-' + d;
+    if (!monthTasks[dk]) monthTasks[dk] = [];
+    if (!monthTasks[dk].find(function(t){ return t.text === item.text; })) monthTasks[dk].push(Object.assign({}, item));
     localStorage.setItem('estral_month_tasks', JSON.stringify(monthTasks));
     buildMonthGrid();
     buildDragTray();
+    if (typeof buildDashWeekly === 'function') buildDashWeekly();
     return;
   }
   if (cell.classList.contains('week-day-col')) {
+    var dateKey = cell.dataset.datekey;
     var dayNum = parseInt(cell.dataset.day);
-    if (!dayNum || isNaN(dayNum)) return;
-    var now = new Date();
-    var weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay());
-    var d2 = new Date(weekStart); d2.setDate(weekStart.getDate() + (dayNum - weekStart.getDate()));
-    var dateKey = now.getFullYear() + '-' + (now.getMonth()+1) + '-' + dayNum;
+    if (!dateKey) {
+      var now3 = new Date();
+      dateKey = now3.getFullYear() + '-' + (now3.getMonth()+1) + '-' + dayNum;
+    }
 
     if (source && source.indexOf('week-placed-') === 0) {
       var origDay = parseInt(source.replace('week-placed-', ''));
       if (!isNaN(origDay) && origDay !== dayNum) {
-        var origKey = now.getFullYear() + '-' + (now.getMonth()+1) + '-' + origDay;
+        var now4 = new Date();
+        var origKey = now4.getFullYear() + '-' + (now4.getMonth()+1) + '-' + origDay;
         if (monthTasks[origKey]) monthTasks[origKey] = monthTasks[origKey].filter(function(t){ return t.text !== item.text; });
         if (monthTasks[origDay]) monthTasks[origDay] = monthTasks[origDay].filter(function(t){ return t.text !== item.text; });
       }
     }
+
     if (!monthTasks[dateKey]) monthTasks[dateKey] = [];
-    if (!monthTasks[dateKey].find(function(t){ return t.text === item.text; })) monthTasks[dateKey].push(Object.assign({}, item));
+    if (!monthTasks[dateKey].find(function(t){ return t.text === item.text; })) {
+      monthTasks[dateKey].push(Object.assign({}, item));
+    }
     localStorage.setItem('estral_month_tasks', JSON.stringify(monthTasks));
+
+    cell.style.transition = 'background 0.15s';
+    cell.style.background = (getBDAreaColor(item.area) || 'var(--phase)') + '30';
+    setTimeout(function(){ cell.style.background = ''; }, 400);
+
     buildWeekColumns();
     buildWeekTrayItems();
+    buildDragTray();
+    if (typeof buildDashWeekly === 'function') buildDashWeekly();
   }
 }
 
@@ -7313,20 +7379,21 @@ function toggleCustomTagInput() { openQLAddTag('life'); }
 function addCustomTag() { saveQLCustomTag('life'); }
 
 function wireTagBtn(btn) {
-  var _tapped = false;
+  var _fired = false;
   btn.addEventListener('touchstart', function(e) {
-    btn.style.transform = 'scale(0.94)';
+    btn.style.transform = 'scale(0.92)';
   }, { passive: true });
   btn.addEventListener('touchend', function(e) {
     e.preventDefault();
+    e.stopPropagation();
     btn.style.transform = '';
-    if (_tapped) return;
-    _tapped = true;
-    setTimeout(function(){ _tapped = false; }, 350);
+    if (_fired) return;
+    _fired = true;
+    requestAnimationFrame(function(){ _fired = false; });
     toggleDayLogTag(btn);
   }, { passive: false });
-  btn.addEventListener('click', function(e) {
-    if (_tapped) return;
+  btn.addEventListener('click', function() {
+    if (_fired) return;
     toggleDayLogTag(btn);
   });
 }
@@ -7352,9 +7419,15 @@ function toggleDayLogTag(btn) {
   var tag = btn.dataset.tag;
   if (!tag) return;
   var idx = _dayLogSelectedTags.indexOf(tag);
-  if (idx > -1) { _dayLogSelectedTags.splice(idx, 1); btn.classList.remove('active'); }
-  else { _dayLogSelectedTags.push(tag); btn.classList.add('active'); }
+  if (idx > -1) {
+    _dayLogSelectedTags.splice(idx, 1);
+    btn.classList.remove('active');
+  } else {
+    _dayLogSelectedTags.push(tag);
+    btn.classList.add('active');
+  }
   updateQLSelectedPreview();
+  if (typeof _drawEnergyGraph === 'function') _drawEnergyGraph();
 }
 
 function updateQLSelectedPreview() {
@@ -7398,125 +7471,7 @@ function submitDayLog() {
 }
 
 
-function drawDayLogSparkline() {
-  var canvas = document.getElementById('daylog-sparkline');
-  if (!canvas) return;
-  var entries = getDayLogEntries().filter(function(e){ return e.energy; });
-  var dpr = window.devicePixelRatio || 1;
-  var W = canvas.offsetWidth || 320;
-  var H = 80;
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
-  canvas.style.width = W + 'px';
-  canvas.style.height = H + 'px';
-  var ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, W, H);
-
-  var padL = 22, padR = 8, padT = 8, padB = 18;
-  var innerW = W - padL - padR;
-  var innerH = H - padT - padB;
-  var phaseColor = getComputedStyle(document.documentElement).getPropertyValue('--phase').trim() || '#4A8FA8';
-
-  // Grid lines + Y labels (1,4,7,10)
-  ctx.strokeStyle = 'rgba(28,26,24,0.07)';
-  ctx.lineWidth = 1;
-  ctx.setLineDash([2,3]);
-  [1,4,7,10].forEach(function(v) {
-    var y = padT + innerH - ((v-1)/9)*innerH;
-    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W-padR, y); ctx.stroke();
-    ctx.fillStyle = 'rgba(28,26,24,0.28)';
-    ctx.font = '8px DM Mono,monospace';
-    ctx.textAlign = 'right';
-    ctx.fillText(v, padL-4, y+3);
-  });
-  ctx.setLineDash([]);
-
-  // X axis hour markers
-  var hours = [6,9,12,15,18,21];
-  ctx.strokeStyle = 'rgba(28,26,24,0.06)';
-  ctx.lineWidth = 1;
-  hours.forEach(function(h) {
-    var x = padL + (h/24)*innerW;
-    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H-padB); ctx.stroke();
-  });
-
-  function xFor(entry) {
-    var parts = (entry.time||'12:00').split(':');
-    var mins = parseInt(parts[0])*60 + parseInt(parts[1]||0);
-    return padL + (mins/(24*60))*innerW;
-  }
-  function yFor(entry) {
-    return padT + innerH - ((entry.energy-1)/9)*innerH;
-  }
-
-  if (entries.length === 0) {
-    ctx.fillStyle = 'rgba(28,26,24,0.18)';
-    ctx.font = '11px DM Sans,sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Log your energy to start building your day picture', W/2, H/2 - padB/2);
-    return;
-  }
-
-  if (entries.length === 1) {
-    // Just draw a dot
-    var x0 = xFor(entries[0]), y0 = yFor(entries[0]);
-    ctx.beginPath(); ctx.arc(x0, y0, 4, 0, Math.PI*2);
-    ctx.fillStyle = phaseColor; ctx.fill();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
-    return;
-  }
-
-  // Sort by time
-  var sorted = entries.slice().sort(function(a,b){ return a.ts - b.ts; });
-
-  // Gradient fill under curve
-  var grad = ctx.createLinearGradient(0, padT, 0, H-padB);
-  var r=74,g=143,b=168;
-  try {
-    var m = phaseColor.match(/\d+/g);
-    if (m && m.length >= 3) { r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]); }
-  } catch(e){}
-  grad.addColorStop(0, 'rgba('+r+','+g+','+b+',0.22)');
-  grad.addColorStop(1, 'rgba('+r+','+g+','+b+',0)');
-
-  ctx.beginPath();
-  ctx.moveTo(xFor(sorted[0]), H-padB);
-  sorted.forEach(function(e){ ctx.lineTo(xFor(e), yFor(e)); });
-  ctx.lineTo(xFor(sorted[sorted.length-1]), H-padB);
-  ctx.closePath();
-  ctx.fillStyle = grad;
-  ctx.fill();
-
-  // Smooth line using quadratic curves
-  ctx.beginPath();
-  ctx.moveTo(xFor(sorted[0]), yFor(sorted[0]));
-  for (var i = 1; i < sorted.length; i++) {
-    var xm = (xFor(sorted[i-1]) + xFor(sorted[i])) / 2;
-    var ym = (yFor(sorted[i-1]) + yFor(sorted[i])) / 2;
-    ctx.quadraticCurveTo(xFor(sorted[i-1]), yFor(sorted[i-1]), xm, ym);
-  }
-  ctx.lineTo(xFor(sorted[sorted.length-1]), yFor(sorted[sorted.length-1]));
-  ctx.strokeStyle = phaseColor;
-  ctx.lineWidth = 2.5;
-  ctx.lineJoin = 'round';
-  ctx.stroke();
-
-  // Dots with labels
-  sorted.forEach(function(e, i) {
-    var x = xFor(e), y = yFor(e);
-    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2);
-    ctx.fillStyle = phaseColor; ctx.fill();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
-    // Label on last dot
-    if (i === sorted.length-1) {
-      ctx.fillStyle = phaseColor;
-      ctx.font = 'bold 9px DM Sans,sans-serif';
-      ctx.textAlign = x > W-40 ? 'right' : 'left';
-      ctx.fillText(e.energy, x + (x > W-40 ? -8 : 8), y - 4);
-    }
-  });
-}
+function drawDayLogSparkline() { _drawEnergyGraph(); }
 
 var TAG_EMOJI = {
   focus:'🧠', energy:'⚡', mood:'💭', body:'🫀',
@@ -7549,93 +7504,199 @@ function renderDayLogFeed() {
   }).join('');
 }
 
-function drawDayLogSparkline() {
+function _drawEnergyGraph() {
   var canvas = document.getElementById('daylog-sparkline');
   if (!canvas) return;
-  var entries = getDayLogEntries().filter(function(e){ return e.energy; });
-  var ctx = canvas.getContext('2d');
+
+  var allEntries = getDayLogEntries();
+  var entries = allEntries.filter(function(e){ return e.energy; })
+                          .sort(function(a,b){ return a.ts - b.ts; });
+
+  // Update count + latest tag line
+  var countEl = document.getElementById('daylog-count');
+  if (countEl) countEl.textContent = allEntries.length + ' entr' + (allEntries.length===1?'y':'ies');
+
+  var latestTag = document.getElementById('daylog-latest-tag');
+  if (latestTag && entries.length > 0) {
+    var last = entries[entries.length-1];
+    var tagStr = (last.tags || []).slice(0,3).join(' · ');
+    latestTag.textContent = 'Last: ⚡' + last.energy + (tagStr ? '  ·  ' + tagStr : '') + '  ·  ' + last.time;
+  } else if (latestTag) {
+    latestTag.textContent = '';
+  }
+
+  var dpr = window.devicePixelRatio || 1;
   var W = canvas.offsetWidth || 320;
-  var H = 52;
-  canvas.width = W;
-  canvas.height = H;
+  var H = 110;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, W, H);
 
-  if (entries.length < 2) {
-    // Draw empty placeholder line
-    ctx.strokeStyle = 'rgba(28,26,24,0.08)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(0, H/2);
-    ctx.lineTo(W, H/2);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    if (entries.length === 0) {
-      ctx.fillStyle = 'rgba(28,26,24,0.2)';
-      ctx.font = '11px DM Sans, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('Energy sparkline builds as you log', W/2, H/2 + 4);
+  var padL = 24, padR = 12, padT = 10, padB = 22;
+  var innerW = W - padL - padR;
+  var innerH = H - padT - padB;
+
+  // Phase colour
+  var phaseColor = getComputedStyle(document.documentElement).getPropertyValue('--phase').trim() || '#4A8FA8';
+  if (!phaseColor || phaseColor === '') phaseColor = '#4A8FA8';
+
+  // Parse RGB from hex or rgb()
+  var r=74, g=143, b=168;
+  try {
+    var hex = phaseColor.match(/^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+    if (hex) { r=parseInt(hex[1],16); g=parseInt(hex[2],16); b=parseInt(hex[3],16); }
+    else {
+      var rgb = phaseColor.match(/\d+/g);
+      if (rgb && rgb.length >= 3) { r=parseInt(rgb[0]); g=parseInt(rgb[1]); b=parseInt(rgb[2]); }
     }
+  } catch(ex){}
+
+  // ── Grid lines ──
+  ctx.strokeStyle = 'rgba(28,26,24,0.07)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2,3]);
+  [1,3,5,7,10].forEach(function(v) {
+    var y = padT + innerH - ((v-1)/9)*innerH;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W-padR, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(28,26,24,0.3)';
+    ctx.font = '8px DM Mono,monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(v, padL-5, y+3);
+  });
+  ctx.setLineDash([]);
+
+  // ── X axis hour ticks ──
+  var hourMarks = [{h:6,label:'6am'},{h:9,label:'9am'},{h:12,label:'12pm'},{h:15,label:'3pm'},{h:18,label:'6pm'},{h:21,label:'9pm'}];
+  ctx.strokeStyle = 'rgba(28,26,24,0.06)';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = 'rgba(28,26,24,0.25)';
+  ctx.font = '8px DM Mono,monospace';
+  ctx.textAlign = 'center';
+  hourMarks.forEach(function(hm) {
+    var x = padL + (hm.h/24)*innerW;
+    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H-padB+3); ctx.stroke();
+    ctx.fillText(hm.label, x, H-padB+13);
+  });
+
+  // ── "Now" vertical line ──
+  var now = new Date();
+  var nowMins = now.getHours()*60 + now.getMinutes();
+  var nowX = padL + (nowMins/(24*60))*innerW;
+  ctx.strokeStyle = 'rgba(28,26,24,0.18)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3,4]);
+  ctx.beginPath(); ctx.moveTo(nowX, padT); ctx.lineTo(nowX, H-padB); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(28,26,24,0.3)';
+  ctx.font = '8px DM Mono,monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('now', nowX, padT-1);
+
+  function xFor(e) {
+    var parts = (e.time||'00:00').split(':');
+    var mins = parseInt(parts[0]||0)*60 + parseInt(parts[1]||0);
+    return padL + (mins/(24*60))*innerW;
+  }
+  function yFor(e) {
+    return padT + innerH - ((e.energy-1)/9)*innerH;
+  }
+
+  if (entries.length === 0) {
+    ctx.fillStyle = 'rgba(28,26,24,0.2)';
+    ctx.font = '11px DM Sans,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Log your energy to build your day picture', W/2, H/2);
     return;
   }
 
-  // X: spread across the day (0–24h); Y: energy 1–10
-  var pad = 8;
-  function xForEntry(e) {
-    var parts = e.time.split(':');
-    var mins = parseInt(parts[0])*60 + parseInt(parts[1]);
-    return pad + (mins / (24*60)) * (W - pad*2);
+  if (entries.length === 1) {
+    var sx = xFor(entries[0]), sy = yFor(entries[0]);
+    // Glow
+    ctx.beginPath(); ctx.arc(sx, sy, 8, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.15)'; ctx.fill();
+    // Dot
+    ctx.beginPath(); ctx.arc(sx, sy, 4.5, 0, Math.PI*2);
+    ctx.fillStyle = phaseColor; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    // Value label
+    ctx.fillStyle = phaseColor;
+    ctx.font = 'bold 10px DM Sans,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(entries[0].energy, sx, sy-9);
+    return;
   }
-  function yForEnergy(e) {
-    return H - pad - ((e.energy - 1) / 9) * (H - pad*2);
+
+  // ── Smooth cubic bezier path ──
+  function getCPs(pts) {
+    var cps = [];
+    for (var i=0; i<pts.length-1; i++) {
+      var p0 = pts[Math.max(i-1,0)], p1=pts[i], p2=pts[i+1], p3=pts[Math.min(i+2,pts.length-1)];
+      var t=0.4;
+      cps.push({
+        cp1x: p1.x + (p2.x-p0.x)*t/2, cp1y: p1.y + (p2.y-p0.y)*t/2,
+        cp2x: p2.x - (p3.x-p1.x)*t/2, cp2y: p2.y - (p3.y-p1.y)*t/2
+      });
+    }
+    return cps;
   }
+
+  var pts = entries.map(function(e){ return {x:xFor(e), y:yFor(e)}; });
+  var cps = getCPs(pts);
 
   // Gradient fill
-  var grad = ctx.createLinearGradient(0, 0, 0, H);
-  // Use a CSS variable approximation — we'll read it from computed style
-  var phaseColor = getComputedStyle(document.documentElement).getPropertyValue('--phase').trim() || '#4A8FA8';
-  grad.addColorStop(0, phaseColor.replace(')', ',0.25)').replace('rgb','rgba') || 'rgba(74,143,168,0.25)');
-  grad.addColorStop(1, 'rgba(74,143,168,0)');
+  var grad = ctx.createLinearGradient(0, padT, 0, H-padB);
+  grad.addColorStop(0,   'rgba('+r+','+g+','+b+',0.28)');
+  grad.addColorStop(0.6, 'rgba('+r+','+g+','+b+',0.08)');
+  grad.addColorStop(1,   'rgba('+r+','+g+','+b+',0)');
 
-  // Draw fill
   ctx.beginPath();
-  ctx.moveTo(xForEntry(entries[0]), H - pad);
-  entries.forEach(function(e){ ctx.lineTo(xForEntry(e), yForEnergy(e)); });
-  ctx.lineTo(xForEntry(entries[entries.length-1]), H - pad);
+  ctx.moveTo(pts[0].x, H-padB);
+  ctx.lineTo(pts[0].x, pts[0].y);
+  for (var i=0; i<pts.length-1; i++) {
+    ctx.bezierCurveTo(cps[i].cp1x, cps[i].cp1y, cps[i].cp2x, cps[i].cp2y, pts[i+1].x, pts[i+1].y);
+  }
+  ctx.lineTo(pts[pts.length-1].x, H-padB);
   ctx.closePath();
   ctx.fillStyle = grad;
   ctx.fill();
 
-  // Draw line
+  // Smooth line
   ctx.beginPath();
-  entries.forEach(function(e, i){
-    if (i === 0) ctx.moveTo(xForEntry(e), yForEnergy(e));
-    else ctx.lineTo(xForEntry(e), yForEnergy(e));
-  });
-  ctx.strokeStyle = phaseColor || '#4A8FA8';
-  ctx.lineWidth = 2;
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (var i=0; i<pts.length-1; i++) {
+    ctx.bezierCurveTo(cps[i].cp1x, cps[i].cp1y, cps[i].cp2x, cps[i].cp2y, pts[i+1].x, pts[i+1].y);
+  }
+  ctx.strokeStyle = phaseColor;
+  ctx.lineWidth = 2.5;
   ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
   ctx.stroke();
 
-  // Draw dots
-  entries.forEach(function(e) {
-    ctx.beginPath();
-    ctx.arc(xForEntry(e), yForEnergy(e), 3.5, 0, Math.PI*2);
-    ctx.fillStyle = phaseColor || '#4A8FA8';
-    ctx.fill();
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-  });
+  // Dots
+  entries.forEach(function(e, i) {
+    var x = xFor(e), y = yFor(e);
+    var isLast = i === entries.length-1;
 
-  // Hour labels: 6am, 12pm, 6pm
-  ctx.fillStyle = 'rgba(28,26,24,0.25)';
-  ctx.font = '9px DM Mono, monospace';
-  ctx.textAlign = 'center';
-  ctx.setLineDash([]);
-  [{label:'6am',mins:360},{label:'12pm',mins:720},{label:'6pm',mins:1080}].forEach(function(h){
-    var x = pad + (h.mins / (24*60)) * (W - pad*2);
-    ctx.fillText(h.label, x, H - 1);
+    if (isLast) {
+      // Pulse ring on latest point
+      ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.15)'; ctx.fill();
+    }
+
+    ctx.beginPath(); ctx.arc(x, y, isLast ? 5 : 3.5, 0, Math.PI*2);
+    ctx.fillStyle = phaseColor; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = isLast ? 2 : 1.5; ctx.stroke();
+
+    // Energy value label on every dot
+    ctx.fillStyle = phaseColor;
+    ctx.font = (isLast ? 'bold 10px' : '9px') + ' DM Sans,sans-serif';
+    ctx.textAlign = x > W-36 ? 'right' : (x < padL+16 ? 'left' : 'center');
+    var labelX = ctx.textAlign==='right' ? x-8 : ctx.textAlign==='left' ? x+8 : x;
+    ctx.fillText(e.energy, labelX, y-9);
   });
 }
 
