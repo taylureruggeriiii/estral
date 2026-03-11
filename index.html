@@ -2924,13 +2924,17 @@ function buildDashTodoList() {
   var doneMap = {};
   try { doneMap = JSON.parse(localStorage.getItem(doneKey) || '{}'); } catch(e) {}
 
-  // Get the 4 focus areas chosen at brain dump setup
-  var chosenNames = bdSelectedAreas && bdSelectedAreas.length ? bdSelectedAreas : [];
-  if (!chosenNames.length) {
-    try {
-      var _saved = JSON.parse(localStorage.getItem('estral_brain_dump') || 'null');
-      if (_saved && _saved.areas) chosenNames = _saved.areas;
-    } catch(e) {}
+  // Get the 4 focus areas chosen at brain dump setup — always read fresh from storage
+  var chosenNames = [];
+  try {
+    var _bdSaved = JSON.parse(localStorage.getItem('estral_brain_dump') || 'null');
+    if (_bdSaved && Array.isArray(_bdSaved.areas) && _bdSaved.areas.length) {
+      chosenNames = _bdSaved.areas;
+    }
+  } catch(e) {}
+  // Fall back to in-memory if storage read failed
+  if (!chosenNames.length && typeof bdSelectedAreas !== 'undefined' && bdSelectedAreas.length) {
+    chosenNames = bdSelectedAreas;
   }
 
   // Map names to full area objects with colour + emoji
@@ -4248,7 +4252,7 @@ function buildPhaseSuggestions(phase) {
     btn.textContent = '+ ' + s.text;
     btn.addEventListener('click', function() {
       brainDumpItems.push({ text: s.text, area: s.area });
-      try { localStorage.setItem('estral_brain_dump', JSON.stringify({ items: brainDumpItems })); } catch(e) {}
+      try { localStorage.setItem('estral_brain_dump', JSON.stringify({ items: brainDumpItems, areas: bdSelectedAreas, createdAt: new Date().toISOString() })); } catch(e) {}
       buildWeekTrayItems();
       buildDragTray();
       buildPhaseSuggestions(phase);
@@ -6863,11 +6867,14 @@ function buildWeekColumns() {
     const dayTasks = (monthTasks[dateKey] || []).filter(t => !t.locked);
 
     const col = document.createElement('div');
-    col.style.cssText = `display:flex;flex-direction:column;border-radius:12px;overflow:hidden;border:1.5px solid ${isToday ? color : 'rgba(28,26,24,0.08)'};min-height:180px;`;
+    col.style.cssText = `display:flex;flex-direction:column;border-radius:12px;border:1.5px solid ${isToday ? color : 'rgba(28,26,24,0.08)'};min-height:180px;`;
+    col.classList.add('week-day-col');
+    col.dataset.day = dateNum;
+    col.dataset.datekey = dateKey;
 
     // Header
     const header = document.createElement('div');
-    header.style.cssText = `background:${color}${isToday ? '33' : '15'};padding:8px 6px 6px;text-align:center;`;
+    header.style.cssText = `background:${color}${isToday ? '33' : '15'};padding:8px 6px 6px;text-align:center;border-radius:10px 10px 0 0;`;
     header.innerHTML = `<div style="font-size:10px;font-weight:600;color:${color};letter-spacing:0.04em;">${dayNames[i]}</div><div style="font-size:16px;font-weight:${isToday ? 700 : 400};color:${isToday ? color : 'var(--text)'};">${dateNum}</div>`;
     col.appendChild(header);
 
@@ -6876,12 +6883,9 @@ function buildWeekColumns() {
     bar.style.cssText = `height:3px;background:${color};opacity:0.5;`;
     col.appendChild(bar);
 
-    // Content area
+    // Content area (no week-day-col here — drop target is col itself now)
     const body = document.createElement('div');
     body.style.cssText = `flex:1;padding:6px 5px;display:flex;flex-direction:column;gap:4px;min-height:130px;`;
-    body.dataset.day = dateNum;
-    body.dataset.datekey = dateKey;
-    body.classList.add('week-day-col');
 
     // Locked events
     dayEvents.forEach(ev => {
@@ -6902,12 +6906,13 @@ function buildWeekColumns() {
       // Tap × to remove
       tag.querySelector('.week-task-remove-x').addEventListener('click', e => {
         e.stopPropagation();
-        if (monthTasks[dateNum]) {
-          monthTasks[dateNum] = monthTasks[dateNum].filter(t => t.text !== task.text);
-        }
+        if (monthTasks[dateKey]) monthTasks[dateKey] = monthTasks[dateKey].filter(t => t.text !== task.text);
+        if (monthTasks[dateNum]) monthTasks[dateNum] = monthTasks[dateNum].filter(t => t.text !== task.text);
+        localStorage.setItem('estral_month_tasks', JSON.stringify(monthTasks));
         buildWeekColumns();
         buildWeekTrayItems();
         buildDragTray();
+        _debounceDashWeekly();
       });
 
       // Desktop drag — mark as "placed task being dragged back"
@@ -6929,10 +6934,10 @@ function buildWeekColumns() {
       body.appendChild(tag);
     });
 
-    // Drop zone — add to day
-    body.addEventListener('dragover', e => { e.preventDefault(); body.style.background = `${color}22`; });
-    body.addEventListener('dragleave', () => { body.style.background = ''; });
-    body.addEventListener('drop', e => {
+    // Drop zone — desktop drag onto the whole column
+    col.addEventListener('dragover', e => { e.preventDefault(); body.style.background = `${color}22`; });
+    col.addEventListener('dragleave', () => { body.style.background = ''; });
+    col.addEventListener('drop', e => {
       e.preventDefault();
       body.style.background = '';
       if (!dragItem) return;
@@ -7098,10 +7103,10 @@ var _touchDragOffsetY = 0;
 var _touchDragActive = false;
 var _touchDragOriginChip = null;
 
-function _createDragClone(chip, touch) {
+function _createDragCloneFromCoords(chip, clientX, clientY) {
   var rect = chip.getBoundingClientRect();
-  _touchDragOffsetX = touch.clientX - rect.left;
-  _touchDragOffsetY = touch.clientY - rect.top;
+  _touchDragOffsetX = clientX - rect.left;
+  _touchDragOffsetY = clientY - rect.top;
 
   var clone = chip.cloneNode(true);
   clone.style.cssText =
@@ -7109,12 +7114,16 @@ function _createDragClone(chip, touch) {
     'left:' + rect.left + 'px;top:' + rect.top + 'px;' +
     'width:' + rect.width + 'px;height:' + rect.height + 'px;' +
     'opacity:0.95;border-radius:100px;' +
-    'box-shadow:0 12px 32px rgba(28,26,24,0.25);' +
-    'transform:scale(1.06);' +
-    'transition:transform 0.1s ease,box-shadow 0.1s ease;' +
+    'box-shadow:0 12px 32px rgba(28,26,24,0.3);' +
+    'transform:scale(1.08);' +
+    'transition:transform 0.1s ease;' +
     'will-change:left,top;';
   document.body.appendChild(clone);
   return clone;
+}
+
+function _createDragClone(chip, touch) {
+  return _createDragCloneFromCoords(chip, touch.clientX, touch.clientY);
 }
 
 function _moveDragClone(touch) {
@@ -7143,10 +7152,12 @@ function _elementFromTouch(touch) {
 }
 
 function _getDropCell(el) {
-  while (el && el !== document.body) {
-    if (el.classList && (el.classList.contains('month-day-cell') || el.classList.contains('week-day-col'))) return el;
-    if (el.id === 'week-remove-zone') return el;
-    el = el.parentElement;
+  var cur = el;
+  while (cur && cur !== document.body) {
+    if (cur.classList && cur.classList.contains('week-day-col')) return cur;
+    if (cur.classList && cur.classList.contains('month-day-cell')) return cur;
+    if (cur.id === 'week-remove-zone') return cur;
+    cur = cur.parentElement;
   }
   return null;
 }
@@ -7184,23 +7195,30 @@ function _clearHighlight() {
 }
 
 function attachTouchDrag(chip, item, source) {
-  var startX, startY, longPressTimer;
-  var DRAG_THRESHOLD = 6; // px of movement to confirm drag intent
+  var startX, startY, startClientX, startClientY;
+  var longPressTimer = null;
+  var LONG_PRESS_MS = 350;
+  var DRAG_THRESHOLD = 8;
 
   chip.addEventListener('touchstart', function(e) {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
+    var t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+    // Capture coords NOW — event object is recycled, don't use e inside setTimeout
+    startClientX = t.clientX;
+    startClientY = t.clientY;
 
-    // Long-press to initiate (120ms) — prevents scroll conflicts
     longPressTimer = setTimeout(function() {
+      // Activate drag: create clone using stored coordinates
       _touchDragItem = item;
       _touchDragSource = source;
       _touchDragOriginChip = chip;
-      _touchDragClone = _createDragClone(chip, e.touches[0]);
+      // Build a fake touch-like object from stored coords
+      _touchDragClone = _createDragCloneFromCoords(chip, startClientX, startClientY);
       _touchDragActive = true;
       chip.style.opacity = '0.35';
-      if (navigator.vibrate) navigator.vibrate(18);
-    }, 120);
+      if (navigator.vibrate) navigator.vibrate(25);
+    }, LONG_PRESS_MS);
   }, { passive: true });
 
   chip.addEventListener('touchmove', function(e) {
@@ -7208,25 +7226,28 @@ function attachTouchDrag(chip, item, source) {
     var dx = Math.abs(t.clientX - startX);
     var dy = Math.abs(t.clientY - startY);
 
-    // If mostly vertical before drag activates, cancel the long press
-    if (!_touchDragActive && dy > dx && dy > 8) {
-      clearTimeout(longPressTimer);
+    // Cancel long press if scrolling vertically before drag activates
+    if (!_touchDragActive) {
+      if (dy > DRAG_THRESHOLD || dx > DRAG_THRESHOLD * 2) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
       return;
     }
 
-    if (!_touchDragActive) return;
     e.preventDefault();
     e.stopPropagation();
 
     _moveDragClone(t);
     var el = _elementFromTouch(t);
     var cell = _getDropCell(el);
-    var color = (item.area && typeof getBDAreaColor === 'function') ? getBDAreaColor(item.area) : (item.phase ? (PHASE_COLORS[item.phase] || 'var(--phase)') : 'var(--phase)');
+    var color = (item.area && typeof getBDAreaColor === 'function') ? getBDAreaColor(item.area) : 'var(--phase)';
     _highlightCell(cell, color);
   }, { passive: false });
 
   chip.addEventListener('touchend', function(e) {
     clearTimeout(longPressTimer);
+    longPressTimer = null;
     if (!_touchDragActive) return;
 
     var t = e.changedTouches[0];
@@ -7242,9 +7263,9 @@ function attachTouchDrag(chip, item, source) {
     _touchDragSource = null;
   }, { passive: true });
 
-  // Safety — always clean up if touch cancelled
   chip.addEventListener('touchcancel', function() {
     clearTimeout(longPressTimer);
+    longPressTimer = null;
     _removeDragClone();
     _clearHighlight();
     _touchDragItem = null;
@@ -7598,7 +7619,7 @@ function _drawEnergyGraph() {
 
   var dpr = window.devicePixelRatio || 1;
   var W = canvas.offsetWidth || 320;
-  var H = 120;
+  var H = 130;
   canvas.width = W * dpr;
   canvas.height = H * dpr;
   canvas.style.width = W + 'px';
@@ -7607,19 +7628,61 @@ function _drawEnergyGraph() {
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, W, H);
 
-  var padL = 26, padR = 14, padT = 14, padB = 24;
+  var padL = 28, padR = 16, padT = 18, padB = 30;
   var innerW = W - padL - padR;
   var innerH = H - padT - padB;
 
   // Phase colour
-  var phaseColor = getComputedStyle(document.documentElement).getPropertyValue('--phase').trim() || '#4A8FA8';
-  if (!phaseColor) phaseColor = '#4A8FA8';
-  var r=74, g=143, b=168;
+  var phaseColor = getComputedStyle(document.documentElement).getPropertyValue('--phase').trim() || '#C4903A';
+  var r=196, g=144, b=58;
   try {
     var hex = phaseColor.match(/^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
     if (hex) { r=parseInt(hex[1],16); g=parseInt(hex[2],16); b=parseInt(hex[3],16); }
     else { var rgb=phaseColor.match(/\d+/g); if(rgb&&rgb.length>=3){r=+rgb[0];g=+rgb[1];b=+rgb[2];} }
   } catch(ex){}
+
+  function toMins(timeStr) {
+    var p = (timeStr||'00:00').split(':');
+    return parseInt(p[0]||0)*60 + parseInt(p[1]||0);
+  }
+
+  // ── Adaptive X axis: zoom to content ──
+  var now = new Date();
+  var nowMins = now.getHours()*60 + now.getMinutes();
+
+  // Determine X range from entries + now
+  var allMins = entries.map(function(e){ return toMins(e.time); });
+  allMins.push(nowMins);
+
+  var minMins, maxMins;
+  if (entries.length === 0) {
+    minMins = 6*60; maxMins = 22*60;
+  } else {
+    var dataMin = Math.min.apply(null, allMins);
+    var dataMax = Math.max.apply(null, allMins);
+    var span = dataMax - dataMin;
+
+    if (span < 120) {
+      // Entries within 2 hours — show a 4-hour window centred on them
+      var centre = (dataMin + dataMax) / 2;
+      minMins = Math.max(0, centre - 120);
+      maxMins = Math.min(24*60, centre + 120);
+    } else {
+      // Pad 15% on each side
+      var pad = Math.max(30, span * 0.15);
+      minMins = Math.max(0, dataMin - pad);
+      maxMins = Math.min(24*60, dataMax + pad);
+    }
+    // Always show at least a 3-hour window
+    if (maxMins - minMins < 180) { maxMins = Math.min(24*60, minMins + 180); }
+  }
+  var spanMins = maxMins - minMins;
+
+  function xForMins(m) {
+    return padL + ((m - minMins) / spanMins) * innerW;
+  }
+  function xFor(e) { return xForMins(toMins(e.time)); }
+  function yFor(e) { return padT + innerH - ((e.energy - 1) / 9) * innerH; }
 
   // ── Y gridlines ──
   ctx.setLineDash([2,3]);
@@ -7628,45 +7691,45 @@ function _drawEnergyGraph() {
     ctx.strokeStyle = 'rgba(28,26,24,0.06)';
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W-padR, y); ctx.stroke();
-    ctx.fillStyle = 'rgba(28,26,24,0.25)';
-    ctx.font = '8px DM Mono,monospace';
+    ctx.fillStyle = 'rgba(28,26,24,0.28)';
+    ctx.font = '9px DM Mono,monospace';
     ctx.textAlign = 'right';
     ctx.fillText(v, padL-5, y+3);
   });
   ctx.setLineDash([]);
 
-  // ── X axis hour ticks ──
-  var hourMarks = [{h:6,label:'6am'},{h:9,label:'9'},{h:12,label:'12pm'},{h:15,label:'3'},{h:18,label:'6pm'},{h:21,label:'9'}];
-  ctx.fillStyle = 'rgba(28,26,24,0.2)';
-  ctx.font = '8px DM Mono,monospace';
+  // ── X axis tick marks — sensible intervals based on span ──
+  var tickInterval = spanMins <= 180 ? 30 : spanMins <= 360 ? 60 : spanMins <= 720 ? 120 : 180;
+  var firstTick = Math.ceil(minMins / tickInterval) * tickInterval;
+  ctx.fillStyle = 'rgba(28,26,24,0.22)';
+  ctx.font = '9px DM Mono,monospace';
   ctx.textAlign = 'center';
-  hourMarks.forEach(function(hm) {
-    var x = padL + (hm.h/24)*innerW;
+  for (var tm = firstTick; tm <= maxMins; tm += tickInterval) {
+    var tx = xForMins(tm);
+    var th = Math.floor(tm/60), tmin = tm%60;
+    var label = th < 12 ? (th===0?'12':th)+'am' : th===12 ? '12pm' : (th-12)+'pm';
+    if (tmin !== 0) label = th + ':' + (tmin<10?'0':'')+tmin;
     ctx.strokeStyle = 'rgba(28,26,24,0.05)';
     ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H-padB+3); ctx.stroke();
-    ctx.fillText(hm.label, x, H-padB+13);
-  });
+    ctx.setLineDash([2,3]);
+    ctx.beginPath(); ctx.moveTo(tx, padT); ctx.lineTo(tx, H-padB+3); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(28,26,24,0.22)';
+    ctx.fillText(label, tx, H-padB+13);
+  }
 
   // ── "Now" line ──
-  var now = new Date();
-  var nowX = padL + ((now.getHours()*60+now.getMinutes())/(24*60))*innerW;
-  ctx.strokeStyle = 'rgba('+r+','+g+','+b+',0.25)';
-  ctx.lineWidth = 1;
-  ctx.setLineDash([3,4]);
-  ctx.beginPath(); ctx.moveTo(nowX, padT); ctx.lineTo(nowX, H-padB); ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.5)';
-  ctx.font = 'bold 8px DM Mono,monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('now', nowX, padT-3);
-
-  function xFor(e) {
-    var parts = (e.time||'00:00').split(':');
-    return padL + ((parseInt(parts[0]||0)*60+parseInt(parts[1]||0))/(24*60))*innerW;
-  }
-  function yFor(e) {
-    return padT + innerH - ((e.energy-1)/9)*innerH;
+  var nowX = xForMins(nowMins);
+  if (nowX >= padL && nowX <= W-padR) {
+    ctx.strokeStyle = 'rgba('+r+','+g+','+b+',0.2)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3,4]);
+    ctx.beginPath(); ctx.moveTo(nowX, padT); ctx.lineTo(nowX, H-padB); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.45)';
+    ctx.font = 'bold 8px DM Mono,monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('now', nowX, padT-4);
   }
 
   // ── Empty state ──
@@ -7678,29 +7741,25 @@ function _drawEnergyGraph() {
     return;
   }
 
-  // ── Live slider preview dot (current value before logging) ──
+  // ── Build point list ──
+  var pts = entries.map(function(e){ return { x:xFor(e), y:yFor(e), e:e }; });
+
+  // ── Live preview dot ──
   var sliderEl = document.getElementById('quicklog-energy');
   var previewEnergy = sliderEl ? parseInt(sliderEl.value) : null;
-  var previewPts = null;
+  var previewPt = null;
   if (previewEnergy && entries.length > 0) {
-    var nowMins = now.getHours()*60 + now.getMinutes();
-    var lastMins = (function(){ var p=(entries[entries.length-1].time||'00:00').split(':'); return +p[0]*60+ +p[1]; })();
-    // Only show preview if it would be after the last entry
+    var lastMins = toMins(entries[entries.length-1].time);
     if (nowMins > lastMins) {
-      previewPts = { x: nowX, y: padT + innerH - ((previewEnergy-1)/9)*innerH, energy: previewEnergy };
+      previewPt = { x: nowX, y: padT + innerH - ((previewEnergy-1)/9)*innerH };
     }
   }
-
-  var pts = entries.map(function(e){ return {x:xFor(e), y:yFor(e), e:e}; });
-
-  // Add preview point to path if present (ghost)
-  var allPts = previewPts ? pts.concat([{x:previewPts.x, y:previewPts.y, ghost:true}]) : pts;
 
   function getCPs(arr) {
     var cps = [];
     for (var i=0; i<arr.length-1; i++) {
       var p0=arr[Math.max(i-1,0)], p1=arr[i], p2=arr[i+1], p3=arr[Math.min(i+2,arr.length-1)];
-      var t=0.38;
+      var t=0.35;
       cps.push({
         cp1x: p1.x+(p2.x-p0.x)*t/2, cp1y: p1.y+(p2.y-p0.y)*t/2,
         cp2x: p2.x-(p3.x-p1.x)*t/2, cp2y: p2.y-(p3.y-p1.y)*t/2
@@ -7709,117 +7768,138 @@ function _drawEnergyGraph() {
     return cps;
   }
 
-  // ── Draw dashed preview extension ──
-  if (previewPts && pts.length >= 1) {
-    var lastPt = pts[pts.length-1];
-    ctx.beginPath();
-    ctx.moveTo(lastPt.x, lastPt.y);
-    ctx.lineTo(previewPts.x, previewPts.y);
-    ctx.strokeStyle = 'rgba('+r+','+g+','+b+',0.3)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([4,4]);
-    ctx.stroke();
-    ctx.setLineDash([]);
+  // ── Preview dashed extension ──
+  if (previewPt && pts.length >= 1) {
+    var lp = pts[pts.length-1];
+    ctx.beginPath(); ctx.moveTo(lp.x, lp.y); ctx.lineTo(previewPt.x, previewPt.y);
+    ctx.strokeStyle = 'rgba('+r+','+g+','+b+',0.28)';
+    ctx.lineWidth = 1.5; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
   }
 
-  if (allPts.length === 1) {
-    // Single morning entry — big glowing dot
-    var sx=allPts[0].x, sy=allPts[0].y;
-    // Outer glow rings
-    [14,10].forEach(function(rad,i){
-      ctx.beginPath(); ctx.arc(sx, sy, rad, 0, Math.PI*2);
-      ctx.fillStyle = 'rgba('+r+','+g+','+b+','+(i===0?0.08:0.14)+')'; ctx.fill();
-    });
-    ctx.beginPath(); ctx.arc(sx, sy, 5.5, 0, Math.PI*2);
-    ctx.fillStyle = phaseColor; ctx.fill();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
-    // AM label
-    ctx.fillStyle = phaseColor;
-    ctx.font = 'bold 9px DM Sans,sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('☀ ' + allPts[0].e.energy, sx, sy-12);
-    return;
-  }
-
-  var cps = getCPs(allPts);
+  var allPts = previewPt ? pts.concat([{x:previewPt.x, y:previewPt.y, ghost:true}]) : pts;
 
   // ── Gradient fill ──
-  var grad = ctx.createLinearGradient(0, padT, 0, H-padB);
-  grad.addColorStop(0,   'rgba('+r+','+g+','+b+',0.3)');
-  grad.addColorStop(0.55,'rgba('+r+','+g+','+b+',0.08)');
-  grad.addColorStop(1,   'rgba('+r+','+g+','+b+',0)');
-  ctx.beginPath();
-  ctx.moveTo(allPts[0].x, H-padB);
-  ctx.lineTo(allPts[0].x, allPts[0].y);
-  for (var i=0; i<allPts.length-1; i++) {
-    ctx.bezierCurveTo(cps[i].cp1x,cps[i].cp1y,cps[i].cp2x,cps[i].cp2y,allPts[i+1].x,allPts[i+1].y);
+  if (allPts.length > 1) {
+    var grad = ctx.createLinearGradient(0, padT, 0, H-padB);
+    grad.addColorStop(0,   'rgba('+r+','+g+','+b+',0.28)');
+    grad.addColorStop(0.6, 'rgba('+r+','+g+','+b+',0.07)');
+    grad.addColorStop(1,   'rgba('+r+','+g+','+b+',0)');
+    ctx.beginPath();
+    ctx.moveTo(allPts[0].x, H-padB);
+    ctx.lineTo(allPts[0].x, allPts[0].y);
+    var cps = getCPs(allPts);
+    for (var i=0; i<allPts.length-1; i++) {
+      ctx.bezierCurveTo(cps[i].cp1x,cps[i].cp1y,cps[i].cp2x,cps[i].cp2y,allPts[i+1].x,allPts[i+1].y);
+    }
+    ctx.lineTo(allPts[allPts.length-1].x, H-padB);
+    ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
   }
-  ctx.lineTo(allPts[allPts.length-1].x, H-padB);
-  ctx.closePath();
-  ctx.fillStyle = grad; ctx.fill();
 
-  // ── Main line (solid through real points) ──
-  ctx.beginPath();
-  ctx.moveTo(pts[0].x, pts[0].y);
-  var realCps = getCPs(pts);
-  for (var i=0; i<pts.length-1; i++) {
-    ctx.bezierCurveTo(realCps[i].cp1x,realCps[i].cp1y,realCps[i].cp2x,realCps[i].cp2y,pts[i+1].x,pts[i+1].y);
+  // ── Main line ──
+  if (pts.length > 1) {
+    var rcps = getCPs(pts);
+    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+    for (var i=0; i<pts.length-1; i++) {
+      ctx.bezierCurveTo(rcps[i].cp1x,rcps[i].cp1y,rcps[i].cp2x,rcps[i].cp2y,pts[i+1].x,pts[i+1].y);
+    }
+    ctx.strokeStyle = phaseColor; ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
   }
-  ctx.strokeStyle = phaseColor;
-  ctx.lineWidth = 2.5;
-  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-  ctx.stroke();
 
-  // ── Dots + labels ──
-  entries.forEach(function(e, i) {
-    var x=xFor(e), y=yFor(e);
+  // ── Dots + labels — de-overlap labels ──
+  // Compute raw label positions then nudge horizontally if too close
+  var labelInfos = entries.map(function(e, i) {
+    var x = xFor(e), y = yFor(e);
     var isMorning = e.source === 'morning';
-    var isLast = i === entries.length-1;
+    var isLast = i === entries.length - 1;
+    var label = isMorning ? '☀ ' + e.energy : String(e.energy);
+    return { x:x, y:y, lx:x, ly:y-13, label:label, time:e.time||'', isMorning:isMorning, isLast:isLast, energy:e.energy };
+  });
 
+  // Nudge labels that are too close horizontally (within 28px)
+  var MIN_LABEL_GAP = 28;
+  for (var a=0; a<labelInfos.length-1; a++) {
+    var li = labelInfos[a], lj = labelInfos[a+1];
+    var gap = Math.abs(lj.lx - li.lx);
+    if (gap < MIN_LABEL_GAP) {
+      var nudge = (MIN_LABEL_GAP - gap) / 2 + 2;
+      li.lx  -= nudge;
+      lj.lx  += nudge;
+      // Alternate vertical: one above, one further above
+      li.ly = li.y - 10;
+      lj.ly = lj.y - 22;
+    }
+  }
+  // Clamp to canvas
+  labelInfos.forEach(function(li) {
+    li.lx = Math.max(padL+4, Math.min(W-padR-4, li.lx));
+  });
+
+  entries.forEach(function(e, i) {
+    var info = labelInfos[i];
+    var x=info.x, y=info.y;
+    var isMorning=info.isMorning, isLast=info.isLast;
+
+    // Glow rings
     if (isMorning) {
-      // Sunrise glow — larger outer ring
-      ctx.beginPath(); ctx.arc(x, y, 11, 0, Math.PI*2);
+      ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI*2);
       ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.1)'; ctx.fill();
       ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI*2);
       ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.18)'; ctx.fill();
     } else if (isLast) {
-      // Pulse ring on latest
       ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI*2);
       ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.15)'; ctx.fill();
     }
 
-    ctx.beginPath(); ctx.arc(x, y, isMorning ? 5 : isLast ? 4.5 : 3, 0, Math.PI*2);
+    // Dot
+    var dotR = isMorning ? 5.5 : isLast ? 4.5 : 3.5;
+    ctx.beginPath(); ctx.arc(x, y, dotR, 0, Math.PI*2);
     ctx.fillStyle = phaseColor; ctx.fill();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = isMorning ? 2.5 : isLast ? 2 : 1.5; ctx.stroke();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = isMorning ? 2.5 : 2; ctx.stroke();
 
-    // Label
+    // Energy label
     ctx.fillStyle = phaseColor;
     ctx.font = (isMorning || isLast ? 'bold 10px' : '9px') + ' DM Sans,sans-serif';
-    var lx = x > W-40 ? x-8 : x < padL+20 ? x+8 : x;
-    ctx.textAlign = x > W-40 ? 'right' : x < padL+20 ? 'left' : 'center';
-    var label = isMorning ? '☀ ' + e.energy : String(e.energy);
-    ctx.fillText(label, lx, y-10);
+    ctx.textAlign = 'center';
+    ctx.fillText(info.label, info.lx, info.ly);
 
-    // Time label below dot for morning and last entry
-    if (isMorning || isLast) {
-      ctx.fillStyle = 'rgba(28,26,24,0.35)';
+    // Time label (morning + last, or all if not many)
+    if (isMorning || isLast || entries.length <= 4) {
+      ctx.fillStyle = 'rgba(28,26,24,0.38)';
       ctx.font = '8px DM Mono,monospace';
-      ctx.textAlign = x > W-40 ? 'right' : x < padL+20 ? 'left' : 'center';
-      ctx.fillText(e.time||'', lx, y+16);
+      ctx.textAlign = 'center';
+      ctx.fillText(info.time, info.lx, y + 16);
     }
   });
 
-  // ── Preview dot (ghost at slider position) ──
-  if (previewPts) {
-    ctx.beginPath(); ctx.arc(previewPts.x, previewPts.y, 4, 0, Math.PI*2);
-    ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.35)'; ctx.fill();
+  // ── Single entry fallback ──
+  if (pts.length === 1) {
+    var sx=pts[0].x, sy=pts[0].y, se=entries[0];
+    [13,8].forEach(function(rad,i){
+      ctx.beginPath(); ctx.arc(sx,sy,rad,0,Math.PI*2);
+      ctx.fillStyle='rgba('+r+','+g+','+b+','+(i===0?0.09:0.16)+')'; ctx.fill();
+    });
+    ctx.beginPath(); ctx.arc(sx,sy,5.5,0,Math.PI*2);
+    ctx.fillStyle=phaseColor; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2.5; ctx.stroke();
+    ctx.fillStyle=phaseColor;
+    ctx.font='bold 10px DM Sans,sans-serif'; ctx.textAlign='center';
+    ctx.fillText((se.source==='morning'?'☀ ':'')+se.energy, sx, sy-14);
+    ctx.fillStyle='rgba(28,26,24,0.38)';
+    ctx.font='8px DM Mono,monospace';
+    ctx.fillText(se.time||'', sx, sy+16);
+  }
+
+  // ── Preview ghost dot ──
+  if (previewPt) {
+    ctx.beginPath(); ctx.arc(previewPt.x, previewPt.y, 4, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.32)'; ctx.fill();
     ctx.strokeStyle = 'rgba('+r+','+g+','+b+',0.5)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([2,2]); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.6)';
-    ctx.font = '9px DM Sans,sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(previewEnergy, previewPts.x, previewPts.y-10);
+    ctx.lineWidth = 1.5; ctx.setLineDash([2,2]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.65)';
+    ctx.font = '9px DM Sans,sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(previewEnergy, previewPt.x, previewPt.y-11);
   }
 }
 
