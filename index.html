@@ -1552,6 +1552,7 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
     </div>
 
     <button class="btn-primary phase" onclick="completePMQuiz()">Save + close the day →</button>
+    <button class="btn-ghost" onclick="completePMQuiz()" style="margin-top:-8px; font-size:13px; opacity:0.6;">Skip ESTRAL's read →</button>
   </div>
 </div>
 
@@ -1737,9 +1738,17 @@ input[type=range].ob-slider { width: 100%; accent-color: var(--phase); height: 4
       </div>
       <!-- Life area color legend -->
       <div id="week-area-legend" style="display:flex; gap:8px; padding:0 16px 10px; overflow-x:auto; flex-wrap:nowrap; scrollbar-width:none;"></div>
-      <!-- Week columns -->
-      <div style="padding:0 16px;">
-        <div id="weekColumns" style="display:grid; grid-template-columns:repeat(7,1fr); gap:6px; align-items:start;"></div>
+      <!-- Week columns — swipeable large cards (3 per slide) -->
+      <div style="padding:0 16px;position:relative;">
+        <div style="overflow:hidden;border-radius:16px;">
+          <div id="weekColumns" style="display:flex;transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);will-change:transform;"></div>
+        </div>
+        <!-- Slide nav -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding:0 2px;">
+          <button id="weekSlideBack" onclick="_weekSlideNav(-1)" style="padding:6px 14px;border-radius:100px;border:1.5px solid rgba(28,26,24,0.15);background:none;font-size:12px;color:var(--muted);cursor:pointer;font-family:DM Sans,sans-serif;">← Back</button>
+          <div id="weekSlideDots" style="display:flex;gap:5px;align-items:center;"></div>
+          <button id="weekSlideNext" onclick="_weekSlideNav(1)" style="padding:6px 14px;border-radius:100px;border:1.5px solid rgba(28,26,24,0.15);background:none;font-size:12px;color:var(--muted);cursor:pointer;font-family:DM Sans,sans-serif;">Next →</button>
+        </div>
       </div>
       <!-- Swipeable brain dump tray — one tab per life area -->
       <div id="week-drag-tray" style="padding:14px 0 4px;">
@@ -2637,17 +2646,23 @@ function unlockDashboard() {
       </div>
 
       <!-- WEEKLY OVERVIEW — mini week grid -->
-      <div class="card" style="margin-top:12px; padding:18px 20px 16px; overflow:hidden;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-          <div class="label" style="color:var(--phase);">This week</div>
-          <button onclick="switchTab('plan')" style="font-size:11px;color:var(--phase);background:none;border:none;cursor:pointer;touch-action:manipulation;font-family:DM Sans,sans-serif;font-weight:600;padding:0;">View plan →</button>
+      <!-- SWIPEABLE WEEK CARDS -->
+      <div style="margin-top:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px;margin-bottom:10px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);" id="dash-week-label">This week</div>
+          <button onclick="switchTab('plan')" style="font-size:11px;color:var(--phase);background:none;border:none;cursor:pointer;touch-action:manipulation;font-family:DM Sans,sans-serif;font-weight:600;padding:0;">Plan →</button>
         </div>
-        <!-- Phase strip -->
-        <div id="dash-week-phase-strip" style="display:flex;gap:2px;border-radius:6px;overflow:hidden;height:4px;margin-bottom:10px;"></div>
-        <!-- 7-day mini columns -->
-        <div id="dash-mini-week" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
-        <!-- Phase note -->
-        <div id="dash-week-phase-note" style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;"></div>
+        <!-- Phase note strip -->
+        <div id="dash-week-phase-note" style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5;"></div>
+        <!-- 3-day swipeable cards -->
+        <div style="position:relative;overflow:hidden;border-radius:16px;">
+          <div id="dash-week-track" style="display:flex;transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);will-change:transform;"></div>
+        </div>
+        <!-- Dot indicators -->
+        <div id="dash-week-dots" style="display:flex;justify-content:center;gap:5px;margin-top:10px;"></div>
+        <!-- Hidden for compat -->
+        <div id="dash-mini-week" style="display:none;"></div>
+        <div id="dash-week-phase-strip" style="display:none;"></div>
       </div>
 
       <!-- LIFE AREA TODO LIST -->
@@ -2810,10 +2825,10 @@ function buildDashWeekly() {
 }
 
 function buildDashMiniWeek() {
-  var grid = document.getElementById('dash-mini-week');
-  var strip = document.getElementById('dash-week-phase-strip');
+  var track = document.getElementById('dash-week-track');
+  var dotsEl = document.getElementById('dash-week-dots');
   var note = document.getElementById('dash-week-phase-note');
-  if (!grid) return;
+  if (!track) return;
 
   var today = new Date();
   var weekStart = new Date(today);
@@ -2821,83 +2836,192 @@ function buildDashMiniWeek() {
 
   var realLogs = [];
   try { realLogs = JSON.parse(localStorage.getItem('estral_logs') || '[]'); } catch(e) {}
-
-  // Use live monthTasks object if available, else load from storage
   var wkTasks = (typeof monthTasks !== 'undefined' && Object.keys(monthTasks).length) ? monthTasks : {};
   if (!Object.keys(wkTasks).length) {
     try { wkTasks = JSON.parse(localStorage.getItem('estral_month_tasks') || '{}'); } catch(e) {}
   }
 
-  var dayNames = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var dayShort = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var monthShort = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   var phaseCounts = {};
-  grid.innerHTML = '';
-  if (strip) strip.innerHTML = '';
 
+  // Build 7 day data
+  var days = [];
   for (var i = 0; i < 7; i++) {
     var d = new Date(weekStart);
     d.setDate(weekStart.getDate() + i);
     var isToday = d.toDateString() === today.toDateString();
     var isPast = d < today && !isToday;
-
     var dStr = d.toLocaleDateString('en-GB', {day:'numeric', month:'short'});
     var log = realLogs.find(function(l){ return l.date === dStr; });
     var phase = (log && log.phase) || (window._userProfile && window._userProfile.cyclePhase) || 'follicular';
     var color = (window.PHASE_COLORS && PHASE_COLORS[phase]) || 'var(--phase)';
     phaseCounts[phase] = (phaseCounts[phase] || 0) + 1;
-
     var dateKey = d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
-    var tasks = wkTasks[dateKey] || wkTasks[d.getDate()] || [];
-
-    var col = document.createElement('div');
-    col.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;';
-
-    var lbl = document.createElement('div');
-    lbl.style.cssText = 'font-size:9px;font-weight:' + (isToday?'800':'500') + ';color:' + (isToday?color:(isPast?'rgba(28,26,24,0.3)':'var(--muted)')) + ';margin-bottom:1px;';
-    lbl.textContent = dayNames[d.getDay()];
-    col.appendChild(lbl);
-
-    var circle = document.createElement('div');
-    var circleBase = 'width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-bottom:3px;';
-    circle.style.cssText = isToday
-      ? circleBase + 'background:' + color + ';color:#fff;box-shadow:0 2px 8px ' + color + '55;'
-      : circleBase + 'background:rgba(28,26,24,0.05);color:' + (isPast?'rgba(28,26,24,0.3)':'var(--text)') + ';';
-    circle.textContent = d.getDate();
-    col.appendChild(circle);
-
-    tasks.slice(0, 3).forEach(function(task) {
-      var taskName = (typeof task === 'object') ? (task.text || task.title || '') : String(task);
-      var areaColor = (typeof task === 'object' && task.area && typeof getBDAreaColor === 'function') ? getBDAreaColor(task.area) : color;
-      var pill = document.createElement('div');
-      pill.style.cssText = 'width:100%;background:' + areaColor + '22;border-left:2px solid ' + areaColor + ';border-radius:0 4px 4px 0;padding:2px 3px;font-size:8px;line-height:1.3;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;box-sizing:border-box;opacity:' + (isPast?'0.5':'1') + ';';
-      pill.textContent = taskName;
-      pill.title = taskName;
-      col.appendChild(pill);
-    });
-    if (tasks.length > 3) {
-      var more = document.createElement('div');
-      more.style.cssText = 'font-size:8px;color:var(--muted);';
-      more.textContent = '+' + (tasks.length - 3);
-      col.appendChild(more);
-    }
-    if (tasks.length === 0) {
-      var dot = document.createElement('div');
-      dot.style.cssText = 'width:4px;height:4px;border-radius:50%;background:rgba(28,26,24,' + (isToday?'0.15':'0.07') + ');margin-top:2px;';
-      col.appendChild(dot);
-    }
-
-    grid.appendChild(col);
-
-    if (strip) {
-      var seg = document.createElement('div');
-      seg.style.cssText = 'flex:1;background:' + color + ';border-radius:3px;opacity:' + (isToday?1:isPast?0.3:0.6) + ';';
-      strip.appendChild(seg);
-    }
+    var tasks = (wkTasks[dateKey] || wkTasks[d.getDate()] || []).filter(Boolean);
+    days.push({ d:d, isToday:isToday, isPast:isPast, phase:phase, color:color, tasks:tasks, dateKey:dateKey });
   }
 
+  // Phase note
   if (note && Object.keys(phaseCounts).length) {
     var dominant = Object.keys(phaseCounts).sort(function(a,b){ return phaseCounts[b]-phaseCounts[a]; })[0];
-    var phaseNotes = { follicular:'Building week — estrogen rising, clarity up.', ovulatory:'Peak week — high output, visibility, connection.', luteal:'Finishing week — go deep, protect your energy.', menstrual:'Reset week — rest, reflect, restore.' };
+    var phaseNotes = { follicular:'Building week · estrogen rising', ovulatory:'Peak week · high output', luteal:'Finishing week · protect energy', menstrual:'Reset week · rest + reflect' };
     note.textContent = phaseNotes[dominant] || '';
+    note.style.color = (window.PHASE_COLORS && PHASE_COLORS[dominant]) || 'var(--phase)';
+    note.style.fontWeight = '600';
+  }
+
+  // Phase bg colours (muted card backgrounds)
+  var phaseBg = {
+    follicular: 'rgba(74,143,168,0.10)',
+    ovulatory:  'rgba(184,134,11,0.10)',
+    luteal:     'rgba(139,94,60,0.10)',
+    menstrual:  'rgba(92,45,74,0.10)'
+  };
+  var phaseText = {
+    follicular: '#4A8FA8',
+    ovulatory:  '#B8860B',
+    luteal:     '#8B5E3C',
+    menstrual:  '#5C2D4A'
+  };
+
+  // Build slides — 3 days per slide (Sun/Mon/Tue, Wed/Thu/Fri, Sat standalone or grouped)
+  var slides = [ [0,1,2], [3,4,5], [6] ];
+  // Find which slide today is on
+  var todayIdx = today.getDay(); // 0-6
+  var todaySlide = todayIdx <= 2 ? 0 : todayIdx <= 5 ? 1 : 2;
+
+  track.innerHTML = '';
+  if (dotsEl) dotsEl.innerHTML = '';
+
+  slides.forEach(function(idxs, slideNum) {
+    var slide = document.createElement('div');
+    slide.style.cssText = 'min-width:100%;display:flex;gap:8px;padding:0 2px;box-sizing:border-box;';
+
+    idxs.forEach(function(di) {
+      var day = days[di];
+      var flex = idxs.length === 1 ? '1' : '1';
+      var bg = day.isToday ? phaseBg[day.phase] : day.isPast ? 'rgba(28,26,24,0.04)' : 'rgba(28,26,24,0.05)';
+      var borderColor = day.isToday ? (phaseText[day.phase] || 'var(--phase)') + '55' : 'rgba(28,26,24,0.08)';
+      var borderWidth = day.isToday ? '1.5px' : '1px';
+
+      var card = document.createElement('div');
+      card.style.cssText = 'flex:1;background:' + bg + ';border-radius:14px;padding:14px 12px 12px;border:' + borderWidth + ' solid ' + borderColor + ';min-height:110px;display:flex;flex-direction:column;gap:0;cursor:pointer;transition:transform 0.15s;position:relative;overflow:hidden;';
+      card.setAttribute('data-datekey', day.dateKey);
+      card.classList.add('week-day-col');
+      card.dataset.day = day.d.getDate();
+      card.dataset.datekey = day.dateKey;
+
+      // Today accent bar
+      if (day.isToday) {
+        var bar = document.createElement('div');
+        bar.style.cssText = 'position:absolute;top:0;left:0;right:0;height:3px;background:' + (phaseText[day.phase]||'var(--phase)') + ';border-radius:14px 14px 0 0;';
+        card.appendChild(bar);
+      }
+
+      // Day name + date
+      var dayNameEl = document.createElement('div');
+      dayNameEl.style.cssText = 'font-size:10px;font-weight:600;letter-spacing:0.05em;color:' + (day.isToday ? (phaseText[day.phase]||'var(--phase)') : day.isPast ? 'rgba(28,26,24,0.3)' : 'var(--muted)') + ';text-transform:uppercase;margin-bottom:2px;' + (day.isToday ? 'margin-top:4px;' : '');
+      dayNameEl.textContent = dayShort[day.d.getDay()];
+      card.appendChild(dayNameEl);
+
+      var dateEl = document.createElement('div');
+      dateEl.style.cssText = 'font-size:28px;font-weight:700;line-height:1;color:' + (day.isToday ? (phaseText[day.phase]||'var(--phase)') : day.isPast ? 'rgba(28,26,24,0.25)' : 'var(--text)') + ';margin-bottom:2px;font-family:DM Sans,sans-serif;';
+      dateEl.textContent = day.d.getDate();
+      card.appendChild(dateEl);
+
+      var monEl = document.createElement('div');
+      monEl.style.cssText = 'font-size:9px;font-weight:700;letter-spacing:0.1em;color:' + (day.isToday ? (phaseText[day.phase]||'var(--phase)') : day.isPast ? 'rgba(28,26,24,0.25)' : 'rgba(28,26,24,0.4)') + ';margin-bottom:8px;';
+      monEl.textContent = monthShort[day.d.getMonth()];
+      card.appendChild(monEl);
+
+      // Task chips
+      var taskArea = document.createElement('div');
+      taskArea.style.cssText = 'display:flex;flex-direction:column;gap:3px;flex:1;';
+      day.tasks.slice(0,3).forEach(function(task) {
+        var taskName = (typeof task === 'object') ? (task.text || task.title || '') : String(task);
+        var areaColor = (typeof task === 'object' && task.area && typeof getBDAreaColor === 'function') ? getBDAreaColor(task.area) : (phaseText[day.phase] || 'var(--phase)');
+        var chip = document.createElement('div');
+        chip.style.cssText = 'font-size:9px;font-weight:600;padding:3px 7px;border-radius:100px;background:' + areaColor + ';color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;opacity:' + (day.isPast ? '0.5' : '1') + ';';
+        chip.textContent = taskName;
+        chip.title = taskName;
+        taskArea.appendChild(chip);
+      });
+      if (day.tasks.length > 3) {
+        var more = document.createElement('div');
+        more.style.cssText = 'font-size:9px;color:var(--muted);padding-left:2px;';
+        more.textContent = '+' + (day.tasks.length - 3) + ' more';
+        taskArea.appendChild(more);
+      }
+      if (day.tasks.length === 0 && !day.isPast) {
+        var empty = document.createElement('div');
+        empty.style.cssText = 'font-size:9px;color:rgba(28,26,24,0.2);font-style:italic;padding-top:2px;';
+        empty.textContent = 'free';
+        taskArea.appendChild(empty);
+      }
+      card.appendChild(taskArea);
+
+      // Tap to switch to plan tab
+      card.onclick = function() { switchTab('plan'); };
+
+      // Also a drop target for touch drag
+      card.addEventListener('dragover', function(e) { e.preventDefault(); card.style.outline = '2px solid ' + (phaseText[day.phase]||'var(--phase)'); });
+      card.addEventListener('dragleave', function() { card.style.outline = ''; });
+      card.addEventListener('drop', function(e) {
+        e.preventDefault(); card.style.outline = '';
+        if (!window.dragItem) return;
+        if (!monthTasks[day.dateKey]) monthTasks[day.dateKey] = [];
+        if (!monthTasks[day.dateKey].find(function(t){ return t.text === window.dragItem.text; })) {
+          monthTasks[day.dateKey].push(Object.assign({}, window.dragItem));
+        }
+        localStorage.setItem('estral_month_tasks', JSON.stringify(monthTasks));
+        buildDashWeekly();
+      });
+
+      slide.appendChild(card);
+    });
+
+    track.appendChild(slide);
+
+    // Dot
+    if (dotsEl) {
+      var dot = document.createElement('div');
+      dot.style.cssText = 'width:' + (slideNum === todaySlide ? '18px' : '6px') + ';height:6px;border-radius:100px;background:' + (slideNum === todaySlide ? 'var(--phase)' : 'rgba(28,26,24,0.15)') + ';transition:all 0.25s;cursor:pointer;';
+      (function(sn){ dot.onclick = function(){ _dashWeekSlide = sn; _updateDashWeekSlide(); }; })(slideNum);
+      dotsEl.appendChild(dot);
+    }
+  });
+
+  // Jump to today's slide
+  window._dashWeekSlide = todaySlide;
+  _updateDashWeekSlide(true);
+
+  // Touch swipe
+  var startX = 0;
+  track.ontouchstart = function(e) { startX = e.touches[0].clientX; };
+  track.ontouchend = function(e) {
+    var dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 40) {
+      _dashWeekSlide = Math.max(0, Math.min(2, _dashWeekSlide + (dx < 0 ? 1 : -1)));
+      _updateDashWeekSlide();
+    }
+  };
+}
+
+window._dashWeekSlide = 0;
+function _updateDashWeekSlide(instant) {
+  var track = document.getElementById('dash-week-track');
+  var dotsEl = document.getElementById('dash-week-dots');
+  if (!track) return;
+  if (instant) track.style.transition = 'none';
+  track.style.transform = 'translateX(-' + (_dashWeekSlide * 100) + '%)';
+  if (instant) setTimeout(function(){ track.style.transition = 'transform 0.35s cubic-bezier(0.4,0,0.2,1)'; }, 0);
+  if (dotsEl) {
+    Array.from(dotsEl.children).forEach(function(dot, i) {
+      dot.style.width = i === _dashWeekSlide ? '18px' : '6px';
+      dot.style.background = i === _dashWeekSlide ? 'var(--phase)' : 'rgba(28,26,24,0.15)';
+    });
   }
 }
 
@@ -4324,6 +4448,7 @@ var PHASE_SWIPE_DECKS = {
     { emoji:'⚡', color:'#4A8FA8', label:'Your body this week', title:'Build hard. Your recovery is elite right now.', body:'Estrogen improves muscle repair speed and increases pain tolerance. Your cardiovascular capacity is at its seasonal peak. If you train now, you build faster. If you push past comfort, you recover quicker.' },
     { emoji:'🗓', color:'#4A8FA8', label:'This week\'s power move', title:'Schedule everything hard for the next 10 days.', body:'Your ovulatory peak is coming. Before it does, use this follicular clarity to plan your boldest moves — pitch the idea, book the call, set the deadline. Future-you will thank you.' },
     { emoji:'✦', color:'#4A8FA8', label:'Your mantra', title:'"I plant seeds that ovulation will bloom."', body:'This is the window before the peak. Use its clarity and freshness. Build momentum — not just output.' },
+    { emoji:'📝', color:'#4A8FA8', label:'Your reflection', title:'What are you building right now?', body:'', type:'reflect', placeholder:'Right now I am building...', phase:'follicular' },
   ],
   ovulatory: [
     { emoji:'🌕', color:'#B8860B', label:'Your phase right now', title:'Ovulatory — The Peak.', body:'This is it. Estrogen peaks, LH surges, testosterone spikes briefly. This is the 3–4 day window when you are most magnetic, most articulate, and most comfortable being seen. Most women have no idea this is happening.' },
@@ -4331,6 +4456,7 @@ var PHASE_SWIPE_DECKS = {
     { emoji:'💪', color:'#B8860B', label:'Your body this week', title:'Maximum strength. Maximum visibility.', body:'You have your highest pain tolerance, fastest reaction time, and peak muscle activation this week. Athletes who track this phase set personal records here. Your body is asking to be pushed.' },
     { emoji:'📣', color:'#B8860B', label:'This week\'s power move', title:'Be visible. Speak. Show up.', body:'Whatever you\'ve been waiting to say, post, pitch or begin — do it this week. The world receives you differently right now, and so do you receive yourself.' },
     { emoji:'✦', color:'#B8860B', label:'Your mantra', title:'"I am in full bloom. I will not hide it."', body:'The peak doesn\'t last long. Use it completely.' },
+    { emoji:'📝', color:'#B8860B', label:'Your reflection', title:'How does your body feel right now?', body:'', type:'reflect', placeholder:'I notice...', phase:'ovulatory' },
   ],
   luteal: [
     { emoji:'🌖', color:'#8B5E3C', label:'Your phase right now', title:'Luteal — The Deepening.', body:'Progesterone rises after ovulation and your nervous system shifts. You become more sensitive, more inward, more attuned to what isn\'t working. This isn\'t PMS. This is your body\'s quality-control phase.' },
@@ -4338,6 +4464,7 @@ var PHASE_SWIPE_DECKS = {
     { emoji:'🛡', color:'#8B5E3C', label:'Your body this week', title:'Protect your energy like it\'s a limited resource.', body:'Progesterone increases core body temperature slightly, disrupts sleep architecture, and raises cortisol sensitivity. You are more vulnerable to stress, alcohol, and late nights. Every boundary you protect this week is an act of biological intelligence.' },
     { emoji:'✂️', color:'#8B5E3C', label:'This week\'s power move', title:'Cancel what doesn\'t deserve your current state.', body:'Luteal clarity is ruthless and usually right. If something feels wrong or draining this week, it probably is. Clear your plate. Finish what matters. Say no to what doesn\'t.' },
     { emoji:'✦', color:'#8B5E3C', label:'Your mantra', title:'"I complete, I clarify, I protect my peace."', body:'The frustration you feel in late luteal is your body telling you something needs to change. Listen.' },
+    { emoji:'📝', color:'#8B5E3C', label:'Your reflection', title:'What needs to go?', body:'', type:'reflect', placeholder:'I need to let go of...', phase:'luteal' },
   ],
   menstrual: [
     { emoji:'🌑', color:'#5C2D4A', label:'Your phase right now', title:'Menstrual — The Reset.', body:'All hormones drop. The uterine lining sheds. Something quieter, older and wiser comes online. In many traditions this week was considered sacred — the time women\'s intuition was sharpest. Modern life tells you to push through. Your biology is asking you to stop.' },
@@ -4345,6 +4472,7 @@ var PHASE_SWIPE_DECKS = {
     { emoji:'🌿', color:'#5C2D4A', label:'Your body this week', title:'Rest is not weakness. It\'s phase-appropriate intelligence.', body:'Prostaglandins are high, your immune system is slightly suppressed, and your body is doing significant physical work. Pain, fatigue and brain fog this week are not failures. They are information. Nutritious food, warmth and reduced output are medicine.' },
     { emoji:'📓', color:'#5C2D4A', label:'This week\'s power move', title:'Ask the question you\'ve been avoiding.', body:'The clarity that comes in menstruation cuts through social performance and self-deception. Journal with the question: "What am I pretending is working?" The answer you get this week is usually the truest one of the cycle.' },
     { emoji:'✦', color:'#5C2D4A', label:'Your mantra', title:'"I rest as an act of radical self-trust."', body:'This phase built every other phase. Without it, the cycle cannot begin again.' },
+    { emoji:'📝', color:'#5C2D4A', label:'Your reflection', title:'What is your body asking for?', body:'', type:'reflect', placeholder:'Right now I need...', phase:'menstrual' },
   ]
 };
 
@@ -4380,6 +4508,10 @@ function openSwipeDeck(mode, phase) {
 function closeSwipeDeck() {
   document.getElementById('swipeDeckModal').style.display = 'none';
   document.body.style.overflow = '';
+  // Reset so next open builds fresh (clears any textarea values)
+  var cards = document.getElementById('swipeDeckCards');
+  if (cards) cards.innerHTML = '';
+  _deckIdx = 0;
 }
 
 function renderSwipeDeck() {
@@ -4391,27 +4523,34 @@ function renderSwipeDeck() {
   var nextBtn = document.getElementById('swipeDeckNext');
   var total = _deckCards.length;
 
-  // Build cards only once
   if (cards.children.length === 0) {
     _deckCards.forEach(function(card) {
       var el = document.createElement('div');
       el.style.cssText = 'min-width:100%;height:100%;padding:24px 28px 16px;display:flex;flex-direction:column;justify-content:flex-start;overflow-y:auto;box-sizing:border-box;';
-      el.innerHTML =
-        '<div style="font-size:52px;margin-bottom:16px;text-align:center;">' + card.emoji + '</div>' +
-        '<div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:' + card.color + ';margin-bottom:10px;text-align:center;">' + card.label + '</div>' +
-        '<h2 style="font-size:26px;line-height:1.25;margin-bottom:20px;text-align:center;">' + card.title + '</h2>' +
-        '<p style="font-size:16px;line-height:1.75;color:rgba(28,26,24,0.82);text-align:center;">' + card.body + '</p>' +
-        (card.cta ? '<button onclick="' + card.ctaFn + '" style="margin-top:28px;padding:16px;border-radius:100px;background:' + card.color + ';border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;width:100%;font-family:DM Sans,sans-serif;touch-action:manipulation;">' + card.cta + '</button>' : '');
+      if (card.type === 'reflect') {
+        el.innerHTML =
+          '<div style="font-size:52px;margin-bottom:16px;text-align:center;">' + card.emoji + '</div>' +
+          '<div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:' + card.color + ';margin-bottom:10px;text-align:center;">' + card.label + '</div>' +
+          '<h2 style="font-size:24px;line-height:1.3;margin-bottom:20px;text-align:center;">' + card.title + '</h2>' +
+          '<textarea id="swipeDeckReflect" placeholder="' + (card.placeholder||'Write here...') + '" style="width:100%;min-height:140px;font-size:15px;line-height:1.65;padding:14px 16px;border-radius:14px;border:1.5px solid rgba(28,26,24,0.12);background:rgba(28,26,24,0.04);resize:none;font-family:DM Sans,sans-serif;box-sizing:border-box;color:var(--text);"></textarea>' +
+          '<button onclick="savePhaseReflection(\'' + card.phase + '\')" style="margin-top:14px;padding:14px;border-radius:100px;background:' + card.color + ';border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;width:100%;font-family:DM Sans,sans-serif;touch-action:manipulation;">Save reflection ✦</button>' +
+          '<button onclick="closeSwipeDeck()" style="margin-top:8px;padding:10px;border-radius:100px;background:none;border:1.5px solid rgba(28,26,24,0.15);color:var(--muted);font-size:13px;cursor:pointer;width:100%;font-family:DM Sans,sans-serif;touch-action:manipulation;">Skip</button>';
+      } else {
+        el.innerHTML =
+          '<div style="font-size:52px;margin-bottom:16px;text-align:center;">' + card.emoji + '</div>' +
+          '<div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:' + card.color + ';margin-bottom:10px;text-align:center;">' + card.label + '</div>' +
+          '<h2 style="font-size:26px;line-height:1.25;margin-bottom:20px;text-align:center;">' + card.title + '</h2>' +
+          '<p style="font-size:16px;line-height:1.75;color:rgba(28,26,24,0.82);text-align:center;">' + card.body + '</p>' +
+          (card.cta ? '<button onclick="' + card.ctaFn + '" style="margin-top:28px;padding:16px;border-radius:100px;background:' + card.color + ';border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;width:100%;font-family:DM Sans,sans-serif;touch-action:manipulation;">' + card.cta + '</button>' : '');
+      }
       cards.appendChild(el);
     });
   }
 
-  // Slide to current
   cards.style.transform = 'translateX(-' + (_deckIdx * 100) + '%)';
   progress.style.width = ((_deckIdx + 1) / total * 100) + '%';
   counter.textContent = (_deckIdx + 1) + ' / ' + total;
 
-  // Dots
   dots.innerHTML = '';
   for (var i = 0; i < total; i++) {
     var dot = document.createElement('div');
@@ -4420,10 +4559,40 @@ function renderSwipeDeck() {
     dots.appendChild(dot);
   }
 
-  backBtn.style.visibility = _deckIdx === 0 ? 'hidden' : 'visible';
-  var isLast = _deckIdx === total - 1;
-  nextBtn.textContent = isLast ? 'Done ✓' : 'Next →';
-  nextBtn.onclick = isLast ? closeSwipeDeck : function(){ swipeDeckNav(1); };
+  var currentCard = _deckCards[_deckIdx];
+  var isReflect = currentCard && currentCard.type === 'reflect';
+  nextBtn.style.display = isReflect ? 'none' : '';
+  backBtn.style.visibility = (isReflect || _deckIdx === 0) ? 'hidden' : 'visible';
+  if (!isReflect) {
+    var isLast = _deckIdx === total - 1;
+    nextBtn.textContent = isLast ? 'Done \u2713' : 'Next \u2192';
+    nextBtn.onclick = isLast ? closeSwipeDeck : function(){ swipeDeckNav(1); };
+  }
+}
+
+function savePhaseReflection(phase) {
+  var ta = document.getElementById('swipeDeckReflect');
+  var note = ta ? ta.value.trim() : '';
+  if (!note) { closeSwipeDeck(); return; }
+
+  var today = new Date();
+  var monthMap = {0:'jan',1:'feb',2:'mar',3:'apr',4:'may',5:'jun',6:'jul',7:'aug',8:'sep',9:'oct',10:'nov',11:'dec'};
+  var dateStr = today.toLocaleDateString('en-GB', {day:'numeric', month:'short'});
+  var p = window._userProfile || {};
+  var logs = [];
+  try { logs = JSON.parse(localStorage.getItem('estral_logs') || '[]'); } catch(e) {}
+  var idx = logs.findIndex(function(l){ return l.date === dateStr; });
+  var phaseNote = { note: note, phase: phase, savedAt: today.toISOString() };
+  if (idx > -1) {
+    logs[idx].phaseNote = phaseNote;
+  } else {
+    logs.unshift({ date: dateStr, month: monthMap[today.getMonth()], cycleDay: p.cycleDay || 8, phase: phase || p.cyclePhase || 'follicular', am: null, pm: null, phaseNote: phaseNote, timestamp: today.toISOString() });
+  }
+  localStorage.setItem('estral_logs', JSON.stringify(logs));
+
+  var saveBtn = document.querySelector('#swipeDeckCards button[onclick*="savePhaseReflection"]');
+  if (saveBtn) { saveBtn.textContent = 'Saved \u2713'; saveBtn.style.opacity = '0.7'; }
+  setTimeout(function(){ closeSwipeDeck(); }, 700);
 }
 
 function swipeDeckNav(dir) {
@@ -4813,8 +4982,8 @@ function switchLogMonth(btn, month) {
 }
 
 function renderLogContent(month) {
-  const content = document.getElementById('log-content');
-  if (!content) return;
+  const container = document.getElementById('log-content');
+  if (!container) return;
 
   let realLogs = [];
   try { realLogs = JSON.parse(localStorage.getItem('estral_logs') || '[]'); } catch(e) {}
@@ -4822,8 +4991,14 @@ function renderLogContent(month) {
 
   let entries = month === 'mar' ? [...DEMO_ENTRIES, ...monthReal] : month === 'feb' ? [...FEB_DEMO, ...monthReal] : monthReal;
 
-  if (entries.length === 0) {
-    content.innerHTML = `<div style="text-align:center;padding:48px 20px;"><div style="font-size:36px;margin-bottom:12px;">📓</div><p class="muted" style="font-size:14px;line-height:1.6;">No entries yet.<br>Complete your morning check-in to start logging.</p><button class="btn-primary phase" onclick="switchTab('home')" style="margin-top:20px;max-width:200px;">Start logging \u2192</button></div>`;
+  // Load milestone journals for this month
+  let milestoneLogs = [];
+  try { milestoneLogs = JSON.parse(localStorage.getItem('estral_milestone_logs') || '[]'); } catch(e) {}
+  const monthShort = { jan:'January', feb:'February', mar:'March', apr:'April', may:'May', jun:'June', jul:'July', aug:'August', sep:'September', oct:'October', nov:'November', dec:'December' }[month] || '';
+  const monthMilestones = milestoneLogs.filter(m => m.date && m.date.includes(monthShort));
+
+  if (entries.length === 0 && monthMilestones.length === 0) {
+    container.innerHTML = `<div style="text-align:center;padding:48px 20px;"><div style="font-size:36px;margin-bottom:12px;">📓</div><p class="muted" style="font-size:14px;line-height:1.6;">No entries yet.<br>Complete your morning check-in to start logging.</p><button class="btn-primary phase" onclick="switchTab('home')" style="margin-top:20px;max-width:200px;">Start logging →</button></div>`;
     return;
   }
 
@@ -4831,6 +5006,29 @@ function renderLogContent(month) {
   entries.forEach(e => { if (grouped[e.phase]) grouped[e.phase].push(e); });
 
   let html = '<div style="padding:0 20px 20px;">';
+
+  // ── Phase journals / milestone entries for this month ──
+  if (monthMilestones.length > 0) {
+    html += `<div style="margin:20px 0 10px;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><span style="font-size:16px;">✦</span><span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--phase);">Phase Journals</span></div>`;
+    monthMilestones.forEach(m => {
+      const color = (typeof MILESTONE_JOURNALS !== 'undefined' && MILESTONE_JOURNALS[m.id]) ? MILESTONE_JOURNALS[m.id].color : 'var(--phase)';
+      const answers = m.answers || {};
+      const answerPreviews = Object.values(answers).filter(v => typeof v === 'string' && v.trim()).slice(0, 2);
+      html += `<div style="background:var(--card);border:1px solid ${color}33;border-left:3px solid ${color};border-radius:12px;margin-bottom:10px;overflow:hidden;">
+        <div style="padding:12px 16px;display:flex;align-items:center;gap:12px;">
+          <span style="font-size:24px;">${m.emoji || '📓'}</span>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:600;color:${color};">${m.journalTitle || m.id}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">${m.date} · Day ${m.cycleDay || '—'}</div>
+          </div>
+        </div>
+        ${answerPreviews.length ? `<div style="padding:0 16px 12px;">${answerPreviews.map(a => `<div style="font-size:13px;color:var(--text);line-height:1.55;font-style:italic;border-top:1px solid rgba(28,26,24,0.05);padding-top:8px;margin-top:6px;">"${a}"</div>`).join('')}</div>` : ''}
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  // ── Daily check-in entries grouped by phase ──
   ['menstrual','follicular','ovulatory','luteal'].forEach(phase => {
     const list = grouped[phase];
     if (!list.length) return;
@@ -4839,13 +5037,14 @@ function renderLogContent(month) {
     list.forEach(e => {
       const am = e.am || {};
       const pm = e.pm || {};
+      const phaseNote = e.phaseNote;
       const ec = am.energy >= 7 ? '#4A8FA8' : am.energy >= 4 ? '#8B5E3C' : '#5C2D4A';
-      html += `<div style="background:var(--card);border:1px solid var(--border);margin-bottom:10px;overflow:hidden;">
+      html += `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;">
         <div style="padding:12px 16px;border-bottom:1px solid rgba(28,26,24,0.06);display:flex;justify-content:space-between;align-items:center;">
           <div><span style="font-family:DM Mono,monospace;font-size:12px;color:var(--muted);">${e.date}</span><span style="font-size:10px;color:${pw.color};letter-spacing:0.08em;text-transform:uppercase;margin-left:8px;">Day ${e.cycleDay}</span></div>
           <div style="display:flex;align-items:center;gap:6px;"><span style="font-family:DM Mono,monospace;font-size:20px;color:${ec};">${am.energy||'—'}</span><span style="font-size:10px;color:var(--muted);">energy</span></div>
         </div>`;
-      if (am.intention) {
+      if (am.intention || am.mood?.length || am.energy) {
         html += `<div style="padding:12px 16px;border-bottom:1px solid rgba(28,26,24,0.04);">
           <div class="label" style="margin-bottom:8px;color:var(--phase);">AM · Morning</div>
           <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">
@@ -4860,17 +5059,30 @@ function renderLogContent(month) {
       } else {
         html += `<div style="padding:10px 16px;border-bottom:1px solid rgba(28,26,24,0.04);"><span class="label" style="color:var(--phase);">AM</span> <span class="muted" style="font-size:12px;margin-left:8px;">Not logged</span></div>`;
       }
-      if (pm.notableMoment) {
-        html += `<div style="padding:12px 16px;"><div class="label" style="margin-bottom:7px;color:var(--muted);">PM · Evening</div>${pm.energyArc?`<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Arc: <span style="color:var(--text);">${pm.energyArc}</span></div>`:''}<div style="font-size:13px;color:var(--text);line-height:1.55;font-style:italic;">"${pm.notableMoment}"</div></div>`;
+      if (pm.moment || pm.mood?.length || pm.energyAM) {
+        html += `<div style="padding:12px 16px;${phaseNote ? 'border-bottom:1px solid rgba(28,26,24,0.04);' : ''}">
+          <div class="label" style="margin-bottom:7px;color:var(--muted);">PM · Evening</div>
+          ${pm.energyAM ? `<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Energy arc: <span style="color:var(--text);">${pm.energyAM} → ${pm.energyMid||'?'} → ${pm.energyEve||'?'}</span></div>` : ''}
+          ${pm.mood?.length ? `<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Mood: <span style="color:var(--text);">${pm.mood.join(', ')}</span></div>` : ''}
+          ${pm.intentionHeld ? `<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Intention: <span style="color:var(--text);">${pm.intentionHeld}</span></div>` : ''}
+          ${pm.moment ? `<div style="font-size:13px;color:var(--text);line-height:1.55;font-style:italic;margin-top:6px;">"${pm.moment}"</div>` : ''}
+        </div>`;
       } else {
-        html += `<div style="padding:10px 16px;"><span class="label" style="color:var(--muted);">PM</span> <span class="muted" style="font-size:12px;margin-left:8px;">Not logged</span></div>`;
+        html += `<div style="padding:10px 16px;${phaseNote ? 'border-bottom:1px solid rgba(28,26,24,0.04);' : ''}"><span class="label" style="color:var(--muted);">PM</span> <span class="muted" style="font-size:12px;margin-left:8px;">Not logged</span></div>`;
+      }
+      if (phaseNote) {
+        const pColor = pw.color;
+        html += `<div style="padding:10px 16px;background:${pColor}08;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${pColor};margin-bottom:4px;">${phaseNote.phase ? phaseNote.phase.charAt(0).toUpperCase()+phaseNote.phase.slice(1) : 'Phase'} Note</div>
+          <div style="font-size:13px;color:var(--text);line-height:1.55;font-style:italic;">"${phaseNote.note}"</div>
+        </div>`;
       }
       html += '</div>';
     });
     html += '</div>';
   });
   html += '</div>';
-  content.innerHTML = html;
+  container.innerHTML = html;
 }
 
 function saveLogEntry(amData) {
@@ -5406,16 +5618,16 @@ function skipTomorrowPlanner() {
 }
 
 function completePMQuiz() {
-  // Mark today done
-  if (typeof getTodayKey === 'function') {
-    localStorage.setItem('pm_done_' + getTodayKey(), 'true');
-  }
-
-  // Save to localStorage
-  savePMLog();
+  // Save + mark done (idempotent — safe to call twice)
+  try { savePMLog(); } catch(e) {}
+  try {
+    if (typeof getTodayKey === 'function') {
+      localStorage.setItem('pm_done_' + getTodayKey(), 'true');
+    }
+  } catch(e) {}
 
   // Build ESTRAL PM read
-  buildPMRead();
+  try { buildPMRead(); } catch(e) {}
 
   // Show read screen — hide all PM screens first
   document.querySelectorAll('[id^="screen-pm"]').forEach(s => {
@@ -6815,15 +7027,17 @@ function buildWeekColumns() {
   const container = document.getElementById('weekColumns');
   if (!container) return;
   container.innerHTML = '';
+
   const p = window._userProfile || {};
   const now = new Date();
-  // Apply week offset
   const weekBase = new Date(now);
   weekBase.setDate(now.getDate() + (_weekOffset * 7));
   const today = now;
-  const dayNames = ['S','M','T','W','T','F','S'];
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dayShort = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const monthShort = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 
-  // Update week title
+  // Week title
   const titleEl = document.getElementById('plan-week-title');
   const subEl = document.getElementById('plan-week-subtitle');
   const weekStart = new Date(weekBase);
@@ -6833,152 +7047,218 @@ function buildWeekColumns() {
     titleEl.textContent = _weekOffset === 0 ? 'This week' : _weekOffset === -1 ? 'Last week' : _weekOffset === 1 ? 'Next week' : 'Week of ' + mo;
   }
 
-  // Dominant phase this week
+  // Dominant phase
   var weekPhases = [];
   for (let i = 0; i < 7; i++) {
-    const d = new Date(weekStart);
-    d.setDate(weekStart.getDate() + i);
-    const cl = parseInt(p.cycleLength) || 28;
-    const pl = parseInt(p.periodLength) || 5;
+    const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
+    const cl = parseInt(p.cycleLength)||28, pl = parseInt(p.periodLength)||5;
     const todayDiff = Math.round((d - today) / 86400000);
-    const adjDay = ((((p.cycleDay || 1) + todayDiff) - 1) % cl + cl) % cl + 1;
+    const adjDay = ((((p.cycleDay||1) + todayDiff) - 1) % cl + cl) % cl + 1;
     weekPhases.push(adjDay <= pl ? 'menstrual' : adjDay <= 13 ? 'follicular' : adjDay <= 17 ? 'ovulatory' : 'luteal');
   }
-  const phaseCt = {}; weekPhases.forEach(function(ph){ phaseCt[ph]=(phaseCt[ph]||0)+1; });
-  const dominantPhase = Object.keys(phaseCt).sort(function(a,b){ return phaseCt[b]-phaseCt[a]; })[0] || 'follicular';
+  const phaseCt = {}; weekPhases.forEach(ph => phaseCt[ph] = (phaseCt[ph]||0)+1);
+  const dominantPhase = Object.keys(phaseCt).sort((a,b) => phaseCt[b]-phaseCt[a])[0] || 'follicular';
   const phaseLabels = { follicular:'Follicular · Building window', ovulatory:'Ovulatory · Peak window', luteal:'Luteal · Finishing window', menstrual:'Menstrual · Reset window' };
   if (subEl) subEl.textContent = phaseLabels[dominantPhase] || '';
 
+  // Phase colours
+  const phaseBg = { follicular:'rgba(74,143,168,0.10)', ovulatory:'rgba(184,134,11,0.10)', luteal:'rgba(139,94,60,0.10)', menstrual:'rgba(92,45,74,0.10)' };
+  const phaseAccent = { follicular:'#4A8FA8', ovulatory:'#B8860B', luteal:'#8B5E3C', menstrual:'#5C2D4A' };
+
+  // Build 7 days data
+  var days = [];
   for (let i = 0; i < 7; i++) {
-    const d = new Date(weekStart);
-    d.setDate(weekStart.getDate() + i);
-    const cl = parseInt(p.cycleLength) || 28;
-    const pl = parseInt(p.periodLength) || 5;
+    const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
+    const cl = parseInt(p.cycleLength)||28, pl = parseInt(p.periodLength)||5;
     const todayDiff = Math.round((d - today) / 86400000);
-    const adjDay = ((((p.cycleDay || 1) + todayDiff) - 1) % cl + cl) % cl + 1;
-    const phase = adjDay <= pl ? 'menstrual' : adjDay <= 13 ? 'follicular' : adjDay <= 17 ? 'ovulatory' : 'luteal';
+    const adjDay = ((((p.cycleDay||1) + todayDiff) - 1) % cl + cl) % cl + 1;
+    const phase = weekPhases[i];
     const color = PHASE_COLORS[phase];
     const isToday = d.toDateString() === today.toDateString();
+    const isPast = d < today && !isToday;
     const dateNum = d.getDate();
-    // Key tasks by unique date string for multi-week support
     const dateKey = d.getFullYear() + '-' + (d.getMonth()+1) + '-' + dateNum;
     if (!monthTasks[dateKey]) monthTasks[dateKey] = monthTasks[dateNum] || [];
     const dayEvents = monthEvents.filter(ev => ev.day === dateNum);
     const dayTasks = (monthTasks[dateKey] || []).filter(t => !t.locked);
-
-    const col = document.createElement('div');
-    col.style.cssText = `display:flex;flex-direction:column;border-radius:12px;border:1.5px solid ${isToday ? color : 'rgba(28,26,24,0.08)'};min-height:180px;`;
-    col.classList.add('week-day-col');
-    col.dataset.day = dateNum;
-    col.dataset.datekey = dateKey;
-
-    // Header
-    const header = document.createElement('div');
-    header.style.cssText = `background:${color}${isToday ? '33' : '15'};padding:8px 6px 6px;text-align:center;border-radius:10px 10px 0 0;`;
-    header.innerHTML = `<div style="font-size:10px;font-weight:600;color:${color};letter-spacing:0.04em;">${dayNames[i]}</div><div style="font-size:16px;font-weight:${isToday ? 700 : 400};color:${isToday ? color : 'var(--text)'};">${dateNum}</div>`;
-    col.appendChild(header);
-
-    // Phase bar
-    const bar = document.createElement('div');
-    bar.style.cssText = `height:3px;background:${color};opacity:0.5;`;
-    col.appendChild(bar);
-
-    // Content area (no week-day-col here — drop target is col itself now)
-    const body = document.createElement('div');
-    body.style.cssText = `flex:1;padding:6px 5px;display:flex;flex-direction:column;gap:4px;min-height:130px;`;
-
-    // Locked events
-    dayEvents.forEach(ev => {
-      const tag = document.createElement('div');
-      tag.style.cssText = `background:#5B7FBF22;border-left:2.5px solid #5B7FBF;border-radius:4px;padding:3px 5px;font-size:9px;line-height:1.3;color:#5B7FBF;font-weight:600;`;
-      tag.innerHTML = `🔒 ${ev.title}`;
-      body.appendChild(tag);
-    });
-
-    // Tasks from monthTasks — draggable back to remove zone
-    dayTasks.forEach(task => {
-      const c = getTaskAreaColor(task);
-      const tag = document.createElement('div');
-      tag.style.cssText = `background:${c}18;border-left:2.5px solid ${c};border-radius:4px;padding:3px 5px 3px 5px;font-size:9px;line-height:1.3;color:${c};display:flex;align-items:center;gap:4px;cursor:grab;position:relative;`;
-      tag.draggable = true;
-      tag.innerHTML = `<span style="flex:1;">${task.text}</span><span class="week-task-remove-x" style="font-size:10px;opacity:0.5;cursor:pointer;padding:0 2px;flex-shrink:0;" title="Remove from plan">✕</span>`;
-
-      // Tap × to remove
-      tag.querySelector('.week-task-remove-x').addEventListener('click', e => {
-        e.stopPropagation();
-        if (monthTasks[dateKey]) monthTasks[dateKey] = monthTasks[dateKey].filter(t => t.text !== task.text);
-        if (monthTasks[dateNum]) monthTasks[dateNum] = monthTasks[dateNum].filter(t => t.text !== task.text);
-        localStorage.setItem('estral_month_tasks', JSON.stringify(monthTasks));
-        buildWeekColumns();
-        buildWeekTrayItems();
-        buildDragTray();
-        _debounceDashWeekly();
-      });
-
-      // Desktop drag — mark as "placed task being dragged back"
-      tag.addEventListener('dragstart', e => {
-        dragItem = task;
-        dragSource = 'week-placed';
-        e.dataTransfer.effectAllowed = 'move';
-        // Highlight remove zone
-        const rz = document.getElementById('week-remove-zone');
-        if (rz) { rz.style.borderColor = 'rgba(180,60,60,0.7)'; rz.style.color = 'rgba(180,60,60,0.9)'; rz.style.background = 'rgba(180,60,60,0.06)'; }
-      });
-      tag.addEventListener('dragend', () => {
-        const rz = document.getElementById('week-remove-zone');
-        if (rz) { rz.style.borderColor = ''; rz.style.color = ''; rz.style.background = ''; }
-      });
-
-      // Touch drag back
-      attachTouchDrag(tag, task, 'week-placed-' + dateNum);
-      body.appendChild(tag);
-    });
-
-    // Drop zone — desktop drag onto the whole column
-    col.addEventListener('dragover', e => { e.preventDefault(); body.style.background = `${color}22`; });
-    col.addEventListener('dragleave', () => { body.style.background = ''; });
-    col.addEventListener('drop', e => {
-      e.preventDefault();
-      body.style.background = '';
-      if (!dragItem) return;
-      if (!monthTasks[dateKey]) monthTasks[dateKey] = [];
-      if (!monthTasks[dateKey].find(t => t.text === dragItem.text)) {
-        monthTasks[dateKey].push({ ...dragItem });
-      }
-      localStorage.setItem('estral_month_tasks', JSON.stringify(monthTasks));
-      buildWeekColumns();
-      buildWeekTrayItems();
-      buildDragTray();
-      _debounceDashWeekly();
-    });
-    container.appendChild(col);
+    days.push({ d, isToday, isPast, phase, color, dateNum, dateKey, dayEvents, dayTasks });
   }
 
-  // Wire remove zone for desktop drag
+  // Build slides — 3 per slide: [0,1,2], [3,4,5], [6]
+  const slideGroups = [[0,1,2],[3,4,5],[6]];
+  const dotsEl = document.getElementById('weekSlideDots');
+  const backBtn = document.getElementById('weekSlideBack');
+  const nextBtn = document.getElementById('weekSlideNext');
+  if (dotsEl) dotsEl.innerHTML = '';
+
+  // Today slide
+  const todayDow = today.getDay() + (_weekOffset === 0 ? 0 : 99);
+  let todaySlide = _weekOffset === 0 ? (today.getDay() <= 2 ? 0 : today.getDay() <= 5 ? 1 : 2) : 0;
+
+  slideGroups.forEach(function(idxs, slideNum) {
+    const slide = document.createElement('div');
+    slide.style.cssText = 'min-width:100%;display:flex;gap:10px;box-sizing:border-box;padding:0 2px;align-items:stretch;';
+
+    idxs.forEach(function(di) {
+      const day = days[di];
+      const accent = phaseAccent[day.phase] || color;
+      const bg = day.isToday ? phaseBg[day.phase] : day.isPast ? 'rgba(28,26,24,0.04)' : 'rgba(28,26,24,0.05)';
+      const borderColor = day.isToday ? accent + '66' : 'rgba(28,26,24,0.09)';
+
+      const col = document.createElement('div');
+      col.style.cssText = `flex:1;background:${bg};border-radius:16px;border:${day.isToday?'1.5px':'1px'} solid ${borderColor};display:flex;flex-direction:column;min-height:180px;position:relative;overflow:hidden;`;
+      col.classList.add('week-day-col');
+      col.dataset.day = day.dateNum;
+      col.dataset.datekey = day.dateKey;
+
+      // Top accent bar
+      const topBar = document.createElement('div');
+      topBar.style.cssText = `height:${day.isToday?'3px':'2px'};background:${accent};opacity:${day.isToday?'1':'0.35'};flex-shrink:0;`;
+      col.appendChild(topBar);
+
+      // Header — day + date
+      const header = document.createElement('div');
+      header.style.cssText = 'padding:10px 10px 6px;flex-shrink:0;';
+      header.innerHTML = `
+        <div style="font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:${day.isToday?accent:day.isPast?'rgba(28,26,24,0.3)':'var(--muted)'};margin-bottom:1px;">${dayShort[day.d.getDay()]}</div>
+        <div style="font-size:30px;font-weight:700;line-height:1;color:${day.isToday?accent:day.isPast?'rgba(28,26,24,0.2)':'var(--text)'};font-family:DM Sans,sans-serif;">${day.dateNum}</div>
+        <div style="font-size:8px;font-weight:700;letter-spacing:0.1em;color:${day.isToday?accent:day.isPast?'rgba(28,26,24,0.2)':'rgba(28,26,24,0.35)'};margin-top:1px;">${monthShort[day.d.getMonth()]}</div>
+      `;
+      col.appendChild(header);
+
+      // Divider
+      const div = document.createElement('div');
+      div.style.cssText = `height:1px;background:${accent};opacity:0.12;margin:0 10px;flex-shrink:0;`;
+      col.appendChild(div);
+
+      // Task area — scrollable
+      const body = document.createElement('div');
+      body.style.cssText = 'flex:1;padding:8px 8px 6px;display:flex;flex-direction:column;gap:5px;overflow-y:auto;';
+
+      // Locked events
+      day.dayEvents.forEach(ev => {
+        const tag = document.createElement('div');
+        tag.style.cssText = 'background:#5B7FBF18;border:1px solid #5B7FBF33;border-radius:8px;padding:5px 7px;font-size:10px;line-height:1.3;color:#5B7FBF;font-weight:600;';
+        tag.innerHTML = `🔒 ${ev.title}`;
+        body.appendChild(tag);
+      });
+
+      // Placed tasks
+      day.dayTasks.forEach(task => {
+        const c = getTaskAreaColor(task);
+        const tag = document.createElement('div');
+        tag.style.cssText = `background:${c}15;border:1px solid ${c}30;border-radius:8px;padding:5px 8px 5px 7px;font-size:10px;line-height:1.35;color:var(--text);display:flex;align-items:flex-start;gap:5px;cursor:grab;`;
+        tag.draggable = true;
+
+        const dot = document.createElement('div');
+        dot.style.cssText = `width:7px;height:7px;border-radius:50%;background:${c};flex-shrink:0;margin-top:3px;`;
+        const txt = document.createElement('span');
+        txt.style.cssText = 'flex:1;';
+        txt.textContent = task.text;
+        const x = document.createElement('span');
+        x.style.cssText = 'font-size:11px;opacity:0.4;cursor:pointer;flex-shrink:0;padding:0 1px;line-height:1;margin-top:1px;';
+        x.textContent = '×';
+        x.addEventListener('click', e => {
+          e.stopPropagation();
+          if (monthTasks[day.dateKey]) monthTasks[day.dateKey] = monthTasks[day.dateKey].filter(t => t.text !== task.text);
+          if (monthTasks[day.dateNum]) monthTasks[day.dateNum] = monthTasks[day.dateNum].filter(t => t.text !== task.text);
+          localStorage.setItem('estral_month_tasks', JSON.stringify(monthTasks));
+          buildWeekColumns(); buildWeekTrayItems(); buildDragTray(); _debounceDashWeekly();
+        });
+        tag.appendChild(dot); tag.appendChild(txt); tag.appendChild(x);
+
+        tag.addEventListener('dragstart', e => {
+          dragItem = task; dragSource = 'week-placed';
+          e.dataTransfer.effectAllowed = 'move';
+          const rz = document.getElementById('week-remove-zone');
+          if (rz) { rz.style.borderColor='rgba(180,60,60,0.7)'; rz.style.background='rgba(180,60,60,0.06)'; }
+        });
+        tag.addEventListener('dragend', () => {
+          const rz = document.getElementById('week-remove-zone');
+          if (rz) { rz.style.borderColor=''; rz.style.background=''; }
+        });
+        attachTouchDrag(tag, task, 'week-placed-' + day.dateNum);
+        body.appendChild(tag);
+      });
+
+      col.appendChild(body);
+
+      // Drop zone
+      col.addEventListener('dragover', e => { e.preventDefault(); col.style.outline = `2px solid ${accent}`; });
+      col.addEventListener('dragleave', () => { col.style.outline = ''; });
+      col.addEventListener('drop', e => {
+        e.preventDefault(); col.style.outline = '';
+        if (!dragItem) return;
+        if (!monthTasks[day.dateKey]) monthTasks[day.dateKey] = [];
+        if (!monthTasks[day.dateKey].find(t => t.text === dragItem.text)) monthTasks[day.dateKey].push({...dragItem});
+        localStorage.setItem('estral_month_tasks', JSON.stringify(monthTasks));
+        buildWeekColumns(); buildWeekTrayItems(); buildDragTray(); _debounceDashWeekly();
+      });
+
+      slide.appendChild(col);
+    });
+
+    container.appendChild(slide);
+
+    // Dot
+    if (dotsEl) {
+      const dot = document.createElement('div');
+      dot.style.cssText = `width:${slideNum===todaySlide?'18px':'6px'};height:6px;border-radius:100px;background:${slideNum===todaySlide?'var(--phase)':'rgba(28,26,24,0.15)'};transition:all 0.25s;cursor:pointer;`;
+      dot.onclick = () => { window._weekColSlide = slideNum; _updateWeekColSlide(); };
+      dotsEl.appendChild(dot);
+    }
+  });
+
+  window._weekColSlide = todaySlide;
+  _updateWeekColSlide(true);
+
+  // Touch swipe on container
+  let _wsx = 0;
+  container.ontouchstart = e => { _wsx = e.touches[0].clientX; };
+  container.ontouchend = e => {
+    const dx = e.changedTouches[0].clientX - _wsx;
+    if (Math.abs(dx) > 40) { window._weekColSlide = Math.max(0,Math.min(2, _weekColSlide+(dx<0?1:-1))); _updateWeekColSlide(); }
+  };
+
+  // Wire remove zone
   const removeZone = document.getElementById('week-remove-zone');
   if (removeZone) {
-    removeZone.ondragover = e => { e.preventDefault(); };
-    removeZone.ondragenter = () => { removeZone.style.background = 'rgba(180,60,60,0.1)'; removeZone.style.borderColor = 'rgba(180,60,60,0.8)'; };
-    removeZone.ondragleave = () => { removeZone.style.background = ''; removeZone.style.borderColor = ''; };
+    removeZone.ondragover = e => e.preventDefault();
+    removeZone.ondragenter = () => { removeZone.style.background='rgba(180,60,60,0.1)'; removeZone.style.borderColor='rgba(180,60,60,0.8)'; };
+    removeZone.ondragleave = () => { removeZone.style.background=''; removeZone.style.borderColor=''; };
     removeZone.ondrop = e => {
-      e.preventDefault();
-      removeZone.style.background = '';
-      removeZone.style.borderColor = '';
+      e.preventDefault(); removeZone.style.background=''; removeZone.style.borderColor='';
       if (!dragItem) return;
-      Object.keys(monthTasks).forEach(d => {
-        monthTasks[d] = (monthTasks[d] || []).filter(t => t.text !== dragItem.text);
-      });
+      Object.keys(monthTasks).forEach(d => { monthTasks[d] = (monthTasks[d]||[]).filter(t => t.text !== dragItem.text); });
       localStorage.setItem('estral_month_tasks', JSON.stringify(monthTasks));
-      dragItem = null;
-      buildWeekColumns();
-      buildWeekTrayItems();
-      buildDragTray();
-      _debounceDashWeekly();
+      dragItem = null; buildWeekColumns(); buildWeekTrayItems(); buildDragTray(); _debounceDashWeekly();
     };
   }
 
-  // Phase suggestions
   buildPhaseSuggestions(dominantPhase);
+}
+
+window._weekColSlide = 0;
+function _updateWeekColSlide(instant) {
+  const container = document.getElementById('weekColumns');
+  const dotsEl = document.getElementById('weekSlideDots');
+  const backBtn = document.getElementById('weekSlideBack');
+  const nextBtn = document.getElementById('weekSlideNext');
+  if (!container) return;
+  if (instant) container.style.transition = 'none';
+  container.style.transform = 'translateX(-' + (_weekColSlide * 100) + '%)';
+  if (instant) setTimeout(() => { container.style.transition = 'transform 0.35s cubic-bezier(0.4,0,0.2,1)'; }, 0);
+  if (dotsEl) Array.from(dotsEl.children).forEach((dot,i) => {
+    dot.style.width = i === _weekColSlide ? '18px' : '6px';
+    dot.style.background = i === _weekColSlide ? 'var(--phase)' : 'rgba(28,26,24,0.15)';
+  });
+  if (backBtn) backBtn.style.opacity = _weekColSlide === 0 ? '0.3' : '1';
+  if (nextBtn) nextBtn.style.opacity = _weekColSlide === 2 ? '0.3' : '1';
+}
+
+function _weekSlideNav(dir) {
+  window._weekColSlide = Math.max(0, Math.min(2, (_weekColSlide||0) + dir));
+  _updateWeekColSlide();
 }
 
 function buildWeekAreaLegend() {
@@ -8502,6 +8782,18 @@ function getLifeAreas() {
 }
 
 async function buildPMTaskBreakdown() {
+  // ── Save immediately — don't wait for AI or screen navigation ──
+  try {
+    const _focus = document.getElementById('pm-tomorrow-focus')?.value || '';
+    const _hardNo = document.getElementById('pm-tomorrow-hardno')?.value || '';
+    pmData.tomorrowFocus = _focus;
+    pmData.tomorrowHardNo = _hardNo;
+    savePMLog();
+    if (typeof getTodayKey === 'function') {
+      localStorage.setItem('pm_done_' + getTodayKey(), 'true');
+    }
+  } catch(_e) { console.error('PM save error:', _e); }
+
   // Collect all tomorrow tasks
   const carried = pmData.tasksCarried || [];
   const newTasks = [];
