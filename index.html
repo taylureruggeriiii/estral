@@ -2548,6 +2548,23 @@ function unlockDashboard() {
     }
   } catch(e) { console.warn('saveLogEntry error:', e); }
 
+  // Seed morning energy as first daylog entry (source: 'morning')
+  try {
+    const _morningEnergy = morningData.energy || 7;
+    const _morningMood   = morningData.mood || [];
+    const _now = new Date();
+    const _dayKey = 'daylog_' + _now.getFullYear() + '_' + (_now.getMonth()+1) + '_' + _now.getDate();
+    let _entries = [];
+    try { _entries = JSON.parse(localStorage.getItem(_dayKey) || '[]'); } catch(_e) {}
+    // Only seed if no morning entry yet
+    const _hasMorning = _entries.some(function(e){ return e.source === 'morning'; });
+    if (!_hasMorning) {
+      const _timeStr = _now.getHours().toString().padStart(2,'0') + ':' + _now.getMinutes().toString().padStart(2,'0');
+      _entries.unshift({ ts: _now.getTime(), time: _timeStr, tags: _morningMood, text: morningData.intention || '', energy: _morningEnergy, source: 'morning' });
+      localStorage.setItem(_dayKey, JSON.stringify(_entries));
+    }
+  } catch(e) {}
+
   const intention = morningData.intention || 'present';
   const e = morningData.energy || 7;
   const tier = e>=7?'High':e>=4?'Moderate':'Low';
@@ -2748,7 +2765,7 @@ function unlockDashboard() {
           <div style="padding:12px 20px 16px; border-top:1px solid rgba(28,26,24,0.07); background:var(--bg);">
             <div style="display:flex; align-items:center; gap:10px;">
               <span style="font-size:11px;color:var(--muted);white-space:nowrap;min-width:44px;">Energy</span>
-              <input type="range" min="1" max="10" value="7" id="quicklog-energy" style="flex:1;accent-color:var(--phase);" oninput="document.getElementById('quicklog-energy-val').textContent=this.value">
+              <input type="range" min="1" max="10" value="7" id="quicklog-energy" style="flex:1;accent-color:var(--phase);" oninput="document.getElementById('quicklog-energy-val').textContent=this.value; if(typeof _drawEnergyGraph==='function') _drawEnergyGraph();">
               <span class="mono" id="quicklog-energy-val" style="font-size:16px;font-weight:700;min-width:20px;color:var(--phase);">7</span>
               <button id="quicklog-submit-btn" style="flex-shrink:0;padding:12px 22px;border-radius:100px;background:var(--phase);border:none;color:#fff;font-size:13px;font-weight:700;letter-spacing:0.04em;cursor:pointer;touch-action:manipulation;font-family:DM Sans,sans-serif;">Log it</button>
             </div>
@@ -2892,143 +2909,152 @@ function buildDashTodoList() {
   var today = new Date();
   var dateKey = today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate();
 
-  // Read live object first, fall back to storage
+  // Load planned tasks for today
   var wkTasks = (typeof monthTasks !== 'undefined') ? monthTasks : {};
   if (!Object.keys(wkTasks).length) {
     try { wkTasks = JSON.parse(localStorage.getItem('estral_month_tasks') || '{}'); } catch(e) {}
   }
-
   var todayTasks = wkTasks[dateKey] || wkTasks[today.getDate()] || [];
 
-  // Also load manual dash todos (user-typed items)
-  var manualTodos = {};
-  try { manualTodos = JSON.parse(localStorage.getItem('estral_dash_todos') || '{}'); } catch(e) {}
+  // Load manual todos by area
+  var manualTodos = getDashTodos();
+
+  // Load done states for planned tasks
+  var doneKey = 'dash_today_done_' + dateKey;
+  var doneMap = {};
+  try { doneMap = JSON.parse(localStorage.getItem(doneKey) || '{}'); } catch(e) {}
+
+  // Get life areas (use global or load fresh)
+  var areas = (typeof lifeAreas !== 'undefined' && lifeAreas.length) ? lifeAreas :
+    (JSON.parse(localStorage.getItem('estral_life_areas') || 'null') || DEFAULT_LIFE_AREAS);
 
   container.innerHTML = '';
 
-  // ── Section 1: Today's planned tasks from week view ──
-  var planSection = document.createElement('div');
-  planSection.style.cssText = 'margin-bottom:18px;';
+  areas.forEach(function(area) {
+    // Find planned tasks for this area
+    var planned = todayTasks.filter(function(t) {
+      if (!t || typeof t !== 'object') return false;
+      return (t.area && t.area.toLowerCase() === area.name.toLowerCase()) ||
+             (t.areaId && t.areaId === area.id);
+    });
 
-  var planHeader = document.createElement('div');
-  planHeader.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:10px;';
-  var phaseColor = (window.PHASE_COLORS && window._userProfile) ? (PHASE_COLORS[window._userProfile.cyclePhase] || 'var(--phase)') : 'var(--phase)';
-  planHeader.innerHTML =
-    '<div style="width:8px;height:8px;border-radius:50%;background:' + phaseColor + ';flex-shrink:0;"></div>' +
-    '<span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:' + phaseColor + ';">Planned for today</span>' +
-    '<span style="font-size:10px;color:var(--muted);margin-left:auto;">' + today.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) + '</span>';
-  planSection.appendChild(planHeader);
+    // Manual todos for this area
+    var manual = (manualTodos[area.id] || []);
 
-  if (todayTasks.length === 0) {
-    var empty = document.createElement('div');
-    empty.style.cssText = 'font-size:13px;color:var(--muted);font-style:italic;padding:4px 0 2px;';
-    empty.textContent = 'Nothing planned yet — drag tasks from the Plan tab.';
-    planSection.appendChild(empty);
-  } else {
-    todayTasks.forEach(function(task, idx) {
-      var taskText = (typeof task === 'object') ? (task.text || task.title || '') : String(task);
-      var areaColor = (typeof task === 'object' && task.area && typeof getBDAreaColor === 'function') ? getBDAreaColor(task.area) : phaseColor;
+    var section = document.createElement('div');
+    section.style.cssText = 'margin-bottom:20px;';
 
-      // Load done state from storage
-      var doneKey = 'dash_today_done_' + dateKey;
-      var doneMap = {};
-      try { doneMap = JSON.parse(localStorage.getItem(doneKey) || '{}'); } catch(e) {}
-      var isDone = !!doneMap[idx];
+    // Area header
+    var header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;';
+    var dot = document.createElement('div');
+    dot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:' + area.color + ';flex-shrink:0;';
+    var label = document.createElement('span');
+    label.style.cssText = 'font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:' + area.color + ';';
+    label.textContent = area.name;
+    // Task count badge
+    var total = planned.length + manual.filter(function(m){ return !m.done; }).length;
+    var done = planned.filter(function(t,i){ return !!doneMap['p_'+area.id+'_'+i]; }).length +
+               manual.filter(function(m){ return m.done; }).length;
+    if (total > 0) {
+      var badge = document.createElement('span');
+      badge.style.cssText = 'font-size:10px;color:' + area.color + ';background:' + area.color + '18;padding:1px 7px;border-radius:100px;margin-left:auto;font-weight:600;';
+      badge.textContent = done + '/' + total;
+      header.appendChild(dot);
+      header.appendChild(label);
+      header.appendChild(badge);
+    } else {
+      header.appendChild(dot);
+      header.appendChild(label);
+    }
+    section.appendChild(header);
 
-      var row = document.createElement('div');
-      row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid rgba(28,26,24,0.05);';
+    // Planned task rows
+    planned.forEach(function(task, pIdx) {
+      var doneStateKey = 'p_' + area.id + '_' + pIdx;
+      var isDone = !!doneMap[doneStateKey];
+      var taskText = task.text || task.title || '';
+      var row = buildTodoRow(taskText, isDone, area.color, function() {
+        doneMap[doneStateKey] = !doneMap[doneStateKey];
+        localStorage.setItem(doneKey, JSON.stringify(doneMap));
+        buildDashTodoList();
+        if (navigator.vibrate) navigator.vibrate(15);
+      }, true);
+      section.appendChild(row);
+    });
 
-      var cb = document.createElement('div');
-      cb.style.cssText = 'width:18px;height:18px;border-radius:50%;border:1.5px solid ' + (isDone ? areaColor : 'rgba(28,26,24,0.2)') + ';flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;transition:all 0.15s;background:' + (isDone ? areaColor : 'transparent') + ';margin-top:1px;';
-      if (isDone) cb.innerHTML = '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-
-      var areaTag = (typeof task === 'object' && task.area) ? '<span style="font-size:9px;color:' + areaColor + ';background:' + areaColor + '18;padding:1px 6px;border-radius:100px;margin-left:6px;">' + task.area + '</span>' : '';
-      var txt = document.createElement('div');
-      txt.style.cssText = 'font-size:14px;flex:1;line-height:1.4;' + (isDone ? 'text-decoration:line-through;color:rgba(28,26,24,0.35);' : 'color:var(--text);');
-      txt.innerHTML = taskText + areaTag;
-
-      var _tog = false;
-      function makeToggle(i, c, t, ak) {
-        return function(e) {
-          if (_tog) return; _tog = true; setTimeout(function(){ _tog = false; }, 300);
-          var dm = {};
-          try { dm = JSON.parse(localStorage.getItem(ak) || '{}'); } catch(err) {}
-          dm[i] = !dm[i];
-          localStorage.setItem(ak, JSON.stringify(dm));
+    // Manual todo rows
+    manual.forEach(function(item, mIdx) {
+      var row = buildTodoRow(item.text, item.done, area.color, function() {
+        var todos = getDashTodos();
+        if (todos[area.id] && todos[area.id][mIdx]) {
+          todos[area.id][mIdx].done = !todos[area.id][mIdx].done;
+          saveDashTodos(todos);
           buildDashTodoList();
           if (navigator.vibrate) navigator.vibrate(15);
-        };
-      }
-      var toggleFn = makeToggle(idx, areaColor, taskText, doneKey);
-      cb.addEventListener('touchend', function(e){ e.preventDefault(); toggleFn(); }, { passive:false });
-      cb.addEventListener('click', toggleFn);
-
-      row.appendChild(cb);
-      row.appendChild(txt);
-      planSection.appendChild(row);
+        }
+      }, false);
+      section.appendChild(row);
     });
-  }
-  container.appendChild(planSection);
 
-  // ── Section 2: Manual add-anything notes ──
-  var divider = document.createElement('div');
-  divider.style.cssText = 'height:1px;background:rgba(28,26,24,0.07);margin-bottom:14px;';
-  container.appendChild(divider);
+    // Add input row
+    var addRow = document.createElement('div');
+    addRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:4px;';
+    var addDot = document.createElement('div');
+    addDot.style.cssText = 'width:16px;height:16px;border-radius:50%;border:1.5px dashed ' + area.color + '55;flex-shrink:0;display:flex;align-items:center;justify-content:center;';
+    addDot.innerHTML = '<svg width="8" height="8" viewBox="0 0 8 8"><line x1="4" y1="1" x2="4" y2="7" stroke="' + area.color + '" stroke-width="1.5" stroke-linecap="round"/><line x1="1" y1="4" x2="7" y2="4" stroke="' + area.color + '" stroke-width="1.5" stroke-linecap="round"/></svg>';
+    var input = document.createElement('input');
+    input.placeholder = 'Add to ' + area.name.toLowerCase() + '…';
+    input.dataset.area = area.id;
+    input.style.cssText = 'flex:1;border:none;background:none;font-size:13px;font-family:DM Sans,sans-serif;color:var(--text);outline:none;-webkit-text-fill-color:var(--text);padding:4px 0;caret-color:' + area.color + ';';
+    input.addEventListener('keydown', function(e) { handleTodoInputKey(e, area.id); });
+    addRow.appendChild(addDot);
+    addRow.appendChild(input);
+    section.appendChild(addRow);
 
-  var noteHeader = document.createElement('div');
-  noteHeader.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:10px;';
-  noteHeader.innerHTML = '<div style="width:8px;height:8px;border-radius:50%;background:rgba(28,26,24,0.25);flex-shrink:0;"></div><span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);">Quick adds</span>';
-  container.appendChild(noteHeader);
+    // Separator
+    var sep = document.createElement('div');
+    sep.style.cssText = 'height:1px;background:rgba(28,26,24,0.05);margin-top:14px;';
+    section.appendChild(sep);
 
-  var quickItems = manualTodos['_quick'] || [];
-  var quickList = document.createElement('div');
-  quickItems.forEach(function(item, idx) {
-    quickList.appendChild(buildTodoItem({ id:'_quick', color:'rgba(28,26,24,0.4)', name:'Quick' }, item, idx));
+    container.appendChild(section);
   });
-  container.appendChild(quickList);
-
-  var addRow = document.createElement('div');
-  addRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:6px;';
-  addRow.innerHTML =
-    '<div style="width:16px;height:16px;border-radius:50%;border:1.5px dashed rgba(28,26,24,0.18);flex-shrink:0;"></div>' +
-    '<input placeholder="Add anything for today…" data-area="_quick" ' +
-      'style="flex:1;border:none;background:none;font-size:13px;font-family:DM Sans,sans-serif;color:var(--text);outline:none;-webkit-text-fill-color:var(--text);padding:4px 0;" ' +
-      'onkeydown="handleTodoInputKey(event,\'_quick\')">';
-  container.appendChild(addRow);
 }
 
-function buildTodoItem(area, item, idx) {
+function buildTodoRow(text, isDone, color, onToggle, isPlanned) {
   var row = document.createElement('div');
-  row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:5px 0;';
-  row.id = 'dash-todo-row-' + area.id + '-' + idx;
+  row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:5px 0;';
 
   var cb = document.createElement('div');
-  cb.style.cssText = 'width:18px;height:18px;border-radius:50%;border:1.5px solid ' + (item.done ? area.color : 'rgba(28,26,24,0.2)') + ';flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;transition:all 0.15s;background:' + (item.done ? area.color : 'transparent') + ';';
-  if (item.done) cb.innerHTML = '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  cb.style.cssText = [
+    'width:18px;height:18px;border-radius:50%;flex-shrink:0;',
+    'border:1.5px solid ' + (isDone ? color : 'rgba(28,26,24,0.18)') + ';',
+    'background:' + (isDone ? color : 'transparent') + ';',
+    'display:flex;align-items:center;justify-content:center;',
+    'cursor:pointer;touch-action:manipulation;transition:all 0.15s;margin-top:1px;',
+    isPlanned ? '' : ''
+  ].join('');
+  if (isDone) cb.innerHTML = '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  var txt = document.createElement('span');
-  txt.style.cssText = 'font-size:14px;flex:1;line-height:1.4;' + (item.done ? 'text-decoration:line-through;color:rgba(28,26,24,0.35);' : 'color:var(--text);');
-  txt.textContent = item.text;
+  var txt = document.createElement('div');
+  txt.style.cssText = 'font-size:14px;flex:1;line-height:1.5;' + (isDone ? 'text-decoration:line-through;color:rgba(28,26,24,0.3);' : 'color:var(--text);');
+  txt.textContent = text;
 
-  // Toggle done on tap
-  var _toggling = false;
-  function toggleDone(e) {
-    if (_toggling) return; _toggling = true;
-    setTimeout(function(){ _toggling = false; }, 300);
-    var todos = getDashTodos();
-    if (!todos[area.id]) todos[area.id] = [];
-    todos[area.id][idx].done = !todos[area.id][idx].done;
-    saveDashTodos(todos);
-    buildDashTodoList();
-    if (navigator.vibrate) navigator.vibrate(15);
+  var _guard = false;
+  function tap(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (_guard) return; _guard = true;
+    requestAnimationFrame(function(){ _guard = false; });
+    onToggle();
   }
-  cb.addEventListener('touchend', function(e){ e.preventDefault(); toggleDone(); }, { passive:false });
-  cb.addEventListener('click', toggleDone);
+  cb.addEventListener('touchend', tap, { passive: false });
+  cb.addEventListener('click', tap);
 
   row.appendChild(cb);
   row.appendChild(txt);
   return row;
 }
+
 
 function handleTodoInputKey(e, areaId) {
   if (e.key !== 'Enter') return;
@@ -7402,7 +7428,7 @@ function updateQLSelectedPreview() {
 
 function submitDayLog() {
   var energy = parseInt((document.getElementById('quicklog-energy')||{}).value || 7);
-  if (_dayLogSelectedTags.length === 0) return;
+  // Allow energy-only check-ins (no tag required)
   var now = new Date();
   var entry = {
     ts: now.getTime(),
@@ -7469,7 +7495,7 @@ function _drawEnergyGraph() {
   if (!canvas) return;
 
   var allEntries = getDayLogEntries();
-  var entries = allEntries.filter(function(e){ return e.energy; })
+  var entries = allEntries.filter(function(e){ return typeof e.energy === 'number'; })
                           .sort(function(a,b){ return a.ts - b.ts; });
 
   // Update count + latest tag line
@@ -7480,14 +7506,15 @@ function _drawEnergyGraph() {
   if (latestTag && entries.length > 0) {
     var last = entries[entries.length-1];
     var tagStr = (last.tags || []).slice(0,3).join(' · ');
-    latestTag.textContent = 'Last: ⚡' + last.energy + (tagStr ? '  ·  ' + tagStr : '') + '  ·  ' + last.time;
+    var srcLabel = last.source === 'morning' ? '☀ morning' : '';
+    latestTag.textContent = '⚡' + last.energy + (srcLabel ? '  ·  ' + srcLabel : '') + (tagStr ? '  ·  ' + tagStr : '') + '  ·  ' + (last.time||'');
   } else if (latestTag) {
     latestTag.textContent = '';
   }
 
   var dpr = window.devicePixelRatio || 1;
   var W = canvas.offsetWidth || 320;
-  var H = 110;
+  var H = 120;
   canvas.width = W * dpr;
   canvas.height = H * dpr;
   canvas.style.width = W + 'px';
@@ -7496,33 +7523,28 @@ function _drawEnergyGraph() {
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, W, H);
 
-  var padL = 24, padR = 12, padT = 10, padB = 22;
+  var padL = 26, padR = 14, padT = 14, padB = 24;
   var innerW = W - padL - padR;
   var innerH = H - padT - padB;
 
   // Phase colour
   var phaseColor = getComputedStyle(document.documentElement).getPropertyValue('--phase').trim() || '#4A8FA8';
-  if (!phaseColor || phaseColor === '') phaseColor = '#4A8FA8';
-
-  // Parse RGB from hex or rgb()
+  if (!phaseColor) phaseColor = '#4A8FA8';
   var r=74, g=143, b=168;
   try {
     var hex = phaseColor.match(/^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
     if (hex) { r=parseInt(hex[1],16); g=parseInt(hex[2],16); b=parseInt(hex[3],16); }
-    else {
-      var rgb = phaseColor.match(/\d+/g);
-      if (rgb && rgb.length >= 3) { r=parseInt(rgb[0]); g=parseInt(rgb[1]); b=parseInt(rgb[2]); }
-    }
+    else { var rgb=phaseColor.match(/\d+/g); if(rgb&&rgb.length>=3){r=+rgb[0];g=+rgb[1];b=+rgb[2];} }
   } catch(ex){}
 
-  // ── Grid lines ──
-  ctx.strokeStyle = 'rgba(28,26,24,0.07)';
-  ctx.lineWidth = 1;
+  // ── Y gridlines ──
   ctx.setLineDash([2,3]);
-  [1,3,5,7,10].forEach(function(v) {
+  [2,4,6,8,10].forEach(function(v) {
     var y = padT + innerH - ((v-1)/9)*innerH;
+    ctx.strokeStyle = 'rgba(28,26,24,0.06)';
+    ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W-padR, y); ctx.stroke();
-    ctx.fillStyle = 'rgba(28,26,24,0.3)';
+    ctx.fillStyle = 'rgba(28,26,24,0.25)';
     ctx.font = '8px DM Mono,monospace';
     ctx.textAlign = 'right';
     ctx.fillText(v, padL-5, y+3);
@@ -7530,134 +7552,191 @@ function _drawEnergyGraph() {
   ctx.setLineDash([]);
 
   // ── X axis hour ticks ──
-  var hourMarks = [{h:6,label:'6am'},{h:9,label:'9am'},{h:12,label:'12pm'},{h:15,label:'3pm'},{h:18,label:'6pm'},{h:21,label:'9pm'}];
-  ctx.strokeStyle = 'rgba(28,26,24,0.06)';
-  ctx.lineWidth = 1;
-  ctx.fillStyle = 'rgba(28,26,24,0.25)';
+  var hourMarks = [{h:6,label:'6am'},{h:9,label:'9'},{h:12,label:'12pm'},{h:15,label:'3'},{h:18,label:'6pm'},{h:21,label:'9'}];
+  ctx.fillStyle = 'rgba(28,26,24,0.2)';
   ctx.font = '8px DM Mono,monospace';
   ctx.textAlign = 'center';
   hourMarks.forEach(function(hm) {
     var x = padL + (hm.h/24)*innerW;
+    ctx.strokeStyle = 'rgba(28,26,24,0.05)';
+    ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H-padB+3); ctx.stroke();
     ctx.fillText(hm.label, x, H-padB+13);
   });
 
-  // ── "Now" vertical line ──
+  // ── "Now" line ──
   var now = new Date();
-  var nowMins = now.getHours()*60 + now.getMinutes();
-  var nowX = padL + (nowMins/(24*60))*innerW;
-  ctx.strokeStyle = 'rgba(28,26,24,0.18)';
+  var nowX = padL + ((now.getHours()*60+now.getMinutes())/(24*60))*innerW;
+  ctx.strokeStyle = 'rgba('+r+','+g+','+b+',0.25)';
   ctx.lineWidth = 1;
   ctx.setLineDash([3,4]);
   ctx.beginPath(); ctx.moveTo(nowX, padT); ctx.lineTo(nowX, H-padB); ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle = 'rgba(28,26,24,0.3)';
-  ctx.font = '8px DM Mono,monospace';
+  ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.5)';
+  ctx.font = 'bold 8px DM Mono,monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('now', nowX, padT-1);
+  ctx.fillText('now', nowX, padT-3);
 
   function xFor(e) {
     var parts = (e.time||'00:00').split(':');
-    var mins = parseInt(parts[0]||0)*60 + parseInt(parts[1]||0);
-    return padL + (mins/(24*60))*innerW;
+    return padL + ((parseInt(parts[0]||0)*60+parseInt(parts[1]||0))/(24*60))*innerW;
   }
   function yFor(e) {
     return padT + innerH - ((e.energy-1)/9)*innerH;
   }
 
+  // ── Empty state ──
   if (entries.length === 0) {
-    ctx.fillStyle = 'rgba(28,26,24,0.2)';
+    ctx.fillStyle = 'rgba(28,26,24,0.18)';
     ctx.font = '11px DM Sans,sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Log your energy to build your day picture', W/2, H/2);
+    ctx.fillText('Complete your morning check-in to start your energy line', W/2, H/2);
     return;
   }
 
-  if (entries.length === 1) {
-    var sx = xFor(entries[0]), sy = yFor(entries[0]);
-    // Glow
-    ctx.beginPath(); ctx.arc(sx, sy, 8, 0, Math.PI*2);
-    ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.15)'; ctx.fill();
-    // Dot
-    ctx.beginPath(); ctx.arc(sx, sy, 4.5, 0, Math.PI*2);
-    ctx.fillStyle = phaseColor; ctx.fill();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
-    // Value label
-    ctx.fillStyle = phaseColor;
-    ctx.font = 'bold 10px DM Sans,sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(entries[0].energy, sx, sy-9);
-    return;
+  // ── Live slider preview dot (current value before logging) ──
+  var sliderEl = document.getElementById('quicklog-energy');
+  var previewEnergy = sliderEl ? parseInt(sliderEl.value) : null;
+  var previewPts = null;
+  if (previewEnergy && entries.length > 0) {
+    var nowMins = now.getHours()*60 + now.getMinutes();
+    var lastMins = (function(){ var p=(entries[entries.length-1].time||'00:00').split(':'); return +p[0]*60+ +p[1]; })();
+    // Only show preview if it would be after the last entry
+    if (nowMins > lastMins) {
+      previewPts = { x: nowX, y: padT + innerH - ((previewEnergy-1)/9)*innerH, energy: previewEnergy };
+    }
   }
 
-  // ── Smooth cubic bezier path ──
-  function getCPs(pts) {
+  var pts = entries.map(function(e){ return {x:xFor(e), y:yFor(e), e:e}; });
+
+  // Add preview point to path if present (ghost)
+  var allPts = previewPts ? pts.concat([{x:previewPts.x, y:previewPts.y, ghost:true}]) : pts;
+
+  function getCPs(arr) {
     var cps = [];
-    for (var i=0; i<pts.length-1; i++) {
-      var p0 = pts[Math.max(i-1,0)], p1=pts[i], p2=pts[i+1], p3=pts[Math.min(i+2,pts.length-1)];
-      var t=0.4;
+    for (var i=0; i<arr.length-1; i++) {
+      var p0=arr[Math.max(i-1,0)], p1=arr[i], p2=arr[i+1], p3=arr[Math.min(i+2,arr.length-1)];
+      var t=0.38;
       cps.push({
-        cp1x: p1.x + (p2.x-p0.x)*t/2, cp1y: p1.y + (p2.y-p0.y)*t/2,
-        cp2x: p2.x - (p3.x-p1.x)*t/2, cp2y: p2.y - (p3.y-p1.y)*t/2
+        cp1x: p1.x+(p2.x-p0.x)*t/2, cp1y: p1.y+(p2.y-p0.y)*t/2,
+        cp2x: p2.x-(p3.x-p1.x)*t/2, cp2y: p2.y-(p3.y-p1.y)*t/2
       });
     }
     return cps;
   }
 
-  var pts = entries.map(function(e){ return {x:xFor(e), y:yFor(e)}; });
-  var cps = getCPs(pts);
-
-  // Gradient fill
-  var grad = ctx.createLinearGradient(0, padT, 0, H-padB);
-  grad.addColorStop(0,   'rgba('+r+','+g+','+b+',0.28)');
-  grad.addColorStop(0.6, 'rgba('+r+','+g+','+b+',0.08)');
-  grad.addColorStop(1,   'rgba('+r+','+g+','+b+',0)');
-
-  ctx.beginPath();
-  ctx.moveTo(pts[0].x, H-padB);
-  ctx.lineTo(pts[0].x, pts[0].y);
-  for (var i=0; i<pts.length-1; i++) {
-    ctx.bezierCurveTo(cps[i].cp1x, cps[i].cp1y, cps[i].cp2x, cps[i].cp2y, pts[i+1].x, pts[i+1].y);
+  // ── Draw dashed preview extension ──
+  if (previewPts && pts.length >= 1) {
+    var lastPt = pts[pts.length-1];
+    ctx.beginPath();
+    ctx.moveTo(lastPt.x, lastPt.y);
+    ctx.lineTo(previewPts.x, previewPts.y);
+    ctx.strokeStyle = 'rgba('+r+','+g+','+b+',0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4,4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
-  ctx.lineTo(pts[pts.length-1].x, H-padB);
-  ctx.closePath();
-  ctx.fillStyle = grad;
-  ctx.fill();
 
-  // Smooth line
+  if (allPts.length === 1) {
+    // Single morning entry — big glowing dot
+    var sx=allPts[0].x, sy=allPts[0].y;
+    // Outer glow rings
+    [14,10].forEach(function(rad,i){
+      ctx.beginPath(); ctx.arc(sx, sy, rad, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba('+r+','+g+','+b+','+(i===0?0.08:0.14)+')'; ctx.fill();
+    });
+    ctx.beginPath(); ctx.arc(sx, sy, 5.5, 0, Math.PI*2);
+    ctx.fillStyle = phaseColor; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    // AM label
+    ctx.fillStyle = phaseColor;
+    ctx.font = 'bold 9px DM Sans,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('☀ ' + allPts[0].e.energy, sx, sy-12);
+    return;
+  }
+
+  var cps = getCPs(allPts);
+
+  // ── Gradient fill ──
+  var grad = ctx.createLinearGradient(0, padT, 0, H-padB);
+  grad.addColorStop(0,   'rgba('+r+','+g+','+b+',0.3)');
+  grad.addColorStop(0.55,'rgba('+r+','+g+','+b+',0.08)');
+  grad.addColorStop(1,   'rgba('+r+','+g+','+b+',0)');
+  ctx.beginPath();
+  ctx.moveTo(allPts[0].x, H-padB);
+  ctx.lineTo(allPts[0].x, allPts[0].y);
+  for (var i=0; i<allPts.length-1; i++) {
+    ctx.bezierCurveTo(cps[i].cp1x,cps[i].cp1y,cps[i].cp2x,cps[i].cp2y,allPts[i+1].x,allPts[i+1].y);
+  }
+  ctx.lineTo(allPts[allPts.length-1].x, H-padB);
+  ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+
+  // ── Main line (solid through real points) ──
   ctx.beginPath();
   ctx.moveTo(pts[0].x, pts[0].y);
+  var realCps = getCPs(pts);
   for (var i=0; i<pts.length-1; i++) {
-    ctx.bezierCurveTo(cps[i].cp1x, cps[i].cp1y, cps[i].cp2x, cps[i].cp2y, pts[i+1].x, pts[i+1].y);
+    ctx.bezierCurveTo(realCps[i].cp1x,realCps[i].cp1y,realCps[i].cp2x,realCps[i].cp2y,pts[i+1].x,pts[i+1].y);
   }
   ctx.strokeStyle = phaseColor;
   ctx.lineWidth = 2.5;
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   ctx.stroke();
 
-  // Dots
+  // ── Dots + labels ──
   entries.forEach(function(e, i) {
-    var x = xFor(e), y = yFor(e);
+    var x=xFor(e), y=yFor(e);
+    var isMorning = e.source === 'morning';
     var isLast = i === entries.length-1;
 
-    if (isLast) {
-      // Pulse ring on latest point
+    if (isMorning) {
+      // Sunrise glow — larger outer ring
+      ctx.beginPath(); ctx.arc(x, y, 11, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.1)'; ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.18)'; ctx.fill();
+    } else if (isLast) {
+      // Pulse ring on latest
       ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI*2);
       ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.15)'; ctx.fill();
     }
 
-    ctx.beginPath(); ctx.arc(x, y, isLast ? 5 : 3.5, 0, Math.PI*2);
+    ctx.beginPath(); ctx.arc(x, y, isMorning ? 5 : isLast ? 4.5 : 3, 0, Math.PI*2);
     ctx.fillStyle = phaseColor; ctx.fill();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = isLast ? 2 : 1.5; ctx.stroke();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = isMorning ? 2.5 : isLast ? 2 : 1.5; ctx.stroke();
 
-    // Energy value label on every dot
+    // Label
     ctx.fillStyle = phaseColor;
-    ctx.font = (isLast ? 'bold 10px' : '9px') + ' DM Sans,sans-serif';
-    ctx.textAlign = x > W-36 ? 'right' : (x < padL+16 ? 'left' : 'center');
-    var labelX = ctx.textAlign==='right' ? x-8 : ctx.textAlign==='left' ? x+8 : x;
-    ctx.fillText(e.energy, labelX, y-9);
+    ctx.font = (isMorning || isLast ? 'bold 10px' : '9px') + ' DM Sans,sans-serif';
+    var lx = x > W-40 ? x-8 : x < padL+20 ? x+8 : x;
+    ctx.textAlign = x > W-40 ? 'right' : x < padL+20 ? 'left' : 'center';
+    var label = isMorning ? '☀ ' + e.energy : String(e.energy);
+    ctx.fillText(label, lx, y-10);
+
+    // Time label below dot for morning and last entry
+    if (isMorning || isLast) {
+      ctx.fillStyle = 'rgba(28,26,24,0.35)';
+      ctx.font = '8px DM Mono,monospace';
+      ctx.textAlign = x > W-40 ? 'right' : x < padL+20 ? 'left' : 'center';
+      ctx.fillText(e.time||'', lx, y+16);
+    }
   });
+
+  // ── Preview dot (ghost at slider position) ──
+  if (previewPts) {
+    ctx.beginPath(); ctx.arc(previewPts.x, previewPts.y, 4, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.35)'; ctx.fill();
+    ctx.strokeStyle = 'rgba('+r+','+g+','+b+',0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([2,2]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.6)';
+    ctx.font = '9px DM Sans,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(previewEnergy, previewPts.x, previewPts.y-10);
+  }
 }
 
 // initDayLog is called inside unlockDashboard directly
