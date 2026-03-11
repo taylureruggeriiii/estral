@@ -2543,7 +2543,7 @@ function unlockDashboard() {
     localStorage.setItem('morning_done_' + todayFmt, 'true');
   } catch(e) {}
   try {
-    if (typeof saveLogEntry === 'function') {
+    if (typeof saveLogEntry === 'function' && morningData.energy) {
       saveLogEntry({ energy:morningData.energy, mood:morningData.mood, symptoms:morningData.symptoms, skin:morningData.skin, cravings:morningData.cravings, intention:morningData.intention, sleep:morningData.sleep, bodyReady:morningData.bodyReady, mindClear:morningData.mindClear });
     }
   } catch(e) { console.warn('saveLogEntry error:', e); }
@@ -2556,9 +2556,9 @@ function unlockDashboard() {
     const _dayKey = 'daylog_' + _now.getFullYear() + '_' + (_now.getMonth()+1) + '_' + _now.getDate();
     let _entries = [];
     try { _entries = JSON.parse(localStorage.getItem(_dayKey) || '[]'); } catch(_e) {}
-    // Only seed if no morning entry yet
+    // Only seed if no morning entry yet and morningData has real energy from quiz
     const _hasMorning = _entries.some(function(e){ return e.source === 'morning'; });
-    if (!_hasMorning) {
+    if (!_hasMorning && morningData.energy) {
       const _timeStr = _now.getHours().toString().padStart(2,'0') + ':' + _now.getMinutes().toString().padStart(2,'0');
       _entries.unshift({ ts: _now.getTime(), time: _timeStr, tags: _morningMood, text: morningData.intention || '', energy: _morningEnergy, source: 'morning' });
       localStorage.setItem(_dayKey, JSON.stringify(_entries));
@@ -3902,6 +3902,28 @@ function showNoCycleState() {
 }
 
 
+// ── Hydrate morningData from today's saved log on every page load ──
+// This ensures morningData is never empty after a page reload.
+function hydrateMorningData() {
+  try {
+    const logs = JSON.parse(localStorage.getItem('estral_logs') || '[]');
+    const todayStr = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+    const todayEntry = logs.find(function(l) { return l.date === todayStr && l.am; });
+    if (todayEntry && todayEntry.am) {
+      const am = todayEntry.am;
+      if (am.energy)    morningData.energy    = am.energy;
+      if (am.mood)      morningData.mood      = am.mood;
+      if (am.symptoms)  morningData.symptoms  = am.symptoms;
+      if (am.skin)      morningData.skin      = am.skin;
+      if (am.cravings)  morningData.cravings  = am.cravings;
+      if (am.intention) morningData.intention = am.intention;
+      if (am.sleep)     morningData.sleep     = am.sleep;
+      if (am.bodyReady !== undefined) morningData.bodyReady = am.bodyReady;
+      if (am.mindClear !== undefined) morningData.mindClear = am.mindClear;
+    }
+  } catch(e) {}
+}
+
 function applyProfileToApp() {
   const p = window._userProfile; if (!p) return;
   const firstName = p.name ? p.name.split(' ')[0] : '';
@@ -4075,6 +4097,7 @@ window.addEventListener('DOMContentLoaded', () => {
     setPhaseTheme(profile.cyclePhase);
     document.body.classList.add('phase-' + profile.cyclePhase);
     applyProfileToApp();
+    hydrateMorningData();
     setTimeout(() => { initCycleRing(profile.cycleDay, profile.cycleTotal || 28, ''); initInlineSettings(); }, 350);
   } else {
     obShowScreen(0);
