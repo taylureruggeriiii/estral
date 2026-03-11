@@ -2924,11 +2924,28 @@ function buildDashTodoList() {
   var doneMap = {};
   try { doneMap = JSON.parse(localStorage.getItem(doneKey) || '{}'); } catch(e) {}
 
-  // Get life areas (use global or load fresh)
-  var areas = (typeof lifeAreas !== 'undefined' && lifeAreas.length) ? lifeAreas :
-    (JSON.parse(localStorage.getItem('estral_life_areas') || 'null') || DEFAULT_LIFE_AREAS);
+  // Get the 4 focus areas chosen at brain dump setup
+  var chosenNames = bdSelectedAreas && bdSelectedAreas.length ? bdSelectedAreas : [];
+  if (!chosenNames.length) {
+    try {
+      var _saved = JSON.parse(localStorage.getItem('estral_brain_dump') || 'null');
+      if (_saved && _saved.areas) chosenNames = _saved.areas;
+    } catch(e) {}
+  }
 
+  // Map names to full area objects with colour + emoji
+  var areas = chosenNames.map(function(name) {
+    var opt = (typeof BD_AREA_OPTIONS !== 'undefined' ? BD_AREA_OPTIONS : []).find(function(o){ return o.name === name; });
+    return opt ? { id: name.toLowerCase(), name: name, color: opt.color, emoji: opt.emoji } : { id: name.toLowerCase(), name: name, color: '#888', emoji: '◈' };
+  });
+
+  // Fallback: if no brain dump areas set yet, show a prompt
   container.innerHTML = '';
+
+  if (areas.length === 0) {
+    container.innerHTML = '<div style="font-size:13px;color:var(--muted);font-style:italic;padding:8px 0;">Set up your focus areas in the Plan tab to see your list here.</div>';
+    return;
+  }
 
   areas.forEach(function(area) {
     // Find planned tasks for this area
@@ -4519,6 +4536,7 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     const saved = JSON.parse(localStorage.getItem('estral_brain_dump') || 'null');
     if (saved && saved.items) brainDumpItems = saved.items;
+    if (saved && saved.areas) bdSelectedAreas = saved.areas;
   } catch(e) {}
   // Load saved week/month tasks on start
   try {
