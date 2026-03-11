@@ -2223,9 +2223,9 @@ function switchTab(tab) {
     showMorningScreen(currentMorningScreen);
   } else {
     // Auto-unlock dashboard if morning data exists but home is still in locked state
-    if (tab === 'home') {
+    if (tab === 'home' && !window._unlocking) {
       const homeEl = document.getElementById('screen-home');
-      const alreadyUnlocked = homeEl && homeEl.querySelector('#daylog-feed');
+      const alreadyUnlocked = homeEl && homeEl.querySelector('#unlocked-moon-badge');
       const hasMorning = morningData && (morningData.energy || (morningData.mustDo && morningData.mustDo.length));
       // Also check localStorage for saved morning
       let savedMorning = false;
@@ -2518,6 +2518,18 @@ function buildMorningTimeBlocks() {
 function unlockDashboard() {
   currentMorningScreen = 0;
 
+  // Idempotency — if dashboard already built, just switch to it
+  const homeEl = document.getElementById('screen-home');
+  if (homeEl && homeEl.querySelector('#unlocked-moon-badge')) {
+    const nav = document.getElementById('mainNav');
+    if (nav) nav.style.display = 'flex';
+    document.querySelectorAll('[id^="screen-m"]').forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
+    window._unlocking = true;
+    switchTab('home');
+    window._unlocking = false;
+    return;
+  }
+
   // Restore nav
   const nav = document.getElementById('mainNav');
   if (nav) nav.style.display = 'flex';
@@ -2525,12 +2537,16 @@ function unlockDashboard() {
   // Hide all morning screens
   document.querySelectorAll('[id^="screen-m"]').forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
 
-  // Save morning completion
-  const todayFmt = new Date().toISOString().slice(0,10).replace(/-/g,'');
-  localStorage.setItem('morning_done_' + todayFmt, 'true');
-  if (typeof saveLogEntry === 'function') {
-    saveLogEntry({ energy:morningData.energy, mood:morningData.mood, symptoms:morningData.symptoms, skin:morningData.skin, cravings:morningData.cravings, intention:morningData.intention, sleep:morningData.sleep, bodyReady:morningData.bodyReady, mindClear:morningData.mindClear });
-  }
+  // Save morning completion — always, before anything else that could throw
+  try {
+    const todayFmt = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    localStorage.setItem('morning_done_' + todayFmt, 'true');
+  } catch(e) {}
+  try {
+    if (typeof saveLogEntry === 'function') {
+      saveLogEntry({ energy:morningData.energy, mood:morningData.mood, symptoms:morningData.symptoms, skin:morningData.skin, cravings:morningData.cravings, intention:morningData.intention, sleep:morningData.sleep, bodyReady:morningData.bodyReady, mindClear:morningData.mindClear });
+    }
+  } catch(e) { console.warn('saveLogEntry error:', e); }
 
   const intention = morningData.intention || 'present';
   const e = morningData.energy || 7;
@@ -2749,7 +2765,9 @@ function unlockDashboard() {
       <button class="btn-ghost" onclick="openPMQuiz()" style="margin-top:12px;">Open evening review ✦</button>
 
     </div>`;
+  window._unlocking = true;
   switchTab('home');
+  window._unlocking = false;
   setTimeout(() => {
     initCycleRing(8, 28, 'U');
     var _phase = (window._userProfile && window._userProfile.cyclePhase) || 'follicular';
@@ -3208,19 +3226,6 @@ function renderSortedTasks() {
   updateDumpProgress();
 }
 
-function populateMonth() {
-  if (brainDumpItems.length === 0) brainDumpItems = SORTED_DEFAULTS.map(d => ({ ...d }));
-  monthTasks = {};
-  const phaseDays = { follicular:[6,7,8,9,10,11,12,13], ovulatory:[14,15,16], luteal:[17,18,19,20,21,22,23,24,25,26,27,28], menstrual:[1,2,3,4,5] };
-  brainDumpItems.forEach((item, idx) => {
-    const days = phaseDays[item.phase] || phaseDays.follicular;
-    const day = days[idx % days.length];
-    if (!monthTasks[day]) monthTasks[day] = [];
-    if (monthTasks[day].length < 3) monthTasks[day].push(item);
-  });
-  buildMonthGrid();
-  switchPlanView('month');
-}
 
 
 // ══════════════════════════════════════════════════════
@@ -3434,25 +3439,6 @@ function saveNewEvent() {
   if (navigator.vibrate) navigator.vibrate([20, 10, 20]);
 }
 
-function buildMonthGrid() {
-  const grid = document.getElementById('monthGrid'); if (!grid) return;
-  grid.innerHTML = '';
-  for (let blank = 0; blank < 0; blank++) { const e = document.createElement('div'); grid.appendChild(e); }
-  for (let d = 1; d <= 31; d++) {
-    const phase = PHASE_MAP[d] || 'follicular';
-    const color = PHASE_COLORS[phase];
-    const isToday = d === 8;
-    const cell = document.createElement('div'); cell.className = 'month-day-cell' + (isToday?' today':'');
-    cell.style.background = `${color}${isToday?'33':'18'}`;
-    const moon = MOON_ICONS[((d-1) % 28)];
-    const tasks = monthTasks[d] || [];
-    const dots = tasks.map(t => `<div class="month-task-dot" style="background:${PHASE_COLORS[t.phase]};"></div>`).join('');
-    cell.innerHTML = `<span class="month-day-num" style="color:${isToday?color:'rgba(28,26,24,0.75)'};">${d}</span><span class="month-moon-icon" style="color:${isToday?color:'rgba(28,26,24,0.5)'};">${moon}</span><div class="month-task-dots">${dots}</div>`;
-    const _d=d, _phase=phase, _tasks=tasks, _moon=moon, _dateStr=dateStr, _dayEvents=dayEvents;
-    cell.onclick = () => openDayModalFull(_d, _phase, _tasks, _moon, _dateStr, _dayEvents);
-    grid.appendChild(cell);
-  }
-}
 
 function openDayModalFull(day, phase, tasks, moon, dateStr, dayEvents) {
   const color = PHASE_COLORS[phase];
@@ -3699,7 +3685,6 @@ function addChatMessage(role, text) {
   d.textContent=text; c.appendChild(d); c.scrollTop=c.scrollHeight;
   chatHistory.push({role,content:text});
 }
-function sendSuggestion(btn) { document.getElementById('chat-input').value=btn.textContent; sendChat(); }
 async function sendChat() {
   const input=document.getElementById('chat-input'); const msg=input.value.trim(); if(!msg) return;
   input.value=''; addChatMessage('user',msg);
@@ -3890,23 +3875,6 @@ function showNoCycleState() {
   }
 }
 
-function getCurrentMoonPhase() {
-  // Simple moon phase calc
-  const synodicMonth = 29.53058867;
-  const knownNew = new Date('2000-01-06T18:14:00Z');
-  const now = new Date();
-  const diff = (now - knownNew) / (1000 * 60 * 60 * 24);
-  const phase = ((diff % synodicMonth) + synodicMonth) % synodicMonth;
-  if (phase < 1.85) return 'New Moon';
-  if (phase < 7.38) return 'Waxing Crescent';
-  if (phase < 9.22) return 'First Quarter';
-  if (phase < 14.77) return 'Waxing Gibbous';
-  if (phase < 16.61) return 'Full Moon';
-  if (phase < 22.15) return 'Waning Gibbous';
-  if (phase < 23.99) return 'Last Quarter';
-  if (phase < 29.53) return 'Waning Crescent';
-  return 'New Moon';
-}
 
 function applyProfileToApp() {
   const p = window._userProfile; if (!p) return;
@@ -4096,22 +4064,6 @@ const PHASE_DETAILS = {
   menstrual: { name:'Menstrual', days:'Days 1–5', color:'#5C2D4A', emoji:'🌑', tagline:"Rest isn't lazy. It's literally the protocol.", hormone_title:"What's happening hormonally", hormone:"Oestrogen and progesterone are at their lowest point of the entire cycle. The uterine lining is shedding. Prostaglandins are causing the uterine contractions — that's the cramping. Your body is doing real physical work right now, even when you're lying still.", body_title:'What this feels like in your body', body:"Tired. Potentially crampy. Lower back might ache. You might feel unusually cold. Iron dips slightly as you bleed which contributes to the fatigue. Warm food, iron-rich food, rest. That's the prescription.", mind_title:'What this means for your mind', mind:"Counterintuitively, your intuition is sharpest here. The veil between how things appear and how they actually are gets thin. You have less tolerance for bullshit — use it. Journalling, reflection, evaluating what's working — this is the phase for honest inventory.", watch_title:'Watch out for', watch:"Pushing through. The follicular phase energy is coming — three to five days away. You don't need to perform right now. Let yourself be slow.", mantra:'Rest. Reflect. Release.' }
 };
 
-function openPhaseModal(phase) {
-  const d = PHASE_DETAILS[phase]; if (!d) return;
-  const hero = document.getElementById('phaseModalHero');
-  const body = document.getElementById('phaseModalBody');
-  hero.style.background = d.color + '18';
-  hero.style.borderBottom = `2px solid ${d.color}30`;
-  hero.innerHTML = `<button class="phase-modal-close" onclick="closePhaseModal()">×</button><div style="font-size:36px;margin-bottom:12px;">${d.emoji}</div><div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${d.color};margin-bottom:6px;">${d.days}</div><h2 style="font-size:32px;margin-bottom:8px;">${d.name}</h2><p style="font-size:16px;font-weight:500;color:${d.color};">${d.tagline}</p>`;
-  body.innerHTML = `
-    <div class="phase-modal-section"><div class="phase-modal-section-title">${d.hormone_title}</div><p style="font-size:15px;line-height:1.7;">${d.hormone}</p></div>
-    <div class="estral-voice card-voice" style="margin:0;"><span class="voice-label">Tip from ESTRAL</span>${d.body}</div>
-    <div class="phase-modal-section"><div class="phase-modal-section-title">${d.mind_title}</div><p style="font-size:15px;line-height:1.7;">${d.mind}</p></div>
-    <div class="phase-modal-section"><div class="phase-modal-section-title">${d.watch_title}</div><p style="font-size:15px;line-height:1.7;color:var(--menstrual);">${d.watch}</p></div>
-    <div style="text-align:center;padding:20px 0 8px;"><p style="font-family:'Instrument Serif',serif;font-style:italic;font-size:22px;color:${d.color};">${d.mantra}</p></div>`;
-  document.getElementById('phaseModal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
 function closePhaseModal() { document.getElementById('phaseModal').classList.remove('open'); document.body.style.overflow = ''; }
 
 // ══════════════════════════════════════════════════════
@@ -4475,6 +4427,11 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     const saved = JSON.parse(localStorage.getItem('estral_brain_dump') || 'null');
     if (saved && saved.items) brainDumpItems = saved.items;
+  } catch(e) {}
+  // Load saved week/month tasks on start
+  try {
+    const savedTasks = JSON.parse(localStorage.getItem('estral_month_tasks') || 'null');
+    if (savedTasks && typeof savedTasks === 'object') monthTasks = savedTasks;
   } catch(e) {}
 });
 
@@ -4886,6 +4843,20 @@ function buildChartFromData() {
     buildWeeklyNarrative(realLogs);
     showPatternRead();
   }
+
+
+  // Extended chart sections (weekly overview + tag freq + TOD)
+  var realLogsExt = [];
+  try { realLogsExt = JSON.parse(localStorage.getItem('estral_logs')||'[]'); } catch(e) {}
+  var longSection = document.getElementById('patterns-long-section');
+  if (longSection && realLogsExt.length >= 3) {
+    longSection.style.display = 'block';
+    var tfc = document.getElementById('chart-tagfreq-card');
+    if (tfc) tfc.style.display = 'block';
+  }
+  if (typeof buildWeeklyOverview === 'function') buildWeeklyOverview(realLogsExt);
+  if (typeof buildTagFreqBars === 'function') buildTagFreqBars();
+  setTimeout(function(){ if (typeof buildTODChart === 'function') buildTODChart(); }, 80);
 }
 
 function drawMoodBars(logs) {
@@ -6577,15 +6548,15 @@ function populateMonth() {
 // ── DRAG TRAY ──
 function buildDragTray() {
   const tray = document.getElementById('drag-tray-items');
+  if (!tray) return;
   tray.innerHTML = '';
-  brainDumpItems.forEach((item, idx) => {
-    // Skip already placed items
+  brainDumpItems.forEach((item) => {
     const placed = Object.values(monthTasks).flat().some(t => t.text === item.text && !t.locked);
     if (placed) return;
     const chip = document.createElement('div');
     chip.draggable = true;
     const areaColor = getTaskAreaColor(item);
-    chip.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:100px;font-size:12px;cursor:grab;border:1.5px solid ${areaColor};color:${areaColor};background:${areaColor}18;user-select:none;`;
+    chip.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:100px;font-size:12px;cursor:grab;border:1.5px solid ${areaColor};color:${areaColor};background:${areaColor}18;user-select:none;-webkit-user-select:none;`;
     chip.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:${areaColor};flex-shrink:0;"></span>${item.text}`;
     chip.addEventListener('dragstart', e => {
       dragItem = item;
@@ -6594,6 +6565,8 @@ function buildDragTray() {
       chip.style.opacity = '0.5';
     });
     chip.addEventListener('dragend', () => { chip.style.opacity = '1'; });
+    // Touch drag — inline, no patch needed
+    if (typeof attachTouchDrag === 'function') attachTouchDrag(chip, item, 'tray');
     tray.appendChild(chip);
   });
 }
@@ -6680,10 +6653,12 @@ function buildMonthGrid() {
       if (!monthTasks[d].find(t => t.text === dragItem.text)) {
         monthTasks[d].push({ ...dragItem });
       }
+      localStorage.setItem('estral_month_tasks', JSON.stringify(monthTasks));
       buildMonthGrid();
       buildDragTray();
     });
     cell.addEventListener('click', () => openDayModal(d, phase, monthTasks[d] || [], moon));
+    cell.dataset.day = d; // stamp for touch drag
     grid.appendChild(cell);
   }
 }
@@ -6859,7 +6834,7 @@ function buildWeekColumns() {
       buildWeekColumns();
       buildWeekTrayItems();
       buildDragTray();
-      if (typeof buildDashWeekly === 'function') buildDashWeekly();
+      _debounceDashWeekly();
     });
     container.appendChild(col);
   }
@@ -6878,10 +6853,12 @@ function buildWeekColumns() {
       Object.keys(monthTasks).forEach(d => {
         monthTasks[d] = (monthTasks[d] || []).filter(t => t.text !== dragItem.text);
       });
+      localStorage.setItem('estral_month_tasks', JSON.stringify(monthTasks));
       dragItem = null;
       buildWeekColumns();
       buildWeekTrayItems();
       buildDragTray();
+      _debounceDashWeekly();
     };
   }
 
@@ -6988,6 +6965,15 @@ function buildWeekTrayItems() {
 
 
 // ══════════════════════════════════════════════════════
+// Debounced dashboard refresh — prevents rapid repeated calls after drops
+var _dashWeeklyTimer = null;
+function _debounceDashWeekly() {
+  clearTimeout(_dashWeeklyTimer);
+  _dashWeeklyTimer = setTimeout(function() {
+    if (typeof buildDashWeekly === 'function') buildDashWeekly();
+  }, 300);
+}
+
 // TOUCH DRAG SYSTEM — iOS-compatible drag-to-calendar
 // HTML5 drag API does not work on iOS Safari.
 // This uses touchstart/touchmove/touchend with a
@@ -7165,7 +7151,7 @@ function _handleTouchDrop(cell, item, source) {
     buildWeekColumns();
     buildWeekTrayItems();
     buildDragTray();
-    if (typeof buildDashWeekly === 'function') buildDashWeekly();
+    _debounceDashWeekly();
     return;
   }
   if (cell.classList.contains('month-day-cell')) {
@@ -7178,7 +7164,7 @@ function _handleTouchDrop(cell, item, source) {
     localStorage.setItem('estral_month_tasks', JSON.stringify(monthTasks));
     buildMonthGrid();
     buildDragTray();
-    if (typeof buildDashWeekly === 'function') buildDashWeekly();
+    _debounceDashWeekly();
     return;
   }
   if (cell.classList.contains('week-day-col')) {
@@ -7212,35 +7198,9 @@ function _handleTouchDrop(cell, item, source) {
     buildWeekColumns();
     buildWeekTrayItems();
     buildDragTray();
-    if (typeof buildDashWeekly === 'function') buildDashWeekly();
+    _debounceDashWeekly();
   }
 }
-
-// Patch buildDragTray to attach touch handlers
-var _origBuildDragTray = buildDragTray;
-buildDragTray = function() {
-  _origBuildDragTray();
-  var tray = document.getElementById('drag-tray-items');
-  if (!tray) return;
-  tray.querySelectorAll('[draggable]').forEach(function(chip, idx) {
-    var item = brainDumpItems.filter(function(it){
-      return !Object.values(monthTasks).flat().some(function(t){ return t.text === it.text && !t.locked; });
-    })[idx];
-    if (item) attachTouchDrag(chip, item, 'tray');
-  });
-};
-
-// Patch buildMonthGrid to stamp data-day
-var _origBuildMonthGrid = buildMonthGrid;
-buildMonthGrid = function() {
-  _origBuildMonthGrid();
-  document.querySelectorAll('.month-day-cell').forEach(function(cell) {
-    var numEl = cell.querySelector('.month-day-num');
-    if (numEl) cell.dataset.day = numEl.textContent.trim();
-  });
-};
-
-
 
 
 // ══════════════════════════════════════════════════════════
@@ -7700,14 +7660,7 @@ function _drawEnergyGraph() {
   });
 }
 
-// Call initDayLog after unlockDashboard builds the DOM
-var _origUnlockDashboard = unlockDashboard;
-unlockDashboard = function() {
-  _origUnlockDashboard();
-  setTimeout(function() {
-    initDayLog();
-  }, 120);
-};
+// initDayLog is called inside unlockDashboard directly
 
 
 
@@ -7975,26 +7928,6 @@ function buildTODChart() {
     });
   }
 }
-
-// Patch buildChartFromData to also build weekly + intraday sections
-var _origBuildChart = buildChartFromData;
-buildChartFromData = function() {
-  _origBuildChart();
-  var realLogs = [];
-  try { realLogs = JSON.parse(localStorage.getItem('estral_logs')||'[]'); } catch(e) {}
-
-  // Show longer patterns section if enough data
-  var longSection = document.getElementById('patterns-long-section');
-  if (longSection && realLogs.length >= 3) {
-    longSection.style.display = 'block';
-    document.getElementById('chart-tagfreq-card').style.display = 'block';
-  }
-
-  buildWeeklyOverview(realLogs);
-  buildTagFreqBars();
-  setTimeout(buildTODChart, 80);
-};
-
 // ── Clear today's log ──
 function clearTodayLog() {
   if (!confirm('Clear all entries for today?')) return;
