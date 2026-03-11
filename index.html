@@ -3848,8 +3848,19 @@ function completeOnboarding() {
   ob.classList.add('exit');
   setTimeout(() => {
     ob.classList.add('hidden');
+    // Restore nav in case we came from goToLogPeriod mid-session
+    const nav = document.getElementById('mainNav');
+    if (nav) nav.style.display = 'flex';
+    // Remove stale no-cycle nudge so it rebuilds with real data
+    const nudge = document.getElementById('no-cycle-nudge');
+    if (nudge) nudge.remove();
     applyProfileToApp();
     initCycleRing((window._userProfile ? window._userProfile.cycleDay || 8 : 8), window._userProfile?.cycleTotal || 28, '');
+    // If dashboard is already unlocked, refresh it in place
+    const homeEl = document.getElementById('screen-home');
+    if (homeEl && homeEl.querySelector('#unlocked-moon-badge')) {
+      buildDashWeekly && buildDashWeekly();
+    }
   }, 650);
 }
 
@@ -3874,7 +3885,11 @@ function showNoCycleState() {
   if (ringOfEl) ringOfEl.style.display = 'none';
 
   const phaseNameEl = document.getElementById('cycleRingPhaseName');
-  if (phaseNameEl) { phaseNameEl.textContent = 'Log your period to begin'; phaseNameEl.style.fontSize = '11px'; phaseNameEl.style.lineHeight = '1.4'; phaseNameEl.style.maxWidth = '90px'; }
+  if (phaseNameEl) {
+    phaseNameEl.textContent = 'Log your period to begin';
+    phaseNameEl.style.cssText = phaseNameEl.style.cssText + 'font-size:11px;line-height:1.4;max-width:90px;cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px;';
+    phaseNameEl.onclick = function() { goToLogPeriod(); };
+  }
 
   const daysLeftEl = document.getElementById('cycleRingDaysLeft');
   if (daysLeftEl) daysLeftEl.style.display = 'none';
@@ -3890,19 +3905,37 @@ function showNoCycleState() {
   const chatCtx = document.getElementById('chat-context-line');
   if (chatCtx) chatCtx.textContent = `Moon: ${moonPhase}`;
 
-  // Add a small tap-to-log nudge below the ring
+  // Tappable nudge below the ring
   const ringWrap = document.getElementById('home-phase-ring');
   if (ringWrap && !document.getElementById('no-cycle-nudge')) {
-    const nudge = document.createElement('div');
+    const nudge = document.createElement('button');
     nudge.id = 'no-cycle-nudge';
-    nudge.style.cssText = 'font-size:10px;color:var(--muted);text-align:center;margin-top:6px;line-height:1.5;max-width:130px;';
-    nudge.textContent = 'your cycle information will load once you log your first period';
+    nudge.onclick = function() { goToLogPeriod(); };
+    nudge.style.cssText = [
+      'display:inline-flex;align-items:center;gap:6px;',
+      'margin-top:10px;padding:7px 14px;border-radius:100px;',
+      'background:rgba(92,45,74,0.08);border:1px solid rgba(92,45,74,0.25);',
+      'color:#5C2D4A;font-size:11px;font-family:DM Sans,sans-serif;',
+      'cursor:pointer;touch-action:manipulation;letter-spacing:0.02em;',
+    ].join('');
+    nudge.innerHTML = '<span style="font-size:13px;">🩸</span> Log your period to begin';
     ringWrap.parentNode.insertBefore(nudge, ringWrap.nextSibling);
   }
 }
 
 
-// ── Hydrate morningData from today's saved log on every page load ──
+function goToLogPeriod() {
+  // Show onboarding panel at the period screen (ob-2)
+  const ob = document.getElementById('onboarding');
+  if (!ob) return;
+  ob.classList.remove('hidden', 'exit');
+  ob.style.display = 'flex';
+  const nav = document.getElementById('mainNav');
+  if (nav) nav.style.display = 'none';
+  obShowScreen(2);
+}
+
+// ── Hydrate morningData from today’s saved log on every page load ──
 // This ensures morningData is never empty after a page reload.
 function hydrateMorningData() {
   try {
@@ -4098,6 +4131,16 @@ window.addEventListener('DOMContentLoaded', () => {
     document.body.classList.add('phase-' + profile.cyclePhase);
     applyProfileToApp();
     hydrateMorningData();
+    // Auto-unlock dashboard on startup if morning was already completed today
+    setTimeout(function() {
+      try {
+        const _todayFmt = new Date().toISOString().slice(0,10).replace(/-/g,'');
+        const _todayStr = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+        const _doneSaved = !!localStorage.getItem('morning_done_' + _todayFmt);
+        const _doneInLog = !_doneSaved && JSON.parse(localStorage.getItem('estral_logs')||'[]').some(function(l){ return l.date === _todayStr && l.am; });
+        if (_doneSaved || _doneInLog) unlockDashboard();
+      } catch(e) {}
+    }, 0);
     setTimeout(() => { initCycleRing(profile.cycleDay, profile.cycleTotal || 28, ''); initInlineSettings(); }, 350);
   } else {
     obShowScreen(0);
