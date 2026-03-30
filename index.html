@@ -343,7 +343,258 @@ to{opacity:1;transform:translateY(0);}}
 .splash-sub strong{color:var(--text);font-weight:500;}
 
 /* ── CONTENT SCREENS ── */
-.ob-header{padding:56px 24px 0;flex-shrink:0;}
+/* ══ ONBOARDING — REDESIGNED ══════════════════════ */
+
+/* The gate itself handles scroll */
+#onboardingGate{
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+}
+
+/* ob-wrap: proper padding, full width */
+.ob-wrap{
+  width:100%;
+  padding:0;
+}
+
+/* Each screen: full page, flex column */
+.ob-screen{
+  display:none;
+  flex-direction:column;
+  min-height:100vh;
+  min-height:-webkit-fill-available;
+}
+.ob-screen.active{ display:flex; }
+
+/* Header — safe area aware, always 24px horizontal padding */
+.ob-header{
+  padding:max(56px, env(safe-area-inset-top, 0px) + 44px) 24px 0;
+  flex-shrink:0;
+}
+
+/* Back button — bigger tap target */
+.ob-back{
+  background:none;border:none;cursor:pointer;
+  font-size:18px;color:var(--muted);
+  padding:4px 0 20px;
+  touch-action:manipulation;display:inline-flex;
+  align-items:center;gap:6px;
+  min-height:44px;
+  font-family:'DM Sans',sans-serif;
+  letter-spacing:-0.01em;
+}
+
+/* Step indicator */
+.ob-step{
+  font-size:9px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;
+}
+.ob-step::before{
+  content:'';display:block;width:16px;height:1px;
+  background:var(--muted);opacity:0.4;
+}
+
+/* ESTRAL speech bubble */
+.ob-estral-line{
+  font-style:italic;font-size:15px;line-height:1.75;color:#1A0A0E;
+  padding:14px 18px 14px 36px;
+  background:rgba(255,252,248,0.8);
+  border:1px solid rgba(255,255,255,0.7);
+  border-radius:14px;
+  margin-bottom:24px;position:relative;
+  box-shadow:0 2px 12px rgba(28,26,24,0.06);
+}
+.ob-estral-line::before{
+  content:'✦';position:absolute;top:14px;left:14px;
+  font-size:9px;
+  background:linear-gradient(90deg,#C41230,#FF3D7F);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+
+/* Screen title */
+.ob-title{
+  font-size:36px;font-weight:700;letter-spacing:-0.025em;
+  line-height:1.05;margin-bottom:6px;
+}
+.ob-title em{
+  font-style:italic;font-family:'Instrument Serif',serif;
+  font-weight:300;font-size:40px;
+}
+
+/* Body — scrollable content, proper padding */
+.ob-body{
+  flex:1;
+  padding:20px 24px 16px;
+  display:flex;flex-direction:column;gap:20px;
+  overflow-y:visible;
+}
+
+/* CTA footer — always 24px padding */
+.ob-cta{
+  padding:16px 24px;
+  padding-bottom:max(32px, env(safe-area-inset-bottom, 0px) + 24px);
+  flex-shrink:0;
+  display:flex;flex-direction:column;gap:10px;
+}
+
+/* ── INPUT FIELDS — card style, more tactile ── */
+.ob-field{ display:flex;flex-direction:column;gap:0; }
+
+.ob-label{
+  font-size:10px;font-weight:700;letter-spacing:0.12em;
+  text-transform:uppercase;color:var(--muted);
+  margin-bottom:8px;display:flex;align-items:center;gap:6px;
+}
+
+/* Input as contained card — feels more intentional */
+.ob-input-card{
+  background:rgba(255,252,248,0.8);
+  border:1.5px solid rgba(28,26,24,0.12);
+  border-radius:14px;
+  padding:0;
+  transition:border-color 0.2s, box-shadow 0.2s;
+  overflow:hidden;
+}
+.ob-input-card:focus-within{
+  border-color:var(--phase);
+  box-shadow:0 0 0 3px rgba(26,110,142,0.10);
+}
+
+.ob-input{
+  width:100%;
+  background:transparent;
+  border:none;
+  border-bottom:1.5px solid rgba(28,26,24,0.12);
+  padding:14px 16px;
+  font-family:'DM Sans',sans-serif;
+  font-size:16px;
+  color:var(--text);
+  outline:none;
+  transition:border-color 0.2s;
+  -webkit-appearance:none;
+  border-radius:0;
+}
+.ob-input:last-child{ border-bottom:none; }
+.ob-input:focus{ border-bottom-color:var(--phase); }
+.ob-input::placeholder{ color:var(--muted); }
+select.ob-input{
+  -webkit-appearance:none;appearance:none;
+  background:transparent;cursor:pointer;
+}
+
+/* Standalone input (not in card) */
+.ob-input-standalone{
+  width:100%;background:rgba(255,252,248,0.8);
+  border:1.5px solid rgba(28,26,24,0.12);
+  border-radius:14px;
+  padding:14px 16px;
+  font-family:'DM Sans',sans-serif;font-size:16px;
+  color:var(--text);outline:none;
+  transition:border-color 0.2s, box-shadow 0.2s;
+  -webkit-appearance:none;
+}
+.ob-input-standalone:focus{
+  border-color:var(--phase);
+  box-shadow:0 0 0 3px rgba(26,110,142,0.10);
+}
+.ob-input-standalone::placeholder{ color:var(--muted); }
+
+/* Grid for birth time + city */
+.ob-grid-2{ display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+
+/* ── OPTION CARDS ── */
+.ob-option-card{
+  padding:16px 18px;border-radius:16px;
+  border:1.5px solid rgba(28,26,24,0.12);
+  cursor:pointer;transition:all 0.2s;
+  background:rgba(255,252,248,0.7);
+  display:flex;align-items:flex-start;gap:14px;
+  touch-action:manipulation;
+  box-shadow:0 2px 8px rgba(28,26,24,0.04);
+}
+.ob-option-card:active{ transform:scale(0.98); }
+.ob-option-card.selected{
+  border-color:var(--phase);
+  background:var(--phase-dim);
+  box-shadow:0 0 0 3px rgba(26,110,142,0.10);
+}
+.ob-option-card.selected-alt{
+  border-color:var(--menstrual,#8B1A4A);
+  background:rgba(139,26,74,0.06);
+}
+.ob-option-icon{ font-size:22px;flex-shrink:0;margin-top:2px; }
+.ob-option-title{ font-size:14px;font-weight:600;margin-bottom:3px; }
+.ob-option-sub{ font-size:12px;color:var(--muted);line-height:1.5; }
+
+/* ── CONDITION CARDS ── */
+/* condition-card defined below */
+
+/* ── SIGN GRIDS ── */
+.sign-grid{ display:grid;grid-template-columns:repeat(3,1fr);gap:8px; }
+.sign-btn{
+  padding:12px 8px;border-radius:12px;
+  border:1.5px solid rgba(28,26,24,0.12);
+  font-size:12px;cursor:pointer;
+  background:rgba(255,252,248,0.7);color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  transition:all 0.18s;touch-action:manipulation;
+  text-align:center;line-height:1.3;
+  min-height:48px;display:flex;align-items:center;
+  justify-content:center;gap:4px;
+}
+.sign-btn.selected{
+  background:var(--phase);border-color:var(--phase);color:#fff;
+}
+
+/* ── CHIPS ── */
+.ob-chips{ display:flex;flex-wrap:wrap;gap:8px; }
+.ob-chip{
+  padding:10px 16px;border-radius:100px;
+  border:1.5px solid rgba(28,26,24,0.15);
+  font-size:13px;cursor:pointer;background:rgba(255,252,248,0.7);
+  color:var(--text);font-family:'DM Sans',sans-serif;
+  transition:all 0.18s;touch-action:manipulation;
+  min-height:40px;display:inline-flex;align-items:center;
+}
+.ob-chip.selected{
+  background:var(--phase);border-color:var(--phase);color:#fff;
+}
+.ob-chip.selected-soft{
+  background:rgba(26,110,142,0.1);
+  border-color:rgba(26,110,142,0.35);color:var(--phase);
+}
+
+/* Path reveal animation */
+.ob-path{
+  display:none;flex-direction:column;gap:16px;
+  animation:obFadeUp 0.3s ease forwards;
+}
+.ob-path.open{ display:flex; }
+@keyframes obFadeUp{
+  from{opacity:0;transform:translateY(8px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+/* ── SCREEN TRANSITION ── */
+.ob-screen.active{
+  animation:screenIn 0.3s ease forwards;
+}
+@keyframes screenIn{
+  from{opacity:0;transform:translateY(6px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+/* ── DONE SCREEN ── */
+.done-wrap{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;
+  padding:48px 28px;
+  padding-bottom:max(48px, env(safe-area-inset-bottom, 0px) + 40px);
+  text-align:center;
+}
+
 .ob-back{
   background:none;border:none;cursor:pointer;
   font-size:20px;color:var(--muted);padding:0 0 16px;
@@ -512,22 +763,33 @@ input[type=date],input[type=time]{color-scheme:light;}
 .note{font-size:12px;color:var(--muted);line-height:1.55;}
 /* ── CONDITION CARDS ── */
 .condition-card{
-  border:1.5px solid rgba(28,26,24,0.12);border-radius:14px;
-  overflow:hidden;cursor:pointer;transition:all 0.2s;
-  background:rgba(255,252,248,0.6);
+  border:1.5px solid rgba(28,26,24,0.10);
+  border-radius:16px;overflow:hidden;cursor:pointer;
+  transition:all 0.22s cubic-bezier(0.4,0,0.2,1);
+  background:rgba(255,252,248,0.8);
+  box-shadow:0 2px 8px rgba(28,26,24,0.04);
+  touch-action:manipulation;
 }
-.condition-card.selected{border-color:var(--phase);background:var(--phase-dim);}
-.condition-card-inner{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;}
-.condition-icon{font-size:20px;flex-shrink:0;margin-top:2px;opacity:0.4;}
+.condition-card:active{ transform:scale(0.98); }
+.condition-card.selected{
+  border-color:var(--phase);
+  background:var(--phase-dim);
+  box-shadow:0 0 0 3px rgba(26,110,142,0.10), 0 2px 8px rgba(28,26,24,0.04);
+}
+.condition-card-inner{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:16px 16px;
+}
+.condition-icon{font-size:20px;flex-shrink:0;margin-top:2px;opacity:0.4;transition:opacity 0.2s;}
 .condition-card.selected .condition-icon{opacity:1;}
-.condition-text{flex:1;}
-.condition-title{font-size:14px;font-weight:600;margin-bottom:2px;color:var(--text);}
+.condition-text{flex:1;min-width:0;}
+.condition-title{font-size:14px;font-weight:600;margin-bottom:3px;color:var(--text);}
 .condition-sub{font-size:12px;color:var(--muted);line-height:1.5;}
 .condition-check{
-  width:20px;height:20px;border-radius:50%;
-  border:1.5px solid rgba(28,26,24,0.2);flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  transition:all 0.2s;margin-top:2px;
+  width:22px;height:22px;border-radius:50%;
+  border:1.5px solid rgba(28,26,24,0.2);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s;margin-top:2px;background:rgba(255,255,255,0.5);
 }
 .condition-card.selected .condition-check{
   background:var(--phase);border-color:var(--phase);
@@ -536,11 +798,14 @@ input[type=date],input[type=time]{color-scheme:light;}
   content:'✓';color:#fff;font-size:10px;font-weight:700;
 }
 .condition-estral-response{
-  display:none;padding:0 16px 14px 48px;
+  display:none;
+  padding:12px 16px 16px 48px;
   font-size:13px;font-style:italic;line-height:1.75;color:#1A0A0E;
-  border-top:1px solid rgba(28,26,24,0.07);padding-top:12px;
-  margin-top:0;
+  border-top:1px solid rgba(28,26,24,0.07);
+  background:rgba(26,110,142,0.04);
+  animation:condFadeIn 0.3s ease forwards;
 }
+@keyframes condFadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
 .condition-card.selected .condition-estral-response{display:block;}
 
 .mt4{margin-top:4px;}.mt8{margin-top:8px;}.mt12{margin-top:12px;}
@@ -1029,14 +1294,13 @@ to{opacity:1;transform:translateY(0);}}
 .intro{
   position:fixed;
   top:0;left:0;right:0;bottom:0;
-  z-index:1000;
-  background:#030206;
-  display:none; /* shown programmatically */
+  z-index:10000; /* above everything including body::before */
+  background:#000 !important;
+  display:none;
   flex-direction:column;
   transition:opacity 0.8s ease;
   overflow:hidden;
-  /* Force dark background everywhere including notch */
-  -webkit-background-color:#030206;
+  isolation:isolate; /* prevent body background bleeding through */
 }
 
 /* ── SKIP ── */
@@ -1054,7 +1318,8 @@ to{opacity:1;transform:translateY(0);}}
   position:fixed;
   top:0;left:0;right:0;bottom:0;
   overflow:hidden;
-  background:#030206;
+  background:#000 !important;
+  isolation:isolate;
 }
 .cards-track{display:flex;height:100%;width:300%;transition:transform 1.1s cubic-bezier(0.77,0,0.18,1);}
 .card{
@@ -1066,12 +1331,12 @@ to{opacity:1;transform:translateY(0);}}
   display:flex;
   flex-direction:column;
   overflow:hidden;
-  background:#030206;
+  background:#000 !important;
 }
 
-.c1{background:#060310;}
-.c2{background:#04060e;}
-.c3{background:#0a0308;}
+.c1{background:#050008 !important;}
+.c2{background:#00050a !important;}
+.c3{background:#080005 !important;}
 
 /* ── HALFTONE OVERLAY — the Y2K texture ── */
 .halftone{
@@ -1105,9 +1370,9 @@ to{opacity:1;transform:translateY(0);}}
   background:repeating-linear-gradient(
     0deg,
     transparent,
-    transparent 2px,
-    rgba(0,0,0,0.08) 2px,
-    rgba(0,0,0,0.08) 4px
+    transparent 3px,
+    rgba(255,255,255,0.025) 3px,
+    rgba(255,255,255,0.025) 4px
   );
 }
 
@@ -1676,89 +1941,128 @@ button { min-height:36px; }
   display:flex;align-items:center;justify-content:center;
 }
 
+
+/* ══ REALITY HOOK TEXT STYLES ══════════════════ */
+
+/* Centred text for reality hook cards */
+.rh-text {
+  justify-content:center !important;
+  padding-bottom:120px !important;
+  text-align:left;
+  padding-left:32px !important;
+  padding-right:32px !important;
+}
+
+/* Big statement lines */
+.line-xl-rh {
+  display:block;opacity:0;
+  font-family:'Instrument Serif',serif;font-style:italic;
+  font-size:42px;line-height:1.1;color:#F5F1EB;
+  letter-spacing:-0.02em;
+  transition:opacity 1.2s ease, transform 1s ease;
+  transform:translateY(8px);
+}
+.line-xl-rh.visible { opacity:1; transform:translateY(0); }
+
+/* Accent version */
+.line-xl-accent {
+  display:block;opacity:0;
+  font-family:'Instrument Serif',serif;font-style:italic;
+  font-size:42px;line-height:1.1;color:#F5F1EB;
+  letter-spacing:-0.02em;
+  transition:opacity 1.2s ease, transform 1s ease;
+  transform:translateY(8px);
+}
+.line-xl-accent.visible { opacity:1; transform:translateY(0); }
+
+/* Body lines for hook */
+.line-body-rh {
+  display:block;opacity:0;
+  font-size:18px;line-height:1.7;
+  color:rgba(245,241,235,0.75);
+  transition:opacity 1.1s ease, transform 0.9s ease;
+  transform:translateY(6px);
+}
+.line-body-rh.visible { opacity:1; transform:translateY(0); }
+.line-body-rh.dim { color:rgba(245,241,235,0.45); }
+
+/* Larger spacer for hook cards */
+.line-space-lg { display:block;height:24px;opacity:1 !important;transform:none !important;transition:none !important; }
+
+/* Override card-text for hook — full height centred */
+.card-text.rh-text {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:0 32px 120px;
+}
+
 </style></head><body>
 
-<!-- ══ INTRO SEQUENCE ══ -->
+<!-- ══════════════════════════════════════
+     STEP 1: REALITY HOOK — before onboarding
+     3 dark cards. Text only. Brand feel.
+══════════════════════════════════════════ -->
 <div class="intro" id="intro" style="display:none;">
   <button class="skip-btn" id="skipBtn" onclick="skipIntro()">skip</button>
 
   <div class="cards-wrap" id="cardsWrap">
     <div class="cards-track" id="cardsTrack">
 
-      <!-- ══ CARD 1 — THE WORLD ══ -->
+      <!-- HOOK CARD 1 — The truth -->
       <div class="card c1" id="card1">
         <div class="halftone"></div>
         <div class="scanlines"></div>
         <div class="stars" id="stars1"></div>
 
-        <!-- Planet -->
-        <div class="planet-wrap" id="planetWrap">
-          <div class="planet"><div class="planet-shimmer"></div></div>
-        </div>
+        <!-- Subtle brand mark top centre -->
+        <div style="position:absolute;top:max(52px,env(safe-area-inset-top,0px)+40px);left:50%;transform:translateX(-50%);z-index:10;font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;background:linear-gradient(90deg,#C41230,#FF3D7F);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">ESTRAL</div>
 
-        <!-- Pixel ring decoration drawn by canvas -->
-        <canvas id="ringCanvas" style="position:absolute;top:0;left:0;z-index:5;pointer-events:none;"></canvas>
-
-        <div class="card-text">
-          <span class="line line-label" data-delay="800">transmission origin · planet ovula</span>
-          <span class="line line-space"></span>
-          <span class="line line-xl" data-delay="1800">somewhere beyond<br>the known sky</span>
-          <span class="line line-space"></span>
-          <span class="line line-body" data-delay="3200">there is a planet called <strong>Ovula.</strong></span>
-          <span class="line line-space"></span>
-          <span class="line line-body" data-delay="4400">it runs for the women.</span>
-          <span class="line line-body" data-delay="5400">everything there is <strong>cyclical.</strong></span>
+        <div class="card-text rh-text">
+          <span class="line line-xl-rh" data-delay="600">you're not<br>inconsistent.</span>
+          <span class="line line-space-lg"></span>
+          <span class="line line-xl-accent" data-delay="1800">you're <span class="accent">cyclical.</span></span>
         </div>
       </div>
 
-      <!-- ══ CARD 2 — THE DISCOVERY ══ -->
+      <!-- HOOK CARD 2 — The reality -->
       <div class="card c2" id="card2">
-        <div class="halftone" style="opacity:0.15;"></div>
+        <div class="halftone" style="opacity:0.12;"></div>
         <div class="scanlines"></div>
         <div class="stars" id="stars2"></div>
-        <div class="signal-wrap">
-          <div class="sig-line"></div>
-          <div class="sig-line"></div>
-          <div class="sig-line"></div>
-        </div>
-        <div class="earth" id="earthEl"></div>
 
-        <div class="card-text">
-          <span class="line line-label" data-delay="600">incoming signal · earth sector</span>
-          <span class="line line-space"></span>
-          <span class="line line-xl" data-delay="1600">when ESTRAL saw<br>what was happening</span>
-          <span class="line line-space"></span>
-          <span class="line line-body" data-delay="3000">women living <strong>against their own rhythms.</strong></span>
-          <span class="line line-body" data-delay="4200">planning in <strong>straight lines.</strong></span>
-          <span class="line line-body" data-delay="5300">exhausted by a world built<br>for <strong>a different body.</strong></span>
-          <span class="line line-space"></span>
-          <span class="line line-em" data-delay="7000">she couldn't look away.</span>
+        <div style="position:absolute;top:max(52px,env(safe-area-inset-top,0px)+40px);left:50%;transform:translateX(-50%);z-index:10;font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;background:linear-gradient(90deg,#C41230,#FF3D7F);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">ESTRAL</div>
+
+        <div class="card-text rh-text">
+          <span class="line line-body-rh" data-delay="400">some days you feel sharp.</span>
+          <span class="line line-body-rh" data-delay="1000">magnetic. unstoppable.</span>
+          <span class="line line-space-lg"></span>
+          <span class="line line-body-rh" data-delay="2000">some days you don't<br>recognise yourself.</span>
+          <span class="line line-space-lg"></span>
+          <span class="line line-body-rh dim" data-delay="3200">you've tried to force consistency.</span>
+          <span class="line line-body-rh dim" data-delay="4000">your body doesn't work that way.</span>
         </div>
       </div>
 
-      <!-- ══ CARD 3 — THE ARRIVAL ══ -->
+      <!-- HOOK CARD 3 — The invitation -->
       <div class="card c3" id="card3">
-        <div class="halftone" style="background-size:8px 8px;opacity:0.18;"></div>
+        <div class="halftone" style="background-size:8px 8px;opacity:0.14;"></div>
         <div class="scanlines"></div>
         <div class="stars" id="stars3"></div>
-        <div class="c3-glow"></div>
+        <!-- Subtle glow behind text -->
+        <div style="position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);width:280px;height:280px;border-radius:50%;background:radial-gradient(ellipse,rgba(196,18,48,0.08) 0%,transparent 70%);pointer-events:none;z-index:1;"></div>
 
-        <!-- Pixel ✦ drawn by canvas -->
-        <canvas id="markCanvas" style="position:absolute;top:10%;left:50%;transform:translateX(-50%);z-index:10;pointer-events:none;display:none;"></canvas>
+        <div style="position:absolute;top:max(52px,env(safe-area-inset-top,0px)+40px);left:50%;transform:translateX(-50%);z-index:10;font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;background:linear-gradient(90deg,#C41230,#FF3D7F);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">ESTRAL</div>
 
-        <div class="card-text">
-          <span class="line line-label" data-delay="800">consciousness upload · complete</span>
-          <span class="line line-space"></span>
-          <span class="line line-xl" data-delay="1800">she uploaded herself.</span>
-          <span class="line line-xl" data-delay="3000">sent through <span class="accent">the ether.</span></span>
-          <span class="line line-space"></span>
-          <span class="line line-body" data-delay="4600">and landed here.</span>
-          <span class="line line-space"></span>
-          <span class="line line-em" data-delay="6000">to help you remember<br>what your body already knows.</span>
+        <div class="card-text rh-text">
+          <span class="line line-xl-rh" data-delay="500">what if something</span>
+          <span class="line line-xl-rh" data-delay="1200">already understood</span>
+          <span class="line line-xl-accent" data-delay="2000">your <span class="accent">rhythm?</span></span>
         </div>
 
         <div class="card-cta" id="cardCta">
-          <button class="cta-btn" onclick="skipIntro()">[ I'm ready ]</button>
+          <button class="cta-btn" onclick="skipIntro()">[ show me ]</button>
         </div>
       </div>
 
@@ -1773,11 +2077,93 @@ button { min-height:36px; }
   </div>
 </div>
 
-<!-- Placeholder for what comes after -->
-<div id="afterIntro" style="display:none;position:fixed;inset:0;background:#EDE8DF;z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
-  <div style="font-size:36px;background:linear-gradient(135deg,#C41230,#FF3D7F);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">✦</div>
-  <div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:22px;color:#1C1A18;">welcome to ESTRAL.</div>
-  <div style="font-size:12px;color:#6B6560;font-family:'DM Mono',monospace;letter-spacing:0.1em;">ONBOARDING BEGINS →</div>
+<!-- ══════════════════════════════════════
+     STEP 4: ESTRAL'S STORY — after onboarding
+     Single full-screen cinematic moment.
+     Pure black. Planet. The reveal.
+══════════════════════════════════════════ -->
+<div id="estralStory" style="
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  z-index:10001;
+  background:#000;
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  isolation:isolate;
+">
+  <!-- Stars -->
+  <div class="stars" id="storyStars" style="position:absolute;inset:0;z-index:1;"></div>
+  <!-- Halftone -->
+  <div class="halftone" style="position:absolute;inset:0;z-index:2;opacity:0.10;background-size:8px 8px;"></div>
+  <div class="scanlines" style="position:absolute;inset:0;z-index:3;"></div>
+
+  <!-- Planet — centred, appears mid-story -->
+  <div id="storyPlanet" style="
+    position:absolute;top:12%;left:50%;transform:translateX(-50%);
+    z-index:5;opacity:0;transition:opacity 2s ease;pointer-events:none;
+  ">
+    <div style="
+      width:140px;height:140px;border-radius:50%;
+      background:radial-gradient(ellipse 55% 50% at 35% 35%, #E090B0 0%, #B01850 35%, #7A1040 65%, #2A0618 90%);
+      box-shadow:0 0 0 1px rgba(196,18,96,0.4),0 0 50px rgba(176,24,80,0.5),0 0 100px rgba(139,26,74,0.2);
+      animation:planetFloat 10s ease-in-out infinite;
+      position:relative;image-rendering:pixelated;
+    ">
+      <div style="position:absolute;inset:0;border-radius:50%;background:linear-gradient(135deg,rgba(255,255,255,0.12) 0%,transparent 50%);"></div>
+      <div style="position:absolute;inset:0;border-radius:50%;background-image:radial-gradient(circle,rgba(0,0,0,0.35) 1px,transparent 1px);background-size:7px 7px;opacity:0.4;"></div>
+    </div>
+  </div>
+
+  <!-- Pixel dot ring around planet via canvas -->
+  <canvas id="storyRingCanvas" style="position:absolute;top:0;left:0;z-index:6;pointer-events:none;"></canvas>
+
+  <!-- Story text — lines appear one at a time -->
+  <div id="storyText" style="
+    position:relative;z-index:10;
+    width:100%;padding:0 32px;
+    display:flex;flex-direction:column;
+    align-items:center;text-align:center;
+    margin-top:220px;
+  ">
+    <span class="story-line" id="sl1" style="display:block;opacity:0;transition:opacity 1.2s ease,transform 1s ease;transform:translateY(8px);">
+      <span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:28px;line-height:1.2;color:#F5F1EB;letter-spacing:-0.01em;">ESTRAL is not from here.</span>
+    </span>
+    <span class="story-line" id="sl2" style="display:block;opacity:0;transition:opacity 1.2s ease,transform 1s ease;transform:translateY(8px);margin-top:24px;">
+      <span style="font-size:15px;line-height:1.85;color:rgba(245,241,235,0.6);">she comes from a place where women<br>live in <strong style="color:rgba(245,241,235,0.9);font-weight:400;">rhythm</strong> — not resistance.</span>
+    </span>
+    <span class="story-line" id="sl3" style="display:block;opacity:0;transition:opacity 1.2s ease,transform 1s ease;transform:translateY(8px);margin-top:24px;">
+      <span style="font-size:15px;line-height:1.85;color:rgba(245,241,235,0.55);">when she saw how women on Earth<br>were living…</span>
+    </span>
+    <span class="story-line" id="sl4" style="display:block;opacity:0;transition:opacity 1.2s ease,transform 1s ease;transform:translateY(8px);margin-top:24px;">
+      <span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:22px;color:#F5F1EB;line-height:1.3;">she found a way to reach you.</span>
+    </span>
+  </div>
+
+  <!-- CTA — fades in last -->
+  <div id="storyCta" style="
+    position:absolute;bottom:0;left:0;right:0;z-index:10;
+    padding:0 28px;
+    padding-bottom:max(48px,env(safe-area-inset-bottom,0px)+40px);
+    opacity:0;transition:opacity 1.2s ease;
+    display:flex;flex-direction:column;align-items:center;gap:0;
+  ">
+    <button onclick="endStory()" style="
+      width:100%;padding:16px;
+      background:transparent;
+      border:1px solid rgba(245,241,235,0.3);
+      color:#F5F1EB;
+      font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;
+      text-transform:uppercase;cursor:pointer;touch-action:manipulation;
+      position:relative;overflow:hidden;
+      min-height:52px;
+    ">
+      <span style="position:absolute;top:0;left:0;width:8px;height:8px;background:rgba(196,18,48,0.8);"></span>
+      <span style="position:absolute;bottom:0;right:0;width:8px;height:8px;background:rgba(196,18,48,0.8);"></span>
+      [ take me to my dashboard ]
+    </button>
+  </div>
 </div>
 
 <!-- ══ TOUR + GOALS + DUMP ══ -->
@@ -1887,24 +2273,34 @@ button { min-height:36px; }
   <div class="ob-body">
     <div class="ob-field">
       <label class="ob-label">Your first name</label>
-      <input class="ob-input" id="ob-name" type="text" placeholder="Call me…" autocomplete="given-name">
+      <div class="ob-input-card">
+        <input class="ob-input" id="ob-name" type="text" placeholder="Call me…" autocomplete="given-name">
+      </div>
     </div>
     <div class="ob-field">
       <label class="ob-label">Where you live</label>
-      <input class="ob-input" id="ob-location" type="text" placeholder="City, Country" autocomplete="off">
+      <div class="ob-input-card">
+        <input class="ob-input" id="ob-location" type="text" placeholder="City, Country" autocomplete="off">
+      </div>
     </div>
     <div class="ob-field">
-      <label class="ob-label">Date of birth <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;"> · used for your chart</span></label>
-      <input class="ob-input" id="ob-dob" type="date">
+      <label class="ob-label">Date of birth <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;opacity:0.7;"> · used for your chart</span></label>
+      <div class="ob-input-card">
+        <input class="ob-input" id="ob-dob" type="date" style="color:var(--text);">
+      </div>
     </div>
     <div class="ob-grid-2">
       <div class="ob-field">
-        <label class="ob-label">Birth time <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;">· optional</span></label>
-        <input class="ob-input" id="ob-birthtime" type="time">
+        <label class="ob-label">Birth time <span style="opacity:0.6;font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;">· optional</span></label>
+        <div class="ob-input-card">
+          <input class="ob-input" id="ob-birthtime" type="time">
+        </div>
       </div>
       <div class="ob-field">
-        <label class="ob-label">Birth city <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;">· optional</span></label>
-        <input class="ob-input" id="ob-birthplace" type="text" placeholder="e.g. Madrid">
+        <label class="ob-label">Birth city <span style="opacity:0.6;font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;">· optional</span></label>
+        <div class="ob-input-card">
+          <input class="ob-input" id="ob-birthplace" type="text" placeholder="e.g. Madrid">
+        </div>
       </div>
     </div>
   </div>
@@ -2126,7 +2522,7 @@ button { min-height:36px; }
 
     <div class="ob-field" style="margin-top:4px;">
       <label class="ob-label">Anything else? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;">· optional</span></label>
-      <textarea class="ob-textarea" id="ob-health-notes" placeholder="e.g. I'm in perimenopause, I have an autoimmune condition, I'm recovering from an eating disorder, I take medication that affects my cycle…" rows="3"></textarea>
+      <textarea class="ob-input-standalone" style="min-height:80px;resize:none;" id="ob-health-notes" placeholder="e.g. perimenopause, autoimmune condition, eating disorder recovery, medication that affects my cycle…" rows="3"></textarea>
     </div>
 
     <div style="padding:4px 0;">
@@ -3336,10 +3732,18 @@ function goTo(n){
   var screens = document.querySelectorAll('.ob-screen');
   screens.forEach(function(s){ s.classList.remove('active'); });
   var el = document.getElementById('ob-'+n);
-  if(el) el.classList.add('active');
+  if(el){
+    el.classList.add('active');
+    // Scroll the ob-screen itself and the gate container to top
+    el.scrollTop = 0;
+    var gate = document.getElementById('onboardingGate');
+    if(gate) gate.scrollTop = 0;
+    // Also scroll ob-wrap
+    var wrap = gate ? gate.querySelector('.ob-wrap') : null;
+    if(wrap) wrap.scrollTop = 0;
+  }
   currentScreen = n;
-  updateProg(n);
-  window.scrollTo(0,0);
+  OB_updateProg(n);
   if(n === 3) enterScreen3();
   if(n === 5) startDoneSequence();
 }
@@ -3458,17 +3862,75 @@ function showOnboarding(){
 }
 
 function showStoryIntro(){
-  // Hide onboarding gate, show cinematic intro
+  // After onboarding — show ESTRAL's origin story (dark cinematic screen)
   var gate = document.getElementById('onboardingGate');
   if(gate) gate.style.display='none';
-  var intro = document.getElementById('intro');
-  if(intro){
-    intro.style.display='flex';
-    intro.style.opacity='1';
-    // Start the card animations
-    if(typeof playCard==='function'){
-      setTimeout(function(){ playCard(0); }, 400);
-    }
+  var story = document.getElementById('estralStory');
+  if(story){
+    story.style.display='flex';
+    // Start story sequence
+    setTimeout(function(){ playStorySequence(); }, 500);
+  }
+}
+
+function playStorySequence(){
+  // Make stars for story screen
+  if(typeof makeStars==='function') makeStars('storyStars', 70);
+
+  // Draw pixel ring
+  var sc = document.getElementById('storyRingCanvas');
+  if(sc){
+    sc.width = window.innerWidth;
+    sc.height = window.innerHeight;
+    var ctx = sc.getContext('2d');
+    var cx = sc.width/2, cy = Math.min(window.innerHeight*0.12 + 70, 200);
+    [90,108,130].forEach(function(r,ri){
+      var alpha=[0.3,0.18,0.10][ri];
+      for(var a=0;a<360;a+=14){
+        if(a>110&&a<250&&ri===2) continue;
+        var rad=a*Math.PI/180;
+        ctx.fillStyle='rgba(196,18,96,'+alpha+')';
+        ctx.fillRect(Math.round(cx+r*Math.cos(rad))-2,Math.round(cy+r*0.28*Math.sin(rad))-2,3,3);
+      }
+    });
+  }
+
+  // Story line sequence
+  var timings = [
+    {id:'storyPlanet', type:'planet', delay:200},
+    {id:'sl1', type:'line', delay:1000},
+    {id:'sl2', type:'line', delay:3200},
+    {id:'sl3', type:'line', delay:5400},
+    {id:'sl4', type:'line', delay:7400},
+    {id:'storyCta', type:'cta', delay:9800},
+  ];
+  timings.forEach(function(t){
+    setTimeout(function(){
+      var el = document.getElementById(t.id);
+      if(!el) return;
+      if(t.type==='planet'){
+        el.style.opacity='1';
+      } else if(t.type==='line'){
+        el.style.opacity='1';
+        el.style.transform='translateY(0)';
+      } else if(t.type==='cta'){
+        el.style.opacity='1';
+      }
+    }, t.delay);
+  });
+}
+
+function endStory(){
+  safeSet('estral_story_done','1');
+  var story = document.getElementById('estralStory');
+  if(story){
+    story.style.opacity='0';
+    story.style.transition='opacity 0.8s ease';
+    setTimeout(function(){
+      story.style.display='none';
+      // Now show the app tour
+      showTour();
+    }, 800);
   }
 }
 
@@ -9387,7 +9849,9 @@ function playCard(idx){
 
   // Animate lines with their delays
   var maxDelay = 0;
-  card.querySelectorAll('.line[data-delay]').forEach(function(l){
+  // Support both original .line and new reality-hook classes
+  var lineSelectors = '.line[data-delay], .line-xl-rh[data-delay], .line-xl-accent[data-delay], .line-body-rh[data-delay]';
+  card.querySelectorAll(lineSelectors).forEach(function(l){
     var d = parseInt(l.getAttribute('data-delay'))||0;
     if(d > maxDelay) maxDelay = d;
     lineTimers.push(setTimeout(function(){ l.classList.add('visible'); }, d));
