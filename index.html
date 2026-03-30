@@ -30,9 +30,23 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   radial-gradient(ellipse 55% 45% at 85% 18%,rgba(59,175,212,0.10) 0%,transparent 60%),#EDE8DF;}
 
 /* ONBOARDING */
-#onboardingGate{position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:#EDE8DF;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;}
-.ob-wrap{width:100%;max-width:430px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;position:relative;z-index:1;}
-.ob-screen{display:none;flex-direction:column;min-height:100%;}
+#onboardingGate{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  z-index:9999;background:#EDE8DF;
+  overflow-y:auto;overflow-x:hidden;
+  display:flex;flex-direction:column;
+  align-items:center; /* centre ob-wrap horizontally */
+}
+.ob-wrap{
+  width:100%;
+  max-width:430px;
+  min-height:100%;
+  min-height:-webkit-fill-available;
+  display:flex;flex-direction:column;
+  position:relative;z-index:1;
+  flex-shrink:0;
+}
+.ob-screen{display:none;flex-direction:column;min-height:100vh;min-height:-webkit-fill-available;}
 .ob-screen.active{display:flex;}
 
 /* MAIN APP */
@@ -323,11 +337,15 @@ to{opacity:1;transform:translateY(0);}}
 
 /* ── SPLASH ── */
 .splash{
-  flex:1;display:flex;flex-direction:column;
-  align-items:flex-start;justify-content:center;
-  padding:max(60px,env(safe-area-inset-top,0px)+48px) 28px
-         max(48px,env(safe-area-inset-bottom,0px)+40px);
-  text-align:left;width:100%;
+  flex:1;
+  display:flex;flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  padding:max(72px,env(safe-area-inset-top,0px)+56px) 28px max(56px,env(safe-area-inset-bottom,0px)+44px);
+  text-align:left;
+  width:100%;
+  min-height:100vh;
+  min-height:-webkit-fill-available;
 }
 .splash-mark{
   font-size:40px;margin-bottom:24px;
@@ -600,56 +618,7 @@ select.ob-input{
   text-align:center;
 }
 
-.ob-back{
-  background:none;border:none;cursor:pointer;
-  font-size:20px;color:var(--muted);padding:0 0 16px;
-  touch-action:manipulation;display:block;
-}
-.ob-step{
-  font-size:9px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;
-  color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:8px;
-}
-.ob-step::before{content:'';display:block;width:16px;height:1px;background:var(--muted);opacity:0.4;}
-
-/* ESTRAL opening line per screen */
-.ob-estral-line{
-  font-style:italic;font-size:15px;line-height:1.75;color:#1A0A0E;
-  padding:14px 18px;background:rgba(255,252,248,0.65);
-  border:1px solid rgba(255,255,255,0.6);border-radius:14px;
-  margin-bottom:24px;position:relative;
-}
-.ob-estral-line::before{
-  content:'✦';position:absolute;top:14px;left:18px;
-  font-size:9px;font-weight:700;
-  background:linear-gradient(90deg,#C41230,#FF3D7F);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-.ob-estral-line p{padding-left:18px;}
-
-.ob-title{font-size:34px;font-weight:700;letter-spacing:-0.025em;line-height:1.1;margin-bottom:8px;}
-.ob-title em{font-style:italic;font-family:'Instrument Serif',serif;font-weight:300;font-size:38px;}
-
-.ob-
-
-/* ── FIELDS ── */
-.ob-field{display:flex;flex-direction:column;gap:6px;}
-.ob-label{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);}
-.ob-input{
-  width:100%;background:transparent;border:none;border-bottom:1.5px solid rgba(28,26,24,0.18);
-  padding:12px 0;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);
-  outline:none;transition:border-color 0.2s;
-}
-.ob-input:focus{border-bottom-color:var(--phase);}
-.ob-input::placeholder{color:var(--muted);}
-select.ob-input{-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer;}
-.ob-textarea{
-  width:100%;background:rgba(28,26,24,0.03);border:1.5px solid rgba(28,26,24,0.12);
-  border-radius:12px;padding:12px 14px;font-family:'DM Sans',sans-serif;
-  font-size:14px;color:var(--text);outline:none;resize:none;line-height:1.65;
-  transition:border-color 0.2s;
-}
-.ob-textarea:focus{border-color:var(--phase);}
-.ob-textarea::placeholder{color:var(--muted);}
+/* ob-* styles defined above */
 
 /* ── CHIPS ── */
 .ob-chips{display:flex;flex-wrap:wrap;gap:8px;}
@@ -1938,7 +1907,7 @@ button { min-height:36px; }
 }
 
 /* Onboarding safe areas */
-.ob-header{ padding-top:max(56px, env(safe-area-inset-top, 0px) + 44px); }
+/* ob-header safe area — defined above */
 
 /* All buttons minimum touch target */
 .tc-btn-primary, .tc-btn-secondary, .dump-go, .g-send, .cta-btn {
@@ -2093,8 +2062,8 @@ button { min-height:36px; }
   background:#000;
   display:none;
   flex-direction:column;
-  align-items:center;
-  justify-content:center;
+  align-items:stretch;
+  justify-content:flex-start;
   overflow:hidden;
   isolation:isolate;
 ">
@@ -2106,7 +2075,8 @@ button { min-height:36px; }
 
   <!-- Planet — centred, appears mid-story -->
   <div id="storyPlanet" style="
-    position:absolute;top:12%;left:50%;transform:translateX(-50%);
+    position:absolute;top:max(48px,env(safe-area-inset-top,0px)+36px);
+    left:50%;transform:translateX(-50%);
     z-index:5;opacity:0;transition:opacity 2s ease;pointer-events:none;
   ">
     <div style="
@@ -2124,13 +2094,17 @@ button { min-height:36px; }
   <!-- Pixel dot ring around planet via canvas -->
   <canvas id="storyRingCanvas" style="position:absolute;top:0;left:0;z-index:6;pointer-events:none;"></canvas>
 
-  <!-- Story text — lines appear one at a time -->
+  <!-- Story text + CTA — all in one scrollable flex column -->
   <div id="storyText" style="
     position:relative;z-index:10;
-    width:100%;padding:0 32px;
+    width:100%;
+    flex:1;
     display:flex;flex-direction:column;
-    align-items:center;text-align:center;
-    margin-top:220px;
+    align-items:center;justify-content:center;
+    text-align:center;
+    padding:180px 32px max(80px,env(safe-area-inset-bottom,0px)+64px);
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
   ">
     <span class="story-line" id="sl1" style="display:block;opacity:0;transition:opacity 1.2s ease,transform 1s ease;transform:translateY(8px);">
       <span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:28px;line-height:1.2;color:#F5F1EB;letter-spacing:-0.01em;">ESTRAL is not from here.</span>
@@ -2141,33 +2115,32 @@ button { min-height:36px; }
     <span class="story-line" id="sl3" style="display:block;opacity:0;transition:opacity 1.2s ease,transform 1s ease;transform:translateY(8px);margin-top:24px;">
       <span style="font-size:15px;line-height:1.9;color:rgba(245,241,235,0.5);">when she saw how women on Earth<br>were living…</span>
     </span>
-    <span class="story-line" id="sl4" style="display:block;opacity:0;transition:opacity 1.2s ease,transform 1s ease;transform:translateY(8px);margin-top:24px;">
-      <span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:22px;color:#F5F1EB;line-height:1.3;">she found a way to reach you.</span>
+    <span class="story-line" id="sl4" style="display:block;opacity:0;transition:opacity 1.2s ease,transform 1s ease;transform:translateY(8px);margin-top:28px;">
+      <span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:24px;color:#F5F1EB;line-height:1.3;">she found a way to reach you.</span>
     </span>
-  </div>
 
-  <!-- CTA — fades in last -->
-  <div id="storyCta" style="
-    position:absolute;bottom:0;left:0;right:0;z-index:10;
-    padding:0 28px;
-    padding-bottom:max(48px,env(safe-area-inset-bottom,0px)+40px);
-    opacity:0;transition:opacity 1.2s ease;
-    display:flex;flex-direction:column;align-items:center;gap:0;
-  ">
-    <button onclick="endStory()" style="
-      width:100%;padding:16px;
-      background:transparent;
-      border:1px solid rgba(245,241,235,0.3);
-      color:#F5F1EB;
-      font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;
-      text-transform:uppercase;cursor:pointer;touch-action:manipulation;
-      position:relative;overflow:hidden;
-      min-height:52px;
+    <!-- CTA — inside the flow, fades in last, always visible above home bar -->
+    <div id="storyCta" style="
+      width:100%;margin-top:48px;
+      opacity:0;transition:opacity 1.2s ease;
+      flex-shrink:0;
     ">
-      <span style="position:absolute;top:0;left:0;width:8px;height:8px;background:rgba(196,18,48,0.8);"></span>
-      <span style="position:absolute;bottom:0;right:0;width:8px;height:8px;background:rgba(196,18,48,0.8);"></span>
-      [ take me to my dashboard ]
-    </button>
+      <button onclick="endStory()" style="
+        width:100%;padding:18px 20px;
+        background:rgba(245,241,235,0.05);
+        border:1px solid rgba(245,241,235,0.25);
+        color:#F5F1EB;
+        font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.16em;
+        text-transform:uppercase;cursor:pointer;touch-action:manipulation;
+        position:relative;overflow:hidden;
+        min-height:56px;
+        -webkit-tap-highlight-color:rgba(255,255,255,0.1);
+      ">
+        <span style="position:absolute;top:0;left:0;width:8px;height:8px;background:rgba(196,18,48,0.8);display:block;"></span>
+        <span style="position:absolute;bottom:0;right:0;width:8px;height:8px;background:rgba(196,18,48,0.8);display:block;"></span>
+        take me to my dashboard
+      </button>
+    </div>
   </div>
 </div>
 
@@ -2250,7 +2223,7 @@ button { min-height:36px; }
 
 <div class="ob-prog"><div class="ob-prog-fill" id="obProg"></div></div>
 
-<div class="ob-wrap" style="width:100%;flex:1;display:flex;flex-direction:column;">
+<div class="ob-wrap">
 
 <!-- ══════════════════════════════════════════════════
      SPLASH
@@ -3928,42 +3901,61 @@ function playStorySequence(){
 function endStory(){
   safeSet('estral_story_done','1');
   var story = document.getElementById('estralStory');
-  if(story){
-    story.style.opacity='0';
-    story.style.transition='opacity 0.8s ease';
-    setTimeout(function(){
-      story.style.display='none';
-      // Now show the app tour
-      showTour();
-    }, 800);
-  }
+  if(!story) { showTour(); return; }
+  // Disable button immediately to prevent double-tap
+  var btn = story.querySelector('button');
+  if(btn) btn.style.pointerEvents='none';
+  story.style.transition='opacity 0.7s ease';
+  story.style.opacity='0';
+  setTimeout(function(){
+    story.style.display='none';
+    story.style.opacity='';
+    showTour();
+  }, 750);
 }
 
 function showTour(){
-  // Hide all possible overlays
+  // Hide all first-run overlays
   ['onboardingGate','estralStory','intro'].forEach(function(id){
     var el=document.getElementById(id);
     if(el) el.style.display='none';
   });
-  // Show main app behind tour (needed for spotlight)
+
+  // CRITICAL: Hide morning chat — it shows by default and blocks the dashboard
+  var mo = document.getElementById('morningOverlay');
+  if(mo){ mo.classList.remove('active'); mo.style.pointerEvents='none'; }
+  var mc = document.getElementById('morningCard');
+  if(mc){ mc.classList.remove('open'); }
+
+  // Show main app shell
   var ma=document.getElementById('mainApp');
   if(ma){ ma.style.display='flex'; ma.style.flexDirection='column'; }
+
+  // Show topbar
+  var tb=document.getElementById('mainTopbar');
+  if(tb) tb.style.display='flex';
+
+  // Show nav
+  var nav=document.getElementById('mainNav');
+  if(nav) nav.classList.add('show');
+
+  // Show dashboard
   var dash=document.getElementById('sDash');
   if(dash) dash.style.display='flex';
-  // Build dashboard so it shows behind tour
-  if(typeof buildRing==='function') buildRing();
-  if(typeof buildT4==='function') buildT4();
-  if(typeof buildWeek==='function') buildWeek();
-  if(typeof buildDayTip==='function') buildDayTip();
-  // Show tour overlay
-  var t = document.getElementById('tourOverlay');
-  if(t){
-    t.style.display='block';
-    t.style.opacity='1';
-    t.classList.add('active');
-  }
-  // Init tour
-  if(typeof initTour==='function') initTour();
+
+  // Build dashboard content so it's visible behind tour
+  if(typeof initDashboard==='function') initDashboard();
+
+  // Small delay so dashboard renders before we position spotlights
+  setTimeout(function(){
+    var t = document.getElementById('tourOverlay');
+    if(t){
+      t.style.display='block';
+      t.style.opacity='1';
+      t.classList.add('active');
+    }
+    if(typeof initTour==='function') initTour();
+  }, 80);
 }
 
 function completeOnboarding(){
@@ -4717,6 +4709,7 @@ function finishGuidedDump(){
 }
 function sendFree(){
   var inp=document.getElementById('chatInp');
+  if(!inp) return; // element may not exist in all contexts
   var v=inp.value.trim();if(!v)return;
   addBubble('u',v);inp.value='';
   showTyping(function(){addBubble('e','noted. take that into your day.');});
@@ -8511,7 +8504,7 @@ function buildDayEntry(log, phaseColor){
 
 // ══ PATTERNS ═════════════════════════════════════════════
 function buildPatterns(){
-  var scroll = document.getElementById('patternsScroll');
+  var scroll = document.getElementById('mainScroll'); // patterns tab scroll container
   scroll.innerHTML = '';
 
   // ── ESTRAL INSIGHTS FEED ──
@@ -9761,6 +9754,7 @@ makeStars('stars3',50);
 // ── PIXEL RING around planet ──
 function drawPixelRing(){
   var canvas = document.getElementById('ringCanvas');
+  if(!canvas) return; // canvas removed in Reality Hook redesign
   var wrap = document.getElementById('planetWrap');
   if(!canvas || !wrap) return;
   canvas.width = window.innerWidth;
@@ -9934,10 +9928,10 @@ function skipIntro(){
 
 // ── INIT ──
 window.addEventListener('load',function(){
-  drawPixelRing();
+  // drawPixelRing() removed — ringCanvas no longer in DOM (Reality Hook replaced intro)
   setTimeout(function(){ playCard(0); }, 500);
 });
-window.addEventListener('resize', drawPixelRing);
+// resize listener for pixel ring removed — canvas no longer in DOM
 
 // ══ TOUR + GOALS + DUMP JS ══════════════════
 
@@ -9947,31 +9941,31 @@ var userName = 'Sofia';
 // Each step defines: which element to spotlight, where to position the card, and the copy
 var TOUR = [
   {
-    target: null, // no spotlight — intro card
+    target: null,
     cardPos: 'center',
-    heading: 'welcome, ' + userName + '.',
-    body: 'most planning tools were built for a <strong>linear world</strong>. your energy doesn\'t work that way.<br><br>ESTRAL maps your biology — cycle phase, lunar rhythm, symptoms, mood — and tells you <strong>when to do what</strong>. let me show you around.'
+    heading: 'welcome.',
+    body: 'ESTRAL maps your biology — cycle phase, lunar rhythm, symptoms, mood — and tells you <strong>when to do what</strong>.<br><br>let me show you around your dashboard.'
   },
   {
-    target: 'secCycle',
+    target: 'ringWrap',
     cardPos: 'below',
     heading: 'where you are.',
-    body: 'this is your <strong>cycle ring</strong> — today is day 8, follicular phase. estrogen is rising, your brain is sharp. the tags show what\'s happening hormonally and what the moon is doing.<br><br>tap <strong>✦ ESTRAL says</strong> anytime for a deeper read on the day.'
+    body: 'your <strong>cycle ring</strong> shows your phase and cycle day. the tags show what&#39;s happening hormonally and what the moon is doing.<br><br>tap <strong>✦ ESTRAL says</strong> anytime for a deeper read.'
   },
   {
-    target: 'secToday',
+    target: 't4Outer',
     cardPos: 'below',
-    heading: 'today\'s 4.',
-    body: 'every morning ESTRAL asks you a few things — energy, mood, cravings. then she builds <strong>your 4 priorities</strong> from your brain dump, matched to where you are in your cycle.<br><br>at <strong>9pm</strong> she checks back in. the more you log, the more accurate your patterns become.'
+    heading: 'today&#39;s 4.',
+    body: 'every morning ESTRAL builds your <strong>4 daily priorities</strong> around where you actually are — energy, phase, mood, what&#39;s coming up.<br><br>at <strong>9pm</strong> she checks in. the more you log, the sharper your patterns.'
   },
   {
-    target: 'secNourish',
-    cardPos: 'below',
-    heading: 'nourish today.',
-    body: 'every day ESTRAL surfaces <strong>what your body needs</strong> based on your phase, lunar sign, symptoms, and conditions. she also plans your meals and gives you recipes if you want them.'
+    target: 'wkOuter',
+    cardPos: 'above',
+    heading: 'your week.',
+    body: 'each day shows your <strong>phase</strong>, the <strong>lunar transit</strong>, and ESTRAL&#39;s tip. tap any day to see what&#39;s optimal and plan accordingly.'
   },
   {
-    target: 'dashNav',
+    target: 'mainNav',
     cardPos: 'above',
     heading: 'five tabs. one rhythm.',
     body: '<strong>Today</strong> — your daily check-in.<br><strong>Plan</strong> — brain dump → sorted by cycle.<br><strong>Patterns</strong> — what ESTRAL sees after a full cycle.<br><strong>Journal</strong> — reflections at the moments that matter.',
@@ -10116,16 +10110,17 @@ function tourNext(){
 
 function endTour(){
   safeSet('estral_tour_done','1');
-  // Fade out tour overlay
   var overlay = document.getElementById('tourOverlay');
+  if(!overlay){ openGoals(); return; }
+  overlay.style.transition = 'opacity 0.35s ease';
   overlay.style.opacity = '0';
-  overlay.style.transition = 'opacity 0.4s ease';
   overlay.style.pointerEvents = 'none';
   setTimeout(function(){
     overlay.style.display = 'none';
-    // Go straight to dump intro if skipping everything
-    openDumpIntro();
-  }, 400);
+    overlay.classList.remove('active');
+    // Go to goals journal
+    openGoals();
+  }, 350);
 }
 
 // ══ GOALS ══
