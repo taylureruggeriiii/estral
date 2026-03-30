@@ -323,9 +323,11 @@ to{opacity:1;transform:translateY(0);}}
 
 /* ── SPLASH ── */
 .splash{
-  flex:1;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
-  padding:60px 28px 48px;text-align:left;
-  width:100%;
+  flex:1;display:flex;flex-direction:column;
+  align-items:flex-start;justify-content:center;
+  padding:max(60px,env(safe-area-inset-top,0px)+48px) 28px
+         max(48px,env(safe-area-inset-bottom,0px)+40px);
+  text-align:left;width:100%;
 }
 .splash-mark{
   font-size:40px;margin-bottom:24px;
@@ -371,6 +373,7 @@ to{opacity:1;transform:translateY(0);}}
 .ob-header{
   padding:max(56px, env(safe-area-inset-top, 0px) + 44px) 24px 0;
   flex-shrink:0;
+  width:100%;
 }
 
 /* Back button — bigger tap target */
@@ -429,6 +432,8 @@ to{opacity:1;transform:translateY(0);}}
   padding:20px 24px 16px;
   display:flex;flex-direction:column;gap:20px;
   overflow-y:visible;
+  /* Ensure nothing bleeds to edge */
+  width:100%;
 }
 
 /* CTA footer — always 24px padding */
@@ -2131,10 +2136,10 @@ button { min-height:36px; }
       <span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:28px;line-height:1.2;color:#F5F1EB;letter-spacing:-0.01em;">ESTRAL is not from here.</span>
     </span>
     <span class="story-line" id="sl2" style="display:block;opacity:0;transition:opacity 1.2s ease,transform 1s ease;transform:translateY(8px);margin-top:24px;">
-      <span style="font-size:15px;line-height:1.85;color:rgba(245,241,235,0.6);">she comes from a place where women<br>live in <strong style="color:rgba(245,241,235,0.9);font-weight:400;">rhythm</strong> — not resistance.</span>
+      <span style="font-size:15px;line-height:1.9;color:rgba(245,241,235,0.65);">she comes from <strong style="color:rgba(245,241,235,0.9);font-weight:400;">Planet Ovula</strong> — where women live in rhythm with their bodies and the moon.</span>
     </span>
     <span class="story-line" id="sl3" style="display:block;opacity:0;transition:opacity 1.2s ease,transform 1s ease;transform:translateY(8px);margin-top:24px;">
-      <span style="font-size:15px;line-height:1.85;color:rgba(245,241,235,0.55);">when she saw how women on Earth<br>were living…</span>
+      <span style="font-size:15px;line-height:1.9;color:rgba(245,241,235,0.5);">when she saw how women on Earth<br>were living…</span>
     </span>
     <span class="story-line" id="sl4" style="display:block;opacity:0;transition:opacity 1.2s ease,transform 1s ease;transform:translateY(8px);margin-top:24px;">
       <span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:22px;color:#F5F1EB;line-height:1.3;">she found a way to reach you.</span>
@@ -2168,7 +2173,7 @@ button { min-height:36px; }
 
 <!-- ══ TOUR + GOALS + DUMP ══ -->
 <!-- ══ TOUR OVERLAY ══ -->
-<div id="tourOverlay" class="active">
+<div id="tourOverlay">
   <div id="tourMask"></div>
   <div id="tourSpotlight"></div>
   <div id="tourCardArrow"></div>
@@ -3935,10 +3940,28 @@ function endStory(){
 }
 
 function showTour(){
-  var gate = document.getElementById('onboardingGate');
-  if(gate) gate.style.display='none';
+  // Hide all possible overlays
+  ['onboardingGate','estralStory','intro'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.style.display='none';
+  });
+  // Show main app behind tour (needed for spotlight)
+  var ma=document.getElementById('mainApp');
+  if(ma){ ma.style.display='flex'; ma.style.flexDirection='column'; }
+  var dash=document.getElementById('sDash');
+  if(dash) dash.style.display='flex';
+  // Build dashboard so it shows behind tour
+  if(typeof buildRing==='function') buildRing();
+  if(typeof buildT4==='function') buildT4();
+  if(typeof buildWeek==='function') buildWeek();
+  if(typeof buildDayTip==='function') buildDayTip();
+  // Show tour overlay
   var t = document.getElementById('tourOverlay');
-  if(t){ t.style.display='block'; t.style.opacity='1'; t.classList.add('active'); }
+  if(t){
+    t.style.display='block';
+    t.style.opacity='1';
+    t.classList.add('active');
+  }
   // Init tour
   if(typeof initTour==='function') initTour();
 }
@@ -9959,12 +9982,14 @@ var TOUR = [
 var tourStep = 0;
 
 function initTour(){
-  // Build dots
+  // Build dots — clear first to prevent doubling on re-call
   var dots = document.getElementById('tourDots');
+  if(dots) dots.innerHTML = '';
+  if(typeof TOUR === 'undefined' || !TOUR) return;
   TOUR.forEach(function(_, i){
     var d = document.createElement('div');
     d.className = 'tour-dot' + (i===0?' on':'');
-    dots.appendChild(d);
+    if(dots) dots.appendChild(d);
   });
   renderTourStep(0);
 }
